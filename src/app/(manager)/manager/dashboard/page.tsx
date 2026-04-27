@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ManagerJobRow } from '@/components/portal/manager/ManagerJobRow'
+import { ManagerCreateJobForm } from '@/components/portal/manager/ManagerCreateJobForm'
 import { AlertTriangle } from 'lucide-react'
 
 const STATUS_ORDER = ['flagged', 'in_progress', 'not_started', 'completed']
@@ -19,8 +20,8 @@ export default async function ManagerDashboard() {
     year: 'numeric', month: '2-digit', day: '2-digit',
   }).split('/').reverse().join('-') // yyyy-mm-dd in Brisbane time
 
-  // Fetch profile and jobs in parallel
-  const [{ data: profile }, { data: jobs }] = await Promise.all([
+  // Fetch profile, jobs, clients, and cleaners in parallel
+  const [{ data: profile }, { data: jobs }, { data: clients }, { data: cleanerProfiles }] = await Promise.all([
     (supabase as any)
       .from('profiles').select('full_name').eq('user_id', user.id).single(),
     (supabase as any)
@@ -29,6 +30,10 @@ export default async function ManagerDashboard() {
       .gte('scheduled_date', from)
       .lte('scheduled_date', to)
       .order('scheduled_date', { ascending: false }),
+    (supabase as any)
+      .from('clients').select('id, business_name, address, suburb, frequency').eq('active', true).order('business_name'),
+    (supabase as any)
+      .from('profiles').select('id, full_name').eq('role', 'cleaner').order('full_name'),
   ])
 
   const firstName = (profile?.full_name ?? user.email ?? '').split(' ')[0]
@@ -81,6 +86,34 @@ export default async function ManagerDashboard() {
           {greeting}, {firstName}.
         </h1>
       </div>
+
+      {/* Create Job */}
+      {(clients ?? []).length > 0 && (
+        <section className="mb-6">
+          <details className="group">
+            <summary className="flex items-center justify-between cursor-pointer list-none py-0">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Create Job</p>
+              <span className="text-xs text-gray-400 group-open:hidden">＋</span>
+              <span className="text-xs text-gray-400 hidden group-open:inline">−</span>
+            </summary>
+            <div className="mt-4 bg-white rounded-2xl px-5 py-5">
+              <ManagerCreateJobForm
+                clients={(clients ?? []).map((c: any) => ({
+                  id: c.id,
+                  business_name: c.business_name,
+                  address: c.address,
+                  suburb: c.suburb,
+                  frequency: c.frequency,
+                }))}
+                cleaners={(cleanerProfiles ?? []).map((c: any) => ({
+                  id: c.id,
+                  fullName: c.full_name ?? c.id,
+                }))}
+              />
+            </div>
+          </details>
+        </section>
+      )}
 
       {/* Needs Attention */}
       {hasAttention && (
@@ -145,7 +178,13 @@ export default async function ManagerDashboard() {
       {/* Job list */}
       <div className="space-y-2">
         {allJobs.length === 0 && (
-          <div className="text-center py-12 text-sm text-gray-400">No jobs in this period</div>
+          <div className="py-10 text-center space-y-3">
+            <p className="text-sm font-semibold text-gray-500">No jobs scheduled</p>
+            <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">
+              Jobs appear here once they are created from the admin panel.<br />
+              Make sure you have cleaners set up in the <strong className="text-gray-600">Team</strong> tab first.
+            </p>
+          </div>
         )}
         {allJobs.map((job: any) => (
           <ManagerJobRow key={job.id} job={job} />

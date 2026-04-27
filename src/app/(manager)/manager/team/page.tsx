@@ -31,7 +31,10 @@ export default async function ManagerTeamPage() {
         </p>
 
         {cleaners.length === 0 && (
-          <p className="text-sm text-gray-400 mb-4">No cleaners yet.</p>
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl px-5 py-4 mb-4">
+            <p className="text-sm font-semibold text-amber-800">No cleaners added yet</p>
+            <p className="text-xs text-amber-600 mt-1">Use the form below to add your first cleaner. They'll get a login to the cleaner portal.</p>
+          </div>
         )}
 
         <div className="space-y-2 mb-4">
