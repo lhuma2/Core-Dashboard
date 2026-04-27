@@ -320,6 +320,41 @@ export async function startCleanForClientAction(clientId: string) {
   return { success: true, jobId }
 }
 
+// ─── Admin override: force-complete a job ─────────────────────────────────────
+
+export async function adminMarkJobCompleteAction(jobId: string, note?: string) {
+  const supabase = createClient()
+  const now = new Date().toISOString()
+
+  // Upsert submission (creates if missing, updates if exists)
+  await (supabase as any)
+    .from('job_submissions')
+    .upsert(
+      {
+        job_id:       jobId,
+        completed_at: now,
+        notes:        note ?? 'Marked complete by admin',
+        photo_urls:   [],
+        video_urls:   [],
+        checklist_completed: {},
+      },
+      { onConflict: 'job_id' }
+    )
+
+  // Mark job completed (no cleaner restriction)
+  const { error } = await (supabase as any)
+    .from('job_assignments')
+    .update({ status: 'completed' })
+    .eq('id', jobId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/team/jobs')
+  revalidatePath('/manager/dashboard')
+  revalidatePath('/cleaner/dashboard')
+  return { success: true }
+}
+
 // ─── Assign or unassign a cleaner to a job (manager only) ────────────────────
 
 export async function assignCleanerToJobAction(jobId: string, cleanerId: string | null) {

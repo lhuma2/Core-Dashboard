@@ -4,6 +4,7 @@ export const revalidate = 0
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ClientShell } from '@/components/portal/ClientShell'
+import { getUpcomingDates } from '@/lib/schedule'
 import { CalendarDays, CheckCircle2, History } from 'lucide-react'
 
 function getBrisbaneGreeting(): string {
@@ -56,7 +57,7 @@ export default async function ClientDashboardPage() {
   const [{ data: client }, { data: lastJob }, { data: nextJob }, { data: historyJobs }] = await Promise.all([
     (supabase as any)
       .from('clients')
-      .select('business_name')
+      .select('business_name, frequency, service_days, start_date')
       .eq('id', clientId)
       .single(),
 
@@ -94,6 +95,23 @@ export default async function ClientDashboardPage() {
   const lastSub = Array.isArray(lastJob?.job_submissions)
     ? (lastJob.job_submissions[0] ?? null)
     : (lastJob?.job_submissions ?? null)
+
+  // If no scheduled job assignment, calculate next expected date from client's frequency + service_days
+  let scheduledNextDate: string | null = null
+  if (!nextJob && client?.frequency && (client?.service_days ?? []).length > 0) {
+    const upcoming = getUpcomingDates({
+      id: clientId,
+      business_name: client.business_name,
+      address: null,
+      suburb: null,
+      frequency: client.frequency,
+      service_days: client.service_days ?? [],
+      start_date: client.start_date ?? null,
+    }, 90)
+    if (upcoming.length > 0) {
+      scheduledNextDate = upcoming[0].toISOString().split('T')[0]
+    }
+  }
 
   const greeting = getBrisbaneGreeting()
 
@@ -134,6 +152,15 @@ export default async function ClientDashboardPage() {
                   In Progress Now
                 </span>
               )}
+            </div>
+          ) : scheduledNextDate ? (
+            <div>
+              <p className="text-2xl font-bold text-black">
+                {new Date(scheduledNextDate + 'T00:00:00').toLocaleDateString('en-AU', {
+                  weekday: 'long', day: 'numeric', month: 'long',
+                })}
+              </p>
+              <p className="text-xs text-gray-400 mt-2">Based on your regular schedule</p>
             </div>
           ) : (
             <p className="text-gray-400 text-sm">No upcoming cleans scheduled.</p>

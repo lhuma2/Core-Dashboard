@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Card } from '@/components/ui/Card'
 import Link from 'next/link'
 import { CreateJobForm } from '@/components/team/CreateJobForm'
+import { MarkJobCompleteButton } from '@/components/team/MarkJobCompleteButton'
 import { ArrowLeft } from 'lucide-react'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -54,8 +55,8 @@ export default async function AdminJobsPage() {
                 <p className="text-sm text-gray-500 text-center py-8">No jobs assigned yet.</p>
               )}
               {(jobs ?? []).map((job: any) => (
-                <div key={job.id} className="flex items-center justify-between px-5 py-3.5">
-                  <div>
+                <div key={job.id} className="flex items-center justify-between px-5 py-3.5 gap-3">
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800">
                       {job.clients?.business_name ?? '—'}
                     </p>
@@ -66,9 +67,14 @@ export default async function AdminJobsPage() {
                       {job.profiles?.full_name ? ` · ${job.profiles.full_name}` : ' · Unassigned'}
                     </p>
                   </div>
-                  <span className={`text-xs font-semibold capitalize ${STATUS_COLORS[job.status] ?? 'text-slate-400'}`}>
-                    {job.status.replace('_', ' ')}
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {job.status !== 'completed' && (
+                      <MarkJobCompleteButton jobId={job.id} currentStatus={job.status} />
+                    )}
+                    <span className={`text-xs font-semibold capitalize ${STATUS_COLORS[job.status] ?? 'text-slate-400'}`}>
+                      {job.status.replace('_', ' ')}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
