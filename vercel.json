@@ -1,5 +1,5 @@
 {
-  "crons": [
-    { "path": "/api/push/send", "schedule": "0 22 * * *" }
-  ]
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs"
 }
