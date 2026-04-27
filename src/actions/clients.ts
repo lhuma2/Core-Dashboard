@@ -33,7 +33,7 @@ export async function createClientAction(formData: FormData) {
     days_per_week: formData.get('days_per_week') || undefined,
     scope_of_work: formData.get('scope_of_work'),
     access_details: formData.get('access_details'),
-    assigned_cleaner_id: formData.get('assigned_cleaner_id'),
+    assigned_cleaner_id: formData.get('assigned_cleaner_id') ?? undefined,
   }
 
   const parsed = clientSchema.safeParse(raw)
@@ -151,7 +151,7 @@ export async function updateClientAction(id: string, formData: FormData) {
     days_per_week: formData.get('days_per_week') || undefined,
     scope_of_work: formData.get('scope_of_work'),
     access_details: formData.get('access_details'),
-    assigned_cleaner_id: formData.get('assigned_cleaner_id'),
+    assigned_cleaner_id: formData.get('assigned_cleaner_id') ?? undefined,
   }
 
   const parsed = clientSchema.safeParse(raw)
