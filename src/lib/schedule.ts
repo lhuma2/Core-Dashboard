@@ -4,8 +4,11 @@
  */
 
 const DAY_NUM: Record<string, number> = {
+  // Full names
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
   thursday: 4, friday: 5, saturday: 6,
+  // Short abbreviations (used by the day-picker in ClientForm)
+  sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
 }
 
 export interface ClientSchedule {
@@ -49,6 +52,7 @@ export function getUpcomingDates(client: ClientSchedule, daysAhead = 60, fromDat
       let include = false
 
       switch (freq) {
+        case 'daily':
         case 'weekly':
         case 'twice_weekly':
         case 'three_weekly':
@@ -64,6 +68,18 @@ export function getUpcomingDates(client: ClientSchedule, daysAhead = 60, fromDat
           // First occurrence of this weekday in the calendar month
           const dom = cursor.getDate()
           include = dom <= 7
+          break
+        }
+        case 'quarterly': {
+          // First occurrence of this weekday in Jan, Apr, Jul, Oct
+          const month = cursor.getMonth() // 0-indexed
+          const dom = cursor.getDate()
+          include = [0, 3, 6, 9].includes(month) && dom <= 7
+          break
+        }
+        case 'annual': {
+          // First occurrence of this weekday in January
+          include = cursor.getMonth() === 0 && cursor.getDate() <= 7
           break
         }
         default:
