@@ -125,9 +125,20 @@ export function ClientForm({ defaultValues, action, submitLabel = 'Save Client',
       fd.delete('portal_email')
       fd.delete('portal_password')
     }
-    const result = await action(fd)
-    if (result?.error) setErrors(result.error as Record<string, string[]>)
-    setLoading(false)
+    try {
+      const result = await action(fd)
+      if (result?.error) {
+        setErrors(result.error as Record<string, string[]>)
+        setLoading(false)
+      }
+      // On success, action calls redirect() — Next.js handles navigation
+      // setLoading stays true briefly then component unmounts
+    } catch (err: any) {
+      // Next.js redirect throws internally with NEXT_REDIRECT digest — safe to ignore
+      if (err?.digest?.startsWith?.('NEXT_REDIRECT')) return
+      setErrors({ _form: ['An unexpected error occurred. Please try again.'] })
+      setLoading(false)
+    }
   }
 
   const marginColor = breakdown

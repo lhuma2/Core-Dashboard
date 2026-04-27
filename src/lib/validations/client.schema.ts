@@ -38,13 +38,12 @@ export const clientSchema = z.object({
     .or(z.literal('')),
   service_type: z
     .array(serviceTypeEnum)
-    .min(1, 'Select at least one service type'),
+    .min(0),
   frequency: frequencyEnum,
-  rate_per_visit: z.coerce
-    .number()
-    .positive('Must be a positive amount')
-    .optional()
-    .or(z.literal(0)),
+  rate_per_visit: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : v),
+    z.coerce.number().positive('Must be a positive amount').optional()
+  ),
   start_date: z.string().optional().or(z.literal('')),
   active: z.boolean().default(true),
   notes: z.string().max(2000).optional().or(z.literal('')),
