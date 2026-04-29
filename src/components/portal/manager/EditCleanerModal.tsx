@@ -2,31 +2,35 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { updatePortalUserAction } from '@/actions/team'
+import { updateCleanerNameAction } from '@/actions/team'
 import { Pencil, X } from 'lucide-react'
 
 interface Props {
   profileId: string
-  userId: string
-  fullName: string
-  email: string
+  userId:    string
+  fullName:  string
+  email:     string   // kept for display/login reference only
 }
 
 export function EditCleanerModal({ profileId, userId, fullName, email }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState(fullName)
-  const [emailVal, setEmailVal] = useState(email)
-  const [password, setPassword] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
+
+  // Split stored full name into first / last on open
+  const [firstName, setFirstName] = useState('')
+  const [lastName,  setLastName]  = useState('')
+  const [password,  setPassword]  = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [error,     setError]     = useState<string | null>(null)
+  const [saved,     setSaved]     = useState(false)
 
   const inp = 'w-full border-b border-gray-200 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-black transition-colors bg-transparent'
 
   function handleOpen() {
-    setName(fullName)
-    setEmailVal(email)
+    // Split stored full name into first / last best-effort
+    const parts = (fullName ?? '').trim().split(' ')
+    setFirstName(parts[0] ?? '')
+    setLastName(parts.slice(1).join(' ') ?? '')
     setPassword('')
     setError(null)
     setSaved(false)
@@ -35,22 +39,22 @@ export function EditCleanerModal({ profileId, userId, fullName, email }: Props) 
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || !emailVal.trim()) return setError('Both fields are required')
-    if (password && password.length < 5) return setError('Password must be at least 5 characters')
+    if (!firstName.trim() || !lastName.trim()) return setError('First and last name are required')
+    if (password && password.length < 5)       return setError('Password must be at least 5 characters')
     setSaving(true)
     setError(null)
-    const result = await updatePortalUserAction({
+    const result = await updateCleanerNameAction({
       profileId,
       userId,
-      fullName: name.trim(),
-      email: emailVal.trim(),
+      firstName: firstName.trim(),
+      lastName:  lastName.trim(),
       newPassword: password || null,
     })
     setSaving(false)
     if (result.error) return setError(result.error)
     setSaved(true)
     router.refresh()
-    setTimeout(() => setOpen(false), 800)
+    setTimeout(() => setOpen(false), 700)
   }
 
   return (
@@ -79,28 +83,34 @@ export function EditCleanerModal({ profileId, userId, fullName, email }: Props) 
             <form onSubmit={handleSave} className="space-y-4">
               {error && <p className="text-xs text-red-500">{error}</p>}
               {saved && <p className="text-xs text-green-700 font-medium">✓ Saved</p>}
-              <div>
-                <p className="text-xs text-gray-400 mb-1.5">Full Name</p>
-                <input
-                  className={inp}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Jane Smith"
-                />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1.5">First Name</p>
+                  <input
+                    className={inp}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Jane"
+                    autoComplete="given-name"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1.5">Last Name</p>
+                  <input
+                    className={inp}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Smith"
+                    autoComplete="family-name"
+                  />
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1.5">Email</p>
-                <input
-                  className={inp}
-                  type="email"
-                  value={emailVal}
-                  onChange={(e) => setEmailVal(e.target.value)}
-                  placeholder="jane@email.com"
-                />
-              </div>
+
               <div>
                 <p className="text-xs text-gray-400 mb-1.5">
-                  New Password <span className="text-gray-300">(leave blank to keep current)</span>
+                  New Password{' '}
+                  <span className="text-gray-300">(leave blank to keep current)</span>
                 </p>
                 <input
                   className={inp}
@@ -111,6 +121,15 @@ export function EditCleanerModal({ profileId, userId, fullName, email }: Props) 
                   autoComplete="new-password"
                 />
               </div>
+
+              {/* Login reference — read-only */}
+              {email && (
+                <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+                  <p className="text-xs text-gray-400 mb-0.5">Login</p>
+                  <p className="text-xs font-mono text-gray-600 break-all">{email}</p>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"

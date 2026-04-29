@@ -259,6 +259,76 @@ export async function listPortalUsersAction() {
   return { data: data ?? [] }
 }
 
+// ─── Cleaner by name (no email required) ─────────────────────────────────────
+
+export async function addCleanerAction(input: {
+  firstName: string
+  lastName: string
+  password: string
+}) {
+  const adminClient = createAdminClient()
+
+  const first = input.firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || 'cleaner'
+  const last  = input.lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')  || 'user'
+  const fullName = `${input.firstName.trim()} ${input.lastName.trim()}`.trim()
+
+  // Try john.smith@delta-cleaner.internal, then john.smith2, john.smith3 ...
+  let email = `${first}.${last}@delta-cleaner.internal`
+  let attempt = 1
+  while (attempt < 20) {
+    const { data: existing } = await (adminClient as any)
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (!existing) break
+    attempt++
+    email = `${first}.${last}${attempt}@delta-cleaner.internal`
+  }
+
+  return createPortalUserAction({
+    email,
+    password: input.password,
+    fullName,
+    role: 'cleaner',
+    linkedClientId: null,
+  })
+}
+
+export async function updateCleanerNameAction(input: {
+  profileId: string
+  userId: string
+  firstName: string
+  lastName: string
+  newPassword?: string | null
+}) {
+  const adminClient = createAdminClient()
+  const fullName = `${input.firstName.trim()} ${input.lastName.trim()}`.trim()
+
+  // Update auth metadata only (email stays as-is — it's just an internal login handle)
+  const authUpdate: Record<string, any> = {
+    user_metadata: { full_name: fullName },
+  }
+  if (input.newPassword && input.newPassword.trim().length >= 5) {
+    authUpdate.password = input.newPassword.trim()
+  }
+
+  const { error: authErr } = await adminClient.auth.admin.updateUserById(input.userId, authUpdate)
+  if (authErr) return { error: authErr.message }
+
+  const { error: profErr } = await (adminClient as any)
+    .from('profiles')
+    .update({ full_name: fullName })
+    .eq('id', input.profileId)
+
+  if (profErr) return { error: profErr.message }
+
+  revalidatePath('/team')
+  revalidatePath('/manager/team')
+  return { success: true }
+}
+
 export async function createJobAction(input: {
   clientId: string
   cleanerId: string | null

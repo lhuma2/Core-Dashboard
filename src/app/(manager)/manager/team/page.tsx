@@ -46,7 +46,11 @@ export default async function ManagerTeamPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-black">{m.full_name ?? '—'}</p>
-                  <p className="text-xs text-gray-400">{m.email ?? 'No email'}</p>
+                  {m.email && (
+                    <p className="text-xs text-gray-400 font-mono">
+                      Login: {m.email}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1">

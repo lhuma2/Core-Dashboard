@@ -1,3 +1,6 @@
+export const dynamic   = 'force-dynamic'
+export const revalidate = 0
+
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -11,8 +14,9 @@ export default async function ManagerDashboard() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const from = new Date(Date.now() - 30 * 86_400_000).toISOString().split('T')[0]
-  const to   = new Date(Date.now() + 30 * 86_400_000).toISOString().split('T')[0]
+  // Look back 7 days, forward 90 days — generous window to catch all upcoming jobs
+  const from = new Date(Date.now() -  7 * 86_400_000).toISOString().split('T')[0]
+  const to   = new Date(Date.now() + 90 * 86_400_000).toISOString().split('T')[0]
 
   const today = new Date().toLocaleString('en-AU', {
     timeZone: 'Australia/Brisbane',
@@ -146,10 +150,10 @@ export default async function ManagerDashboard() {
       <div className="space-y-2">
         {allJobs.length === 0 && (
           <div className="py-10 text-center space-y-3">
-            <p className="text-sm font-semibold text-gray-500">No jobs scheduled</p>
+            <p className="text-sm font-semibold text-gray-500">No jobs in the next 90 days</p>
             <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">
-              Jobs appear here once they are created from the admin panel.<br />
-              Make sure you have cleaners set up in the <strong className="text-gray-600">Team</strong> tab first.
+              Jobs are created from the admin panel under <strong className="text-gray-600">Team → Job Assignments</strong>.
+              Once a job is assigned for a client and date, it will appear here.
             </p>
           </div>
         )}
