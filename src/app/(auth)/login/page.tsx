@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -15,6 +15,10 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
 
+    // Cleaners log in with just their username (e.g. "john.smith")
+    // Admins/managers use their full email address
+    const email = login.includes('@') ? login : `${login}@delta-cleaner.internal`
+
     const supabase = createClient()
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,
@@ -22,7 +26,7 @@ export default function LoginPage() {
     })
 
     if (authError) {
-      setError('Invalid email or password. Please try again.')
+      setError('Invalid username or password. Please try again.')
       setLoading(false)
       return
     }
@@ -69,18 +73,18 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-xs font-medium text-gray-500 mb-1.5">
-              Email address
+            <label htmlFor="login" className="block text-xs font-medium text-gray-500 mb-1.5">
+              Username or Email
             </label>
             <input
-              id="email"
-              type="email"
-              autoComplete="email"
+              id="login"
+              type="text"
+              autoComplete="username"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={login}
+              onChange={(e) => setLogin(e.target.value.trim())}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-black placeholder-gray-400 focus:outline-none focus:border-black transition"
-              placeholder="you@deltacleaning.com.au"
+              placeholder="john.smith or you@deltacleaning.com.au"
             />
           </div>
 
