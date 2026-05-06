@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { AcceptClientButton } from '@/components/portal/cleaner/AcceptClientButton'
 import { buildSchedule } from '@/lib/schedule'
-import { ChevronRight, Briefcase, Calendar, AlertCircle } from 'lucide-react'
+import { ChevronRight, Briefcase, Calendar, AlertCircle, XCircle } from 'lucide-react'
 
 const DAY_LABELS: Record<string, string> = {
   monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed',
@@ -43,8 +43,10 @@ export default async function CleanerDashboard() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  // Fetch clients + today's in-progress job in parallel
-  const [{ data: clients }, { data: activeJobs }] = await Promise.all([
+  const pastFrom = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0]
+
+  // Fetch clients + today's in-progress job + missed past jobs in parallel
+  const [{ data: clients }, { data: activeJobs }, { data: missedJobsRaw }] = await Promise.all([
     (supabase as any)
       .from('clients')
       .select('id, business_name, address, suburb, frequency, service_days, start_date, assignment_accepted')
@@ -57,12 +59,21 @@ export default async function CleanerDashboard() {
       .eq('cleaner_id', profile.id)
       .eq('scheduled_date', today)
       .in('status', ['in_progress', 'flagged']),
+    (supabase as any)
+      .from('job_assignments')
+      .select('id, scheduled_date, status, client_id, clients(business_name)')
+      .eq('cleaner_id', profile.id)
+      .gte('scheduled_date', pastFrom)
+      .lt('scheduled_date', today)
+      .eq('status', 'not_started')
+      .order('scheduled_date', { ascending: false }),
   ])
 
   const allClients: any[] = clients ?? []
   const pending  = allClients.filter((c) => !c.assignment_accepted)
   const accepted = allClients.filter((c) => c.assignment_accepted)
   const inProgressJob = (activeJobs ?? [])[0] ?? null
+  const missedJobs: any[] = missedJobsRaw ?? []
 
   // Build upcoming schedule (next 14 days) from accepted clients
   const schedule = buildSchedule(accepted, 14)
@@ -116,6 +127,31 @@ export default async function CleanerDashboard() {
               </div>
             </div>
           </Link>
+        </section>
+      )}
+
+      {/* ── 1b. MISSED CLEANS ── */}
+      {missedJobs.length > 0 && (
+        <section className="mb-6">
+          <p className="text-xs font-semibold text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <XCircle className="w-3.5 h-3.5" />
+            Missed Clean{missedJobs.length > 1 ? 's' : ''}
+          </p>
+          <div className="space-y-2">
+            {missedJobs.map((job: any) => {
+              const d = new Date(job.scheduled_date + 'T00:00:00')
+              const dateLabel = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              return (
+                <div key={job.id} className="bg-red-50 border border-red-100 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-black truncate">{job.clients?.business_name ?? '—'}</p>
+                    <p className="text-xs text-red-400 mt-0.5">{dateLabel} · Not completed</p>
+                  </div>
+                  <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                </div>
+              )
+            })}
+          </div>
         </section>
       )}
 

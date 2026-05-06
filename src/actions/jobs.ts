@@ -330,6 +330,10 @@ export async function adminMarkJobCompleteAction(
   const supabase = createClient()
   const now = new Date().toISOString()
 
+  // Get the acting user's name
+  const profile = await getCurrentProfile()
+  const actorName = profile?.full_name ?? (role === 'admin' ? 'Admin' : 'Manager')
+
   // Check if a cleaner already submitted this job — never overwrite
   const { data: existing } = await (supabase as any)
     .from('job_submissions')
@@ -345,7 +349,7 @@ export async function adminMarkJobCompleteAction(
     return { error: 'Cleaner has already submitted this job — no override needed.' }
   }
 
-  // Upsert override submission (won't touch real cleaner data)
+  // Upsert override submission
   const { error: subErr } = await (supabase as any)
     .from('job_submissions')
     .upsert(
@@ -357,6 +361,7 @@ export async function adminMarkJobCompleteAction(
         video_urls:          [],
         checklist_completed: {},
         completed_by_role:   role,
+        completed_by_name:   actorName,
       },
       { onConflict: 'job_id' }
     )
@@ -371,6 +376,7 @@ export async function adminMarkJobCompleteAction(
   if (error) return { error: error.message }
 
   revalidatePath('/team/jobs')
+  revalidatePath('/dashboard')
   revalidatePath('/manager/dashboard')
   revalidatePath('/cleaner/dashboard')
   revalidatePath(`/manager/jobs/${jobId}`)

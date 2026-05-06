@@ -5,9 +5,10 @@ import { buildDashboardAlerts, computeClientHealth } from '@/lib/health'
 import { KPIGrid } from '@/components/dashboard/KPIGrid'
 import { AlertPanel } from '@/components/dashboard/AlertPanel'
 import { RevenueByServiceType } from '@/components/analytics/RevenueByServiceType'
+import { AdminCompleteJobButton } from '@/components/dashboard/AdminCompleteJobButton'
 import { formatAUD, formatDate } from '@/lib/formatters'
 import { HEALTH_STATUS_LABELS, HEALTH_STATUS_DOT } from '@/lib/constants'
-import { ChevronRight, CheckCircle, AlertTriangle, TrendingDown, Info, Activity, TrendingUp } from 'lucide-react'
+import { ChevronRight, CheckCircle, AlertTriangle, TrendingDown, Info, Activity, TrendingUp, XCircle, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 
 type InsightType = 'good' | 'warn' | 'bad' | 'info'
@@ -116,11 +117,23 @@ const LEAD_STATUS_LABELS: Record<string, string> = {
   won: 'Won', lost: 'Lost',
 }
 
+function brisbaneToday(): string {
+  return new Date().toLocaleString('en-AU', {
+    timeZone: 'Australia/Brisbane',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).split('/').reverse().join('-')
+}
+
+export const dynamic   = 'force-dynamic'
+export const revalidate = 0
+
 export default async function DashboardPage() {
   const supabase = createClient()
   const settings = await getSettings()
+  const today    = brisbaneToday()
+  const pastFrom = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0]
 
-  const [clientsRes, surveysRes, lastSurveysRes, leadsRes] = await Promise.all([
+  const [clientsRes, surveysRes, lastSurveysRes, leadsRes, missedRes, recentCompletedRes] = await Promise.all([
     (supabase as any)
       .from('clients')
       .select('id, business_name, active, monthly_value, monthly_profit, margin_pct, profile_complete, contract_expiry_date, frequency, start_date, ref_number, monthly_labour_cost, service_type')
@@ -138,12 +151,31 @@ export default async function DashboardPage() {
       .select('id, business_name, status, last_contact_date, quote_value')
       .not('status', 'in', '("won","lost")')
       .order('created_at', { ascending: false }),
+    // Missed cleans: past 7 days, not completed and not in progress
+    (supabase as any)
+      .from('job_assignments')
+      .select('id, scheduled_date, status, clients(business_name, suburb), profiles(full_name)')
+      .gte('scheduled_date', pastFrom)
+      .lt('scheduled_date', today)
+      .in('status', ['not_started'])
+      .order('scheduled_date', { ascending: false }),
+    // Recently completed jobs (past 7 days) — to show who completed them
+    (supabase as any)
+      .from('job_assignments')
+      .select('id, scheduled_date, status, clients(business_name), profiles(full_name), job_submissions(completed_at, completed_by_role, completed_by_name, notes)')
+      .gte('scheduled_date', pastFrom)
+      .lt('scheduled_date', today)
+      .eq('status', 'completed')
+      .order('scheduled_date', { ascending: false })
+      .limit(10),
   ])
 
-  const clients     = clientsRes.data  || []
-  const surveys     = surveysRes.data  || []
-  const lastSurveys = lastSurveysRes.data || []
-  const leads       = leadsRes.data    || []
+  const clients         = clientsRes.data  || []
+  const surveys         = surveysRes.data  || []
+  const lastSurveys     = lastSurveysRes.data || []
+  const leads           = leadsRes.data    || []
+  const missedJobs      = (missedRes.data  || []) as any[]
+  const recentCompleted = (recentCompletedRes.data || []) as any[]
 
   const activeClients = clients.filter((c: any) => c.active)
   const mrr = activeClients.reduce((s: number, c: any) => s + (c.monthly_value || 0), 0)
@@ -231,6 +263,66 @@ export default async function DashboardPage() {
       />
 
       {alerts.length > 0 && <AlertPanel alerts={alerts} />}
+
+      {/* ── MISSED CLEANS ────────────────────────────────────────────────── */}
+      {missedJobs.length > 0 && (
+        <div className="bg-white border border-red-100 rounded-xl overflow-hidden shadow-sm">
+          <div className="flex items-center gap-2 px-5 py-3.5 border-b border-red-100 bg-red-50">
+            <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <h3 className="text-sm font-semibold text-red-700">Missed Cleans — {missedJobs.length} job{missedJobs.length !== 1 ? 's' : ''} not completed</h3>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {missedJobs.map((job: any) => {
+              const d = new Date(job.scheduled_date + 'T00:00:00')
+              const dateLabel = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              return (
+                <div key={job.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{job.clients?.business_name ?? '—'}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {dateLabel}
+                      {job.profiles?.full_name ? ` · ${job.profiles.full_name}` : ' · No cleaner assigned'}
+                    </p>
+                  </div>
+                  <AdminCompleteJobButton jobId={job.id} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── RECENTLY COMPLETED ───────────────────────────────────────────── */}
+      {recentCompleted.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-200">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+            <h3 className="text-sm font-semibold text-gray-900">Recently Completed Jobs</h3>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {recentCompleted.map((job: any) => {
+              const sub = Array.isArray(job.job_submissions) ? job.job_submissions[0] : job.job_submissions
+              const d = new Date(job.scheduled_date + 'T00:00:00')
+              const dateLabel = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              const completedBy = sub?.completed_by_name
+                ? `${sub.completed_by_role === 'admin' ? 'Admin' : 'Manager'}: ${sub.completed_by_name}`
+                : (job.profiles?.full_name ?? 'Cleaner')
+              return (
+                <div key={job.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{job.clients?.business_name ?? '—'}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{dateLabel} · {completedBy}</p>
+                  </div>
+                  <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 flex-shrink-0">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Complete
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Problem clients — 2 cols */}

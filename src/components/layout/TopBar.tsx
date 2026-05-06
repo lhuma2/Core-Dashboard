@@ -43,7 +43,11 @@ export function TopBar({ userEmail, onMenuClick }: TopBarProps) {
   const initials = userEmail ? userEmail.charAt(0).toUpperCase() : 'A'
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center px-5 lg:px-6 gap-4 sticky top-0 z-30">
+    <header
+      className="bg-white border-b border-gray-200 sticky top-0 z-30"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
+    <div className="h-14 flex items-center px-5 lg:px-6 gap-4">
       {/* Mobile menu button */}
       <button
         onClick={onMenuClick}
@@ -96,6 +100,7 @@ export function TopBar({ userEmail, onMenuClick }: TopBarProps) {
           </>
         )}
       </div>
+    </div>
     </header>
   )
 }

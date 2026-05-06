@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getUpcomingDates } from '@/lib/schedule'
-import { AlertTriangle, CheckCircle2, Circle, Loader2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Circle, XCircle } from 'lucide-react'
 
 function brisbaneToday(): string {
   return new Date().toLocaleString('en-AU', {
@@ -125,10 +125,11 @@ export default async function ManagerDashboard() {
   const completedToday     = todayAllEvents.filter(e => e.job?.status === 'completed')
   const tomorrowEvents     = events.filter(e => e.date === tomorrow)
   const upcomingEvents     = events.filter(e => e.date > tomorrow)
-  const recentJobs         = jobs
+  const pastJobs     = jobs
     .filter((j: any) => j.scheduled_date < today)
     .sort((a: any, b: any) => b.scheduled_date.localeCompare(a.scheduled_date))
-    .slice(0, 8)
+  const missedJobs   = pastJobs.filter((j: any) => j.status === 'not_started').slice(0, 8)
+  const recentJobs   = pastJobs.filter((j: any) => j.status !== 'not_started').slice(0, 8)
 
   function getSub(job: any) {
     const s = job?.job_submissions
@@ -248,7 +249,47 @@ export default async function ManagerDashboard() {
         </div>
       )}
 
-      {/* RECENT — past jobs */}
+      {/* MISSED — past jobs not completed */}
+      {missedJobs.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <XCircle className="w-3.5 h-3.5 text-red-500" />
+            <p className="text-xs font-semibold text-red-500 uppercase tracking-widest">Missed · {missedJobs.length}</p>
+          </div>
+          <div className="space-y-2">
+            {missedJobs.map((job: any) => {
+              const ev: ScheduleEvent = {
+                date: job.scheduled_date,
+                clientId: job.client_id,
+                clientName: job.clients?.business_name ?? 'Unknown',
+                suburb: job.clients?.suburb ?? null,
+                job,
+              }
+              const d = new Date(job.scheduled_date + 'T00:00:00')
+              const dateLabel = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              const cleaner = job.profiles?.full_name ?? null
+              return (
+                <Link key={job.id} href={`/manager/jobs/${job.id}`} className="block active:scale-[0.98] transition-all">
+                  <div className="rounded-2xl px-5 py-4 flex items-center justify-between gap-3 bg-red-50 border border-red-100">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold truncate text-black">{ev.clientName}</p>
+                      <p className="text-xs mt-0.5 truncate text-gray-500">
+                        {dateLabel}{cleaner ? ` · ${cleaner}` : ''}
+                      </p>
+                    </div>
+                    <span className="flex items-center gap-1 text-xs font-semibold text-red-500 flex-shrink-0">
+                      <XCircle className="w-3.5 h-3.5" />
+                      Missed
+                    </span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* RECENT — past completed jobs */}
       {recentJobs.length > 0 && (
         <section>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Recent</p>
