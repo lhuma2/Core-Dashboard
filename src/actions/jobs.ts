@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 
@@ -380,6 +381,98 @@ export async function adminMarkJobCompleteAction(
   revalidatePath('/manager/dashboard')
   revalidatePath('/cleaner/dashboard')
   revalidatePath(`/manager/jobs/${jobId}`)
+  return { success: true }
+}
+
+// ─── Admin: create a job record for a past scheduled clean and mark complete ──
+// Used when no job_assignment was ever created (cleaner never started the app)
+
+export async function adminCreateAndCompleteJobAction(input: {
+  clientId: string
+  scheduledDate: string
+  cleanerProfileId?: string | null
+}) {
+  const supabase  = createClient()
+  const adminClient = createAdminClient()
+  const now       = new Date().toISOString()
+
+  const profile   = await getCurrentProfile()
+  const actorName = profile?.full_name ?? 'Admin'
+
+  // Fetch client details for the job record
+  const { data: client } = await (supabase as any)
+    .from('clients')
+    .select('address, suburb, frequency, assigned_cleaner_id')
+    .eq('id', input.clientId)
+    .single()
+
+  const cleanerId = input.cleanerProfileId ?? client?.assigned_cleaner_id ?? null
+  const address   = [client?.address, client?.suburb].filter(Boolean).join(', ')
+
+  // Check if a job_assignment already exists for this client+date
+  const { data: existing } = await (supabase as any)
+    .from('job_assignments')
+    .select('id, status')
+    .eq('client_id', input.clientId)
+    .eq('scheduled_date', input.scheduledDate)
+    .maybeSingle()
+
+  let jobId: string
+
+  if (existing?.id) {
+    jobId = existing.id
+    if (existing.status === 'completed') {
+      return { error: 'This job is already marked as complete.' }
+    }
+  } else {
+    // Create the job_assignment
+    const { data: newJob, error: createErr } = await (supabase as any)
+      .from('job_assignments')
+      .insert({
+        client_id:       input.clientId,
+        cleaner_id:      cleanerId,
+        scheduled_date:  input.scheduledDate,
+        address:         address || null,
+        status:          'not_started',
+        checklist:       [],
+        frequency_label: client?.frequency ?? null,
+      })
+      .select('id')
+      .single()
+
+    if (createErr) return { error: createErr.message }
+    jobId = newJob.id
+  }
+
+  // Upsert completion record
+  const { error: subErr } = await (adminClient as any)
+    .from('job_submissions')
+    .upsert(
+      {
+        job_id:              jobId,
+        completed_at:        now,
+        notes:               `Marked complete by admin (${actorName})`,
+        photo_urls:          [],
+        video_urls:          [],
+        checklist_completed: {},
+        completed_by_role:   'admin',
+        completed_by_name:   actorName,
+      },
+      { onConflict: 'job_id' }
+    )
+
+  if (subErr) return { error: subErr.message }
+
+  const { error: jobErr } = await (adminClient as any)
+    .from('job_assignments')
+    .update({ status: 'completed' })
+    .eq('id', jobId)
+
+  if (jobErr) return { error: jobErr.message }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/manager/dashboard')
+  revalidatePath('/client/dashboard')
   return { success: true }
 }
 
