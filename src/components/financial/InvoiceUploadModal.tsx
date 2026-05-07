@@ -33,8 +33,8 @@ interface ParsedInvoice {
 
 type Step = 'upload' | 'review' | 'confirm'
 
-const inputCls = 'w-full bg-slate-700/50 border border-slate-600 text-slate-100 placeholder-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50'
-const labelCls = 'text-xs font-medium text-slate-400 block mb-1.5'
+const inputCls = 'w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/50'
+const labelCls = 'text-xs font-medium text-gray-500 block mb-1.5'
 
 export function InvoiceUploadModal({
   open,
@@ -223,20 +223,20 @@ export function InvoiceUploadModal({
           const labels  = ['Upload', 'Match Clients', 'Save']
           return (
             <div key={s} className="flex items-center gap-1">
-              <div className={`flex items-center gap-1.5 text-xs font-medium ${active ? 'text-blue-400' : done ? 'text-emerald-400' : 'text-slate-600'}`}>
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs border ${active ? 'border-blue-500 text-blue-400' : done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-700 text-slate-600'}`}>
+              <div className={`flex items-center gap-1.5 text-xs font-medium ${active ? 'text-[#1e3a5f]' : done ? 'text-emerald-600' : 'text-gray-400'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs border ${active ? 'border-[#1e3a5f] text-[#1e3a5f]' : done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 text-gray-400'}`}>
                   {done ? <Check className="w-3 h-3" /> : i + 1}
                 </div>
                 {labels[i]}
               </div>
-              {i < 2 && <ArrowRight className="w-3 h-3 text-slate-700 mx-1" />}
+              {i < 2 && <ArrowRight className="w-3 h-3 text-gray-300 mx-1" />}
             </div>
           )
         })}
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400 flex items-center gap-2">
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
         </div>
       )}
@@ -252,32 +252,32 @@ export function InvoiceUploadModal({
             onDrop={handleDrop}
             className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
               uploading
-                ? 'border-blue-500/40 bg-blue-500/5'
+                ? 'border-[#1e3a5f]/30 bg-[#1e3a5f]/5'
                 : dragOver
-                ? 'border-blue-500 bg-blue-500/10'
-                : 'border-slate-700 hover:border-slate-500 hover:bg-slate-700/30'
+                ? 'border-[#1e3a5f] bg-[#1e3a5f]/5'
+                : 'border-gray-200 hover:border-[#1e3a5f]/40 hover:bg-gray-50'
             }`}
           >
             {uploading ? (
               <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                <p className="text-sm text-slate-400">Parsing invoice…</p>
+                <Loader2 className="w-8 h-8 text-[#1e3a5f] animate-spin" />
+                <p className="text-sm text-gray-500">Parsing invoice…</p>
               </div>
             ) : dragOver ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <Upload className="w-6 h-6 text-blue-400" />
+                <div className="w-12 h-12 rounded-xl bg-[#1e3a5f]/10 flex items-center justify-center">
+                  <Upload className="w-6 h-6 text-[#1e3a5f]" />
                 </div>
-                <p className="text-sm font-medium text-blue-400">Drop your PDF here</p>
+                <p className="text-sm font-medium text-[#1e3a5f]">Drop your PDF here</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-slate-700 flex items-center justify-center">
-                  <Upload className="w-6 h-6 text-slate-400" />
+                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <Upload className="w-6 h-6 text-gray-400" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-slate-300">Click to upload or drag &amp; drop</p>
-                  <p className="text-xs text-slate-500 mt-1">PDF invoice from your cleaner</p>
+                  <p className="text-sm font-medium text-gray-700">Click to upload or drag &amp; drop</p>
+                  <p className="text-xs text-gray-400 mt-1">PDF invoice from your cleaner</p>
                 </div>
               </div>
             )}
@@ -291,7 +291,7 @@ export function InvoiceUploadModal({
             onChange={handleFileChange}
             disabled={uploading}
           />
-          <p className="text-xs text-slate-500 mt-3 text-center">
+          <p className="text-xs text-gray-400 mt-3 text-center">
             The system will extract line items and auto-match them to your clients
           </p>
         </div>
@@ -301,8 +301,8 @@ export function InvoiceUploadModal({
       {step === 'review' && parsed && (
         <div className="space-y-5">
           {/* Invoice metadata */}
-          <div className="bg-slate-700/30 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Invoice Details</p>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice Details</p>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>Invoice #</label>
@@ -318,26 +318,26 @@ export function InvoiceUploadModal({
               </div>
             </div>
             {parsed.extraction_method === 'regex' && (
-              <p className="text-xs text-amber-400">⚠ Extracted via pattern matching — please verify the line items below</p>
+              <p className="text-xs text-amber-600">⚠ Extracted via pattern matching — please verify the line items below</p>
             )}
           </div>
 
           {/* Line items + client matching */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Invoice Lines ({parsed.lines.length})
               </p>
               {unmatchedCount > 0 && (
-                <span className="text-xs text-amber-400">{unmatchedCount} unmatched</span>
+                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">{unmatchedCount} unmatched</span>
               )}
             </div>
 
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {parsed.lines.length === 0 && (
-                <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                  <p className="text-sm text-slate-500">No line items could be extracted automatically.</p>
-                  <p className="text-xs text-slate-600 mt-1">You may need to enter them manually after saving.</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-500">No line items could be extracted automatically.</p>
+                  <p className="text-xs text-gray-400 mt-1">You may need to enter them manually after saving.</p>
                 </div>
               )}
               {parsed.lines.map(line => {
@@ -346,17 +346,21 @@ export function InvoiceUploadModal({
                 return (
                   <div
                     key={line.line_number}
-                    className={`rounded-lg border p-3 ${matched ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-slate-600 bg-slate-700/30'}`}
+                    className={`rounded-lg border p-3 transition-colors ${
+                      matched
+                        ? 'border-emerald-200 bg-emerald-50'
+                        : 'border-gray-200 bg-white'
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-200 truncate">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
                           {line.client_name_raw || `Line ${line.line_number}`}
                         </p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
                           {line.hours     && <span>{line.hours}h</span>}
                           {line.rate_per_hour && <span>@ {formatAUD(line.rate_per_hour)}/hr</span>}
-                          {line.cost_ex_gst && <span className="text-slate-300 font-medium">{formatAUD(line.cost_ex_gst)}</span>}
+                          {line.cost_ex_gst && <span className="font-semibold text-gray-700">{formatAUD(line.cost_ex_gst)}</span>}
                         </div>
                       </div>
 
@@ -369,19 +373,30 @@ export function InvoiceUploadModal({
                               ...prev,
                               [line.line_number]: e.target.value || null,
                             }))}
-                            className={`w-full text-xs rounded-lg border px-2 py-1.5 pr-6 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${matched ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-slate-700/50 border-slate-600 text-slate-400'}`}
+                            className={`w-full text-xs rounded-lg border px-2 py-1.5 pr-6 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 ${
+                              matched
+                                ? 'bg-white border-emerald-300 text-emerald-800 font-medium'
+                                : 'bg-white border-gray-300 text-gray-500'
+                            }`}
                           >
                             <option value="">— Unmatched —</option>
                             {clients.map(c => (
-                              <option key={c.id} value={c.id} className="bg-slate-800 text-slate-100">
+                              <option key={c.id} value={c.id}>
                                 {c.business_name}
                               </option>
                             ))}
                           </select>
-                          <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                          <ChevronDown className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none ${matched ? 'text-emerald-500' : 'text-gray-400'}`} />
                         </div>
                       </div>
                     </div>
+                    {/* Match confirmation label */}
+                    {matched && client && (
+                      <div className="mt-1.5 flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+                        <Check className="w-3 h-3" />
+                        Matched to {client.business_name}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -390,10 +405,10 @@ export function InvoiceUploadModal({
 
           {/* Totals */}
           {parsed.total_ex_gst && (
-            <div className="bg-slate-700/30 rounded-xl p-4">
+            <div className="bg-gray-900 rounded-xl p-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-300 font-medium">Invoice Total</span>
-                <span className="text-slate-100 font-bold tabular-nums">
+                <span className="text-gray-300 font-medium">Invoice Total</span>
+                <span className="text-white font-bold tabular-nums text-base">
                   {formatAUD(parsed.total_ex_gst)}
                 </span>
               </div>
@@ -401,8 +416,8 @@ export function InvoiceUploadModal({
           )}
 
           {unmatchedCount > 0 && (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3 text-xs text-amber-300">
-              {unmatchedCount} line{unmatchedCount > 1 ? 's' : ''} are unmatched — P&L won't be calculated for them. You can match them above or proceed and fix later.
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800">
+              {unmatchedCount} line{unmatchedCount > 1 ? 's' : ''} are unmatched — P&amp;L won't be calculated for them. You can match them above or proceed and fix later.
             </div>
           )}
 
