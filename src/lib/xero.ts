@@ -26,6 +26,7 @@ export interface XeroTokens {
 }
 
 export interface XeroPLPeriod {
+  label: string      // e.g. "Mar 2026"
   fromDate: string
   toDate: string
   revenue: number
@@ -33,27 +34,16 @@ export interface XeroPLPeriod {
   netProfit: number
 }
 
-export interface XeroInvoice {
-  invoiceId: string
-  invoiceNumber: string
+export interface XeroTransaction {
+  id: string
+  type: 'INCOME' | 'EXPENSE'
   contact: string
-  amountDue: number
-  amountPaid: number
-  total: number
-  dueDate: string | null
+  description: string
+  amount: number
   date: string | null
+  dueDate: string | null
   status: string
-}
-
-export interface XeroBill {
-  invoiceId: string
   invoiceNumber: string
-  contact: string
-  amountDue: number
-  total: number
-  dueDate: string | null
-  date: string | null
-  status: string
 }
 
 export interface XeroBankAccount {
@@ -79,7 +69,6 @@ export async function getXeroTokens(): Promise<XeroTokens | null> {
   const now = new Date()
   const secondsUntilExpiry = (expiresAt.getTime() - now.getTime()) / 1000
 
-  // Auto-refresh if within 5 minutes of expiry
   if (secondsUntilExpiry < TOKEN_REFRESH_BUFFER_SECONDS) {
     return refreshXeroTokens(row)
   }
@@ -145,14 +134,9 @@ async function refreshXeroTokens(row: XeroTokenRow): Promise<XeroTokens | null> 
 
 // ─── Authenticated fetch ───────────────────────────────────────────────────────
 
-export async function xeroFetch(
-  path: string,
-  options: RequestInit = {}
-): Promise<Response> {
+export async function xeroFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const tokens = await getXeroTokens()
-  if (!tokens) {
-    throw new Error('Xero not connected — no valid tokens found')
-  }
+  if (!tokens) throw new Error('Xero not connected — no valid tokens found')
 
   const url = path.startsWith('http') ? path : `${XERO_API_BASE}${path}`
 
@@ -167,159 +151,96 @@ export async function xeroFetch(
   })
 }
 
-// ─── P&L Report ───────────────────────────────────────────────────────────────
+// ─── All transactions (invoices + bills) for approval review ──────────────────
 
-function formatDate(d: Date): string {
-  return d.toISOString().split('T')[0]
-}
+export async function getXeroAllTransactions(): Promise<XeroTransaction[]> {
+  const [incomeRes, expenseRes] = await Promise.all([
+    xeroFetch('/Invoices?where=Type=="ACCREC"&Statuses=AUTHORISED,PAID&order=Date DESC&page=1'),
+    xeroFetch('/Invoices?where=Type=="ACCPAY"&Statuses=AUTHORISED,PAID&order=Date DESC&page=1'),
+  ])
 
-export async function getXeroPL(months = 3): Promise<XeroPLPeriod[]> {
-  const now = new Date()
-  const toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0) // end of current month
-  const fromDate = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1) // start of N months ago
+  const [incomeJson, expenseJson] = await Promise.all([
+    incomeRes.ok ? incomeRes.json() : { Invoices: [] },
+    expenseRes.ok ? expenseRes.json() : { Invoices: [] },
+  ])
 
-  const params = new URLSearchParams({
-    fromDate: formatDate(fromDate),
-    toDate: formatDate(toDate),
-    timeframe: 'MONTH',
-    periods: String(months),
-  })
-
-  const res = await xeroFetch(`/Reports/ProfitAndLoss?${params}`)
-  if (!res.ok) {
-    throw new Error(`Xero P&L fetch failed: ${res.status} ${await res.text()}`)
-  }
-
-  const json = await res.json()
-  const report = json?.Reports?.[0]
-  if (!report) return []
-
-  // Parse column headers to get period dates
-  const columns: Array<{ value: string }> = report.Rows?.[0]?.Cells ?? []
-  const periodCount = Math.max(0, columns.length - 1) // first col is label
-
-  // Walk rows to extract Income and Expenses totals
-  const periods: XeroPLPeriod[] = Array.from({ length: periodCount }, (_, i) => ({
-    fromDate: '',
-    toDate: '',
-    revenue: 0,
-    expenses: 0,
-    netProfit: 0,
+  const income: XeroTransaction[] = (incomeJson.Invoices ?? []).map((inv: any) => ({
+    id: inv.InvoiceID,
+    type: 'INCOME' as const,
+    contact: inv.Contact?.Name ?? 'Unknown',
+    description: inv.Reference ?? inv.InvoiceNumber ?? '',
+    amount: inv.Total ?? 0,
+    date: inv.DateString ?? null,
+    dueDate: inv.DueDateString ?? null,
+    status: inv.Status ?? '',
+    invoiceNumber: inv.InvoiceNumber ?? '',
   }))
 
-  // Set period labels from header row
-  const headerRow = report.Rows?.find((r: any) => r.RowType === 'Header')
-  if (headerRow) {
-    headerRow.Cells?.slice(1).forEach((cell: any, i: number) => {
-      if (periods[i]) periods[i].fromDate = cell.Value ?? ''
+  const expenses: XeroTransaction[] = (expenseJson.Invoices ?? []).map((inv: any) => ({
+    id: inv.InvoiceID,
+    type: 'EXPENSE' as const,
+    contact: inv.Contact?.Name ?? 'Unknown',
+    description: inv.Reference ?? inv.InvoiceNumber ?? '',
+    amount: inv.Total ?? 0,
+    date: inv.DateString ?? null,
+    dueDate: inv.DueDateString ?? null,
+    status: inv.Status ?? '',
+    invoiceNumber: inv.InvoiceNumber ?? '',
+  }))
+
+  return [...income, ...expenses].sort((a, b) =>
+    (b.date ?? '').localeCompare(a.date ?? '')
+  )
+}
+
+// ─── P&L derived from approved transactions only ──────────────────────────────
+
+export async function getApprovedPL(months = 3): Promise<XeroPLPeriod[]> {
+  const supabase = createClient()
+
+  // Get all approved transaction IDs
+  const { data: approved } = await (supabase as any)
+    .from('xero_approved_transactions')
+    .select('xero_id, type, amount, date')
+
+  if (!approved || approved.length === 0) return []
+
+  // Build month buckets for the last N months
+  const now = new Date()
+  const periods: XeroPLPeriod[] = []
+
+  for (let i = months - 1; i >= 0; i--) {
+    const start = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+    const label = start.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })
+
+    const inPeriod = approved.filter((t: any) => {
+      if (!t.date) return false
+      const d = new Date(t.date)
+      return d >= start && d <= end
+    })
+
+    const revenue  = inPeriod.filter((t: any) => t.type === 'INCOME').reduce((s: number, t: any) => s + (t.amount ?? 0), 0)
+    const expenses = inPeriod.filter((t: any) => t.type === 'EXPENSE').reduce((s: number, t: any) => s + (t.amount ?? 0), 0)
+
+    periods.push({
+      label,
+      fromDate: start.toISOString().split('T')[0],
+      toDate:   end.toISOString().split('T')[0],
+      revenue,
+      expenses,
+      netProfit: revenue - expenses,
     })
   }
 
-  function extractSectionTotals(rows: any[], sectionTitle: string): number[] {
-    const totals: number[] = Array(periodCount).fill(0)
-    for (const row of rows) {
-      if (row.RowType === 'Section' && row.Title === sectionTitle) {
-        const summaryRow = row.Rows?.find((r: any) => r.RowType === 'SummaryRow')
-        if (summaryRow) {
-          summaryRow.Cells?.slice(1).forEach((cell: any, i: number) => {
-            totals[i] = parseFloat(cell.Value ?? '0') || 0
-          })
-        }
-        break
-      }
-    }
-    return totals
-  }
-
-  const allRows: any[] = report.Rows ?? []
-  const revenues = extractSectionTotals(allRows, 'Income')
-  const expenses = extractSectionTotals(allRows, 'Less Operating Expenses')
-
-  // Also try alternate section names
-  const altExpenses = extractSectionTotals(allRows, 'Expenses')
-  const finalExpenses = expenses.map((v, i) => v || altExpenses[i])
-
-  periods.forEach((p, i) => {
-    p.revenue = revenues[i] ?? 0
-    p.expenses = finalExpenses[i] ?? 0
-    p.netProfit = p.revenue - p.expenses
-  })
-
   return periods
-}
-
-// ─── Invoices ─────────────────────────────────────────────────────────────────
-
-export async function getXeroInvoices(status = 'AUTHORISED,PAID'): Promise<XeroInvoice[]> {
-  const params = new URLSearchParams({
-    where: 'Type=="ACCREC"',
-    order: 'DueDate DESC',
-    page: '1',
-  })
-
-  // Append status filter if provided
-  if (status) {
-    params.set('Statuses', status)
-  }
-
-  const res = await xeroFetch(`/Invoices?${params}`)
-  if (!res.ok) {
-    throw new Error(`Xero invoices fetch failed: ${res.status}`)
-  }
-
-  const json = await res.json()
-  const invoices: any[] = json?.Invoices ?? []
-
-  return invoices.slice(0, 20).map((inv: any) => ({
-    invoiceId: inv.InvoiceID,
-    invoiceNumber: inv.InvoiceNumber ?? '',
-    contact: inv.Contact?.Name ?? 'Unknown',
-    amountDue: inv.AmountDue ?? 0,
-    amountPaid: inv.AmountPaid ?? 0,
-    total: inv.Total ?? 0,
-    dueDate: inv.DueDateString ?? null,
-    date: inv.DateString ?? null,
-    status: inv.Status ?? 'UNKNOWN',
-  }))
-}
-
-// ─── Bills (Accounts Payable) ─────────────────────────────────────────────────
-
-export async function getXeroBills(): Promise<XeroBill[]> {
-  const params = new URLSearchParams({
-    where: 'Type=="ACCPAY"',
-    order: 'DueDate DESC',
-    Statuses: 'AUTHORISED,PAID',
-    page: '1',
-  })
-
-  const res = await xeroFetch(`/Invoices?${params}`)
-  if (!res.ok) {
-    throw new Error(`Xero bills fetch failed: ${res.status}`)
-  }
-
-  const json = await res.json()
-  const bills: any[] = json?.Invoices ?? []
-
-  return bills.slice(0, 20).map((bill: any) => ({
-    invoiceId: bill.InvoiceID,
-    invoiceNumber: bill.InvoiceNumber ?? '',
-    contact: bill.Contact?.Name ?? 'Unknown',
-    amountDue: bill.AmountDue ?? 0,
-    total: bill.Total ?? 0,
-    dueDate: bill.DueDateString ?? null,
-    date: bill.DateString ?? null,
-    status: bill.Status ?? 'UNKNOWN',
-  }))
 }
 
 // ─── Bank summary ─────────────────────────────────────────────────────────────
 
 export async function getXeroBankSummary(): Promise<XeroBankAccount[]> {
   const res = await xeroFetch('/Accounts?where=Type=="BANK"&includeArchived=false')
-  if (!res.ok) {
-    throw new Error(`Xero accounts fetch failed: ${res.status}`)
-  }
+  if (!res.ok) throw new Error(`Xero accounts fetch failed: ${res.status}`)
 
   const json = await res.json()
   const accounts: any[] = json?.Accounts ?? []
@@ -327,7 +248,7 @@ export async function getXeroBankSummary(): Promise<XeroBankAccount[]> {
   return accounts.map((acc: any) => ({
     accountId: acc.AccountID,
     name: acc.Name ?? 'Unknown Account',
-    balance: acc.ReportingCodeUpdatedDateUTC ? 0 : (acc.Balance ?? 0),
+    balance: acc.Balance ?? 0,
     currencyCode: acc.CurrencyCode ?? 'AUD',
   }))
 }

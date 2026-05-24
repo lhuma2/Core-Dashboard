@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PLPeriod {
+  label: string
   fromDate: string
   toDate: string
   revenue: number
@@ -13,16 +13,15 @@ interface PLPeriod {
   netProfit: number
 }
 
-interface Invoice {
-  invoiceId: string
-  invoiceNumber: string
+interface XeroTransaction {
+  id: string
+  type: 'INCOME' | 'EXPENSE'
   contact: string
-  amountDue: number
-  amountPaid: number
-  total: number
-  dueDate: string | null
+  description: string
+  amount: number
   date: string | null
   status: string
+  invoiceNumber: string
 }
 
 interface BankAccount {
@@ -32,548 +31,404 @@ interface BankAccount {
   currencyCode: string
 }
 
-interface Bill {
-  invoiceId: string
-  invoiceNumber: string
-  contact: string
-  amountDue: number
-  total: number
-  dueDate: string | null
-  date: string | null
-  status: string
-}
+type Tab      = 'review' | 'pl' | 'cash'
+type TxState  = 'approved' | 'ignored' | 'pending'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatAUD(amount: number): string {
-  return new Intl.NumberFormat('en-AU', {
-    style: 'currency',
-    currency: 'AUD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(n)
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—'
-  try {
-    return new Date(dateStr).toLocaleDateString('en-AU', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
-  } catch {
-    return dateStr
-  }
-}
-
-function isOverdue(dueDate: string | null): boolean {
-  if (!dueDate) return false
-  return new Date(dueDate) < new Date()
-}
-
-function trendArrow(current: number, prior: number) {
-  if (prior === 0) return null
-  const pct = ((current - prior) / Math.abs(prior)) * 100
-  const positive = pct >= 0
-  return {
-    pct: Math.abs(pct).toFixed(0),
-    up: positive,
-    label: `${positive ? '+' : '-'}${Math.abs(pct).toFixed(0)}% vs prior`,
-  }
-}
-
-function monthLabel(dateStr: string): string {
-  if (!dateStr) return ''
-  try {
-    // dateStr could be "2024-01-01" or "January 2024" etc.
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' })
-  } catch {
-    return dateStr
-  }
-}
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-100 rounded ${className}`} />
-}
-
-// ─── Subcomponents ────────────────────────────────────────────────────────────
-
-function PLCard({
-  label,
-  current,
-  prior,
-  accent,
-}: {
-  label: string
-  current: number
-  prior: number | null
-  accent: string
-}) {
-  const trend = prior != null ? trendArrow(current, prior) : null
-  return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-1.5">
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className={`text-2xl font-bold tabular-nums ${accent}`}>{formatAUD(current)}</p>
-      {trend && (
-        <p className={`text-xs font-medium ${trend.up ? 'text-emerald-600' : 'text-red-500'}`}>
-          {trend.label}
-        </p>
-      )}
-    </div>
-  )
-}
-
-function InvoiceBadge({ status, dueDate }: { status: string; dueDate: string | null }) {
-  if (status === 'PAID') {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-        Paid
-      </span>
-    )
-  }
-  if (isOverdue(dueDate)) {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-100">
-        Overdue
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-      Pending
-    </span>
-  )
-}
+const fmtDate = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'
 
 // ─── Main widget ──────────────────────────────────────────────────────────────
 
 export function XeroFinanceWidget() {
-  const searchParams = useSearchParams()
+  const [connected, setConnected]         = useState<boolean | null>(null)
+  const [tenantName, setTenantName]       = useState<string | null>(null)
+  const [tab, setTab]                     = useState<Tab>('review')
+  const [transactions, setTransactions]   = useState<XeroTransaction[]>([])
+  const [plData, setPlData]               = useState<PLPeriod[]>([])
+  const [bankData, setBankData]           = useState<BankAccount[]>([])
+  const [txStates, setTxStates]           = useState<Record<string, TxState>>({})
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [loadingPL, setLoadingPL]         = useState(false)
+  const [loadingCash, setLoadingCash]     = useState(false)
 
-  const [connected, setConnected] = useState<boolean | null>(null) // null = loading
-  const [tenantName, setTenantName] = useState<string | null>(null)
-
-  const [pl, setPL] = useState<PLPeriod[] | null>(null)
-  const [plLoading, setPlLoading] = useState(false)
-  const [plError, setPlError] = useState<string | null>(null)
-
-  const [invoices, setInvoices] = useState<Invoice[] | null>(null)
-  const [invLoading, setInvLoading] = useState(false)
-
-  const [bills, setBills] = useState<Bill[] | null>(null)
-  const [billsLoading, setBillsLoading] = useState(false)
-
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[] | null>(null)
-  const [bankLoading, setBankLoading] = useState(false)
-
-  const [disconnecting, setDisconnecting] = useState(false)
-
-  // ── Connection check via P&L probe ──────────────────────────────────────────
-  const checkConnection = useCallback(async () => {
-    setConnected(null)
-    setPlLoading(true)
-    setPlError(null)
+  // Restore approval state from localStorage for instant UI
+  useEffect(() => {
     try {
-      const res = await fetch('/api/xero/data?type=pl&months=3')
-      if (res.status === 401) {
-        setConnected(false)
-        setPlLoading(false)
-        return
-      }
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        if (body.error === 'xero_not_connected') {
-          setConnected(false)
-          setPlLoading(false)
-          return
-        }
-        setPlError('Failed to load P&L data')
+      const saved = localStorage.getItem('xero_tx_states')
+      if (saved) setTxStates(JSON.parse(saved))
+    } catch {}
+  }, [])
+
+  const saveTxState = useCallback((id: string, state: TxState) => {
+    setTxStates(prev => {
+      const next = { ...prev, [id]: state }
+      try { localStorage.setItem('xero_tx_states', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }, [])
+
+  // Initial load — also checks connection
+  useEffect(() => {
+    fetch('/api/xero/data?type=transactions')
+      .then(r => {
+        if (r.status === 401) { setConnected(false); return null }
         setConnected(true)
-        setPlLoading(false)
-        return
-      }
-      const json = await res.json()
-      setConnected(true)
-      setPL(json.data ?? [])
-    } catch {
-      setConnected(false)
-    } finally {
-      setPlLoading(false)
-    }
+        return r.json()
+      })
+      .then(data => {
+        if (!data) return
+        setTransactions(Array.isArray(data) ? data : [])
+      })
+      .catch(() => setConnected(false))
   }, [])
 
-  const loadInvoices = useCallback(async () => {
-    setInvLoading(true)
-    try {
-      const res = await fetch('/api/xero/data?type=invoices')
-      if (!res.ok) return
-      const json = await res.json()
-      setInvoices(json.data ?? [])
-    } finally {
-      setInvLoading(false)
-    }
-  }, [])
-
-  const loadBills = useCallback(async () => {
-    setBillsLoading(true)
-    try {
-      const res = await fetch('/api/xero/data?type=bills')
-      if (!res.ok) return
-      const json = await res.json()
-      setBills(json.data ?? [])
-    } finally {
-      setBillsLoading(false)
-    }
-  }, [])
-
-  const loadBank = useCallback(async () => {
-    setBankLoading(true)
-    try {
-      const res = await fetch('/api/xero/data?type=summary')
-      if (!res.ok) return
-      const json = await res.json()
-      setBankAccounts(json.data ?? [])
-    } finally {
-      setBankLoading(false)
-    }
-  }, [])
-
+  // Load P&L on tab switch
   useEffect(() => {
-    checkConnection()
-  }, [checkConnection])
+    if (tab !== 'pl' || plData.length > 0) return
+    setLoadingPL(true)
+    fetch('/api/xero/data?type=pl')
+      .then(r => r.json())
+      .then(data => { setPlData(Array.isArray(data) ? data : []); setLoadingPL(false) })
+      .catch(() => setLoadingPL(false))
+  }, [tab, plData.length])
 
-  // Eagerly load all data when connected
+  // Load cash on tab switch
   useEffect(() => {
-    if (connected) {
-      loadInvoices()
-      loadBills()
-      loadBank()
-    }
-  }, [connected, loadInvoices, loadBills, loadBank])
+    if (tab !== 'cash' || bankData.length > 0) return
+    setLoadingCash(true)
+    fetch('/api/xero/data?type=summary')
+      .then(r => r.json())
+      .then(data => { setBankData(Array.isArray(data) ? data : []); setLoadingCash(false) })
+      .catch(() => setLoadingCash(false))
+  }, [tab, bankData.length])
 
-  // Also check for URL params (post-OAuth redirect)
-  useEffect(() => {
-    const xeroParam = searchParams.get('xero')
-    if (xeroParam === 'connected') {
-      checkConnection()
-    }
-  }, [searchParams, checkConnection])
-
-  async function handleDisconnect() {
-    if (!confirm('Disconnect Xero? You can reconnect at any time.')) return
-    setDisconnecting(true)
+  // Approve or ignore a transaction
+  async function handleAction(tx: XeroTransaction, action: 'approve' | 'ignore') {
+    setPendingAction(tx.id)
     try {
-      await fetch('/api/xero/disconnect', { method: 'POST' })
-      setConnected(false)
-      setPL(null)
-      setInvoices(null)
-      setBills(null)
-      setBankAccounts(null)
+      await fetch('/api/xero/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          xeroId: tx.id,
+          type: tx.type,
+          contact: tx.contact,
+          description: tx.description,
+          amount: tx.amount,
+          date: tx.date,
+          action,
+        }),
+      })
+      saveTxState(tx.id, action === 'approve' ? 'approved' : 'ignored')
+      setPlData([]) // invalidate P&L cache
     } finally {
-      setDisconnecting(false)
+      setPendingAction(null)
     }
   }
 
-  // ── Top expense categories derived from bills ──────────────────────────────
-  const expenseCategories: Array<{ name: string; amount: number }> = (() => {
-    if (!bills) return []
-    const map = new Map<string, number>()
-    for (const b of bills) {
-      map.set(b.contact, (map.get(b.contact) ?? 0) + b.total)
+  async function handleUndo(xeroId: string) {
+    setPendingAction(xeroId)
+    try {
+      await fetch(`/api/xero/approve?xeroId=${xeroId}`, { method: 'DELETE' })
+      saveTxState(xeroId, 'pending')
+      setPlData([])
+    } finally {
+      setPendingAction(null)
     }
-    return Array.from(map.entries())
-      .map(([name, amount]) => ({ name, amount }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5)
-  })()
+  }
 
-  const maxExpense = expenseCategories[0]?.amount ?? 1
+  // ── Not yet checked ──────────────────────────────────────────────────────
+  if (connected === null) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}
+      </div>
+    )
+  }
 
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── Not connected ────────────────────────────────────────────────────────
+  if (connected === false) {
+    return (
+      <div className="border border-dashed border-gray-200 rounded-2xl p-8 text-center">
+        <p className="text-sm font-medium text-gray-700 mb-1">Connect Xero to track your P&amp;L</p>
+        <p className="text-xs text-gray-400 mb-5">
+          Import invoices &amp; bills, approve what belongs to Delta, and see your real profit &amp; loss.
+        </p>
+        <a
+          href="/api/xero/connect"
+          className="inline-flex items-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition"
+        >
+          <XeroLogo />
+          Connect Xero
+        </a>
+      </div>
+    )
+  }
+
+  // ── Connected ────────────────────────────────────────────────────────────
+  const pendingTx  = transactions.filter(t => !txStates[t.id] || txStates[t.id] === 'pending')
+  const approvedTx = transactions.filter(t => txStates[t.id] === 'approved')
+  const ignoredTx  = transactions.filter(t => txStates[t.id] === 'ignored')
 
   return (
     <div className="space-y-4">
-      {/* ── Header bar ─────────────────────────────────────────────────────── */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Xero logo mark */}
-          <div className="w-8 h-8 rounded-lg bg-[#1ab4d7] flex items-center justify-center flex-shrink-0">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.243 13.914L8.1 13.257a.498.498 0 010-.706l2.657-2.657a.499.499 0 01.706.706L9.512 12.55l1.951 1.951a.499.499 0 01-.706.413zm4.394-2.656l-2.657 2.656a.499.499 0 01-.706-.706l1.951-1.951-1.951-1.951a.499.499 0 01.706-.706l2.657 2.657a.5.5 0 010 .001z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">Xero Finance</p>
-            {connected === true && tenantName && (
-              <p className="text-xs text-gray-400">{tenantName}</p>
-            )}
-            {connected === true && !tenantName && (
-              <p className="text-xs text-emerald-500 font-medium">Connected</p>
-            )}
-          </div>
+        <div className="flex items-center gap-2">
+          <XeroLogo />
+          <span className="text-xs text-gray-500">{tenantName ?? 'Xero connected'}</span>
+          <span className="text-[10px] bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-full font-medium">Live</span>
         </div>
-
-        {connected === true && (
-          <button
-            onClick={handleDisconnect}
-            disabled={disconnecting}
-            className="text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-          >
-            {disconnecting ? 'Disconnecting…' : 'Disconnect'}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {pendingTx.length > 0 && (
+            <span className="text-[10px] bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded-full font-medium">
+              {pendingTx.length} awaiting review
+            </span>
+          )}
+          <a href="/api/xero/disconnect" className="text-xs text-gray-400 hover:text-red-500 transition">Disconnect</a>
+        </div>
       </div>
 
-      {/* ── Not connected ──────────────────────────────────────────────────── */}
-      {connected === false && (
-        <div className="bg-white border border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" className="w-6 h-6 text-gray-300 fill-current" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.243 13.914L8.1 13.257a.498.498 0 010-.706l2.657-2.657a.499.499 0 01.706.706L9.512 12.55l1.951 1.951a.499.499 0 01-.706.413zm4.394-2.656l-2.657 2.656a.499.499 0 01-.706-.706l1.951-1.951-1.951-1.951a.499.499 0 01.706-.706l2.657 2.657a.5.5 0 010 .001z" />
-            </svg>
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-semibold text-gray-700">Connect your Xero account</p>
-            <p className="text-xs text-gray-400 mt-1 max-w-xs">
-              View real-time P&amp;L, invoices, bills, and bank balances directly from your accounting software.
-            </p>
-          </div>
-          <a
-            href="/api/xero/connect"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white text-sm font-semibold rounded-lg hover:bg-[#162d4a] transition-colors"
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+        {([
+          ['review', `Review (${pendingTx.length})`],
+          ['pl',     'P&L'],
+          ['cash',   'Cash'],
+        ] as [Tab, string][]).map(([t, label]) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`text-xs font-medium px-4 py-1.5 rounded-lg transition ${
+              tab === t ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'
+            }`}
           >
-            Connect Xero
-          </a>
-        </div>
-      )}
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {/* ── Loading state ──────────────────────────────────────────────────── */}
-      {connected === null && (
-        <div className="grid grid-cols-3 gap-3">
-          {[0, 1, 2].map(i => (
-            <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-7 w-28" />
-              <Skeleton className="h-3 w-16" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Connected: dashboard ───────────────────────────────────────────── */}
-      {connected === true && (
+      {/* ── REVIEW TAB ──────────────────────────────────────────────────── */}
+      {tab === 'review' && (
         <div className="space-y-5">
+          <p className="text-xs text-gray-400">
+            Approve transactions that belong to <strong className="text-gray-700">Delta</strong> — ignore personal spending.
+            Only approved transactions count toward your P&amp;L.
+          </p>
 
-          {/* P&L summary */}
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Profit &amp; Loss — Last 3 Months
-            </p>
-            {plLoading ? (
-              <div className="grid grid-cols-3 gap-3">
-                {[0, 1, 2].map(i => (
-                  <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
-                    <Skeleton className="h-3 w-20" />
-                    <Skeleton className="h-7 w-28" />
-                    <Skeleton className="h-3 w-16" />
-                  </div>
+          {/* Pending */}
+          {pendingTx.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Needs review — {pendingTx.length}</p>
+              <div className="space-y-1.5">
+                {pendingTx.map(tx => (
+                  <TxRow key={tx.id} tx={tx} state="pending" loading={pendingAction === tx.id}
+                    onApprove={() => handleAction(tx, 'approve')}
+                    onIgnore={() => handleAction(tx, 'ignore')}
+                    onUndo={() => handleUndo(tx.id)} />
                 ))}
-              </div>
-            ) : plError ? (
-              <p className="text-xs text-red-500 bg-red-50 rounded-lg px-4 py-3 border border-red-100">{plError}</p>
-            ) : pl && pl.length > 0 ? (
-              <>
-                {/* Period breakdown table */}
-                <div className="bg-white border border-gray-100 rounded-xl overflow-hidden mb-3">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-100">
-                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Period</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Revenue</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Expenses</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Net</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {pl.map((p, i) => (
-                        <tr key={i} className={i === pl.length - 1 ? 'bg-gray-50' : ''}>
-                          <td className="px-4 py-2.5 text-xs text-gray-500 font-medium">
-                            {p.fromDate ? monthLabel(p.fromDate) : `Month ${i + 1}`}
-                          </td>
-                          <td className="px-4 py-2.5 text-sm font-semibold text-gray-700 tabular-nums text-right">
-                            {formatAUD(p.revenue)}
-                          </td>
-                          <td className="px-4 py-2.5 text-sm font-medium text-gray-500 tabular-nums text-right">
-                            {formatAUD(p.expenses)}
-                          </td>
-                          <td className={`px-4 py-2.5 text-sm font-bold tabular-nums text-right ${
-                            p.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'
-                          }`}>
-                            {formatAUD(p.netProfit)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* KPI cards for latest month */}
-                {pl.length >= 1 && (() => {
-                  const latest = pl[pl.length - 1]
-                  const prior = pl.length >= 2 ? pl[pl.length - 2] : null
-                  return (
-                    <div className="grid grid-cols-3 gap-3">
-                      <PLCard label="Revenue" current={latest.revenue} prior={prior?.revenue ?? null} accent="text-[#1e3a5f]" />
-                      <PLCard label="Expenses" current={latest.expenses} prior={prior?.expenses ?? null} accent="text-gray-700" />
-                      <PLCard
-                        label="Net Profit"
-                        current={latest.netProfit}
-                        prior={prior?.netProfit ?? null}
-                        accent={latest.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}
-                      />
-                    </div>
-                  )
-                })()}
-              </>
-            ) : (
-              <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-4 py-3 border border-dashed border-gray-200">
-                No P&amp;L data available for this period.
-              </p>
-            )}
-          </div>
-
-          {/* Invoices + Bank side-by-side */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-
-            {/* Recent invoices */}
-            <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-800">Recent Invoices</p>
-                <span className="text-xs text-gray-400">Last 5</span>
-              </div>
-              {invLoading ? (
-                <div className="divide-y divide-gray-50">
-                  {[0, 1, 2, 3, 4].map(i => (
-                    <div key={i} className="px-4 py-3 flex items-center justify-between gap-3">
-                      <div className="space-y-1.5">
-                        <Skeleton className="h-3 w-32" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                      <Skeleton className="h-5 w-16" />
-                    </div>
-                  ))}
-                </div>
-              ) : invoices && invoices.length > 0 ? (
-                <div className="divide-y divide-gray-50">
-                  {invoices.slice(0, 5).map(inv => (
-                    <div key={inv.invoiceId} className="px-4 py-3 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{inv.contact}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {inv.dueDate ? `Due ${formatDate(inv.dueDate)}` : '—'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-sm font-bold text-gray-800 tabular-nums">
-                          {formatAUD(inv.total)}
-                        </span>
-                        <InvoiceBadge status={inv.status} dueDate={inv.dueDate} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="px-4 py-6 text-center text-xs text-gray-400">No invoices found.</p>
-              )}
-            </div>
-
-            {/* Bank accounts */}
-            <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-800">Cash Position</p>
-              </div>
-              {bankLoading ? (
-                <div className="divide-y divide-gray-50">
-                  {[0, 1].map(i => (
-                    <div key={i} className="px-4 py-4 flex items-center justify-between">
-                      <Skeleton className="h-3 w-28" />
-                      <Skeleton className="h-6 w-20" />
-                    </div>
-                  ))}
-                </div>
-              ) : bankAccounts && bankAccounts.length > 0 ? (
-                <>
-                  <div className="divide-y divide-gray-50">
-                    {bankAccounts.map(acc => (
-                      <div key={acc.accountId} className="px-4 py-3.5 flex items-center justify-between gap-3">
-                        <p className="text-sm text-gray-600 truncate">{acc.name}</p>
-                        <p className={`text-sm font-bold tabular-nums flex-shrink-0 ${
-                          acc.balance >= 0 ? 'text-gray-900' : 'text-red-600'
-                        }`}>
-                          {formatAUD(acc.balance)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  {bankAccounts.length > 1 && (
-                    <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 flex justify-between">
-                      <p className="text-xs font-semibold text-gray-500">Total</p>
-                      <p className="text-sm font-bold tabular-nums text-[#1e3a5f]">
-                        {formatAUD(bankAccounts.reduce((s, a) => s + a.balance, 0))}
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="px-4 py-6 text-center text-xs text-gray-400">No bank accounts found.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Top expense categories */}
-          {(billsLoading || expenseCategories.length > 0) && (
-            <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-800">Top Expense Categories</p>
-              </div>
-              <div className="px-4 py-3 space-y-3">
-                {billsLoading ? (
-                  [0, 1, 2, 3, 4].map(i => (
-                    <div key={i} className="space-y-1.5">
-                      <div className="flex justify-between">
-                        <Skeleton className="h-3 w-32" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
-                      <Skeleton className="h-2 w-full rounded-full" />
-                    </div>
-                  ))
-                ) : expenseCategories.map((cat, i) => {
-                  const widthPct = maxExpense > 0 ? (cat.amount / maxExpense) * 100 : 0
-                  return (
-                    <div key={i} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600 font-medium truncate max-w-[60%]">{cat.name}</span>
-                        <span className="text-gray-800 font-bold tabular-nums">{formatAUD(cat.amount)}</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[#1e3a5f] rounded-full transition-all duration-500"
-                          style={{ width: `${widthPct}%` }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
               </div>
             </div>
           )}
 
+          {pendingTx.length === 0 && (
+            <div className="text-center py-6 text-xs text-gray-400">
+              ✓ All transactions reviewed — {approvedTx.length} approved, {ignoredTx.length} ignored
+            </div>
+          )}
+
+          {/* Approved */}
+          {approvedTx.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-2">Approved for Delta P&amp;L — {approvedTx.length}</p>
+              <div className="space-y-1.5">
+                {approvedTx.map(tx => (
+                  <TxRow key={tx.id} tx={tx} state="approved" loading={pendingAction === tx.id}
+                    onApprove={() => {}} onIgnore={() => handleAction(tx, 'ignore')} onUndo={() => handleUndo(tx.id)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ignored */}
+          {ignoredTx.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Ignored — {ignoredTx.length}</p>
+              <div className="space-y-1.5">
+                {ignoredTx.map(tx => (
+                  <TxRow key={tx.id} tx={tx} state="ignored" loading={pendingAction === tx.id}
+                    onApprove={() => handleAction(tx, 'approve')} onIgnore={() => {}} onUndo={() => handleUndo(tx.id)} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── P&L TAB ─────────────────────────────────────────────────────── */}
+      {tab === 'pl' && (
+        <div>
+          {loadingPL ? (
+            <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+          ) : plData.length === 0 ? (
+            <div className="text-center py-10 text-xs text-gray-400">
+              No approved transactions yet —{' '}
+              <button onClick={() => setTab('review')} className="underline text-gray-600">go to Review</button> to approve some.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* KPI summary */}
+              <div className="grid grid-cols-3 gap-3">
+                {(['revenue', 'expenses', 'netProfit'] as const).map(key => {
+                  const total = plData.reduce((s, p) => s + p[key], 0)
+                  const label = { revenue: 'Revenue', expenses: 'Expenses', netProfit: 'Net Profit' }[key]
+                  const color = key === 'netProfit' ? (total >= 0 ? 'text-green-700' : 'text-red-600') : 'text-black'
+                  return (
+                    <div key={key} className="border border-gray-100 rounded-xl p-4">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">{label}</p>
+                      <p className={`text-lg font-bold ${color}`}>{fmt(total)}</p>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Monthly table */}
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left py-2 text-gray-400 font-medium">Month</th>
+                    <th className="text-right py-2 text-gray-400 font-medium">Revenue</th>
+                    <th className="text-right py-2 text-gray-400 font-medium">Expenses</th>
+                    <th className="text-right py-2 text-gray-400 font-medium">Profit</th>
+                    <th className="text-right py-2 text-gray-400 font-medium">Margin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {plData.map((p, i) => {
+                    const margin = p.revenue > 0 ? (p.netProfit / p.revenue) * 100 : 0
+                    return (
+                      <tr key={i} className="border-b border-gray-50">
+                        <td className="py-2.5 font-medium text-gray-700">{p.label}</td>
+                        <td className="py-2.5 text-right text-gray-700">{fmt(p.revenue)}</td>
+                        <td className="py-2.5 text-right text-gray-500">{fmt(p.expenses)}</td>
+                        <td className={`py-2.5 text-right font-semibold ${p.netProfit >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                          {fmt(p.netProfit)}
+                        </td>
+                        <td className={`py-2.5 text-right ${margin >= 0 ? 'text-gray-500' : 'text-red-500'}`}>
+                          {margin.toFixed(0)}%
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── CASH TAB ────────────────────────────────────────────────────── */}
+      {tab === 'cash' && (
+        <div>
+          {loadingCash ? (
+            <div className="space-y-3">{[1,2].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+          ) : bankData.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-8">No bank accounts found in Xero.</p>
+          ) : (
+            <div className="space-y-2">
+              {bankData.map(acc => (
+                <div key={acc.accountId} className="flex items-center justify-between border border-gray-100 rounded-xl px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{acc.name}</p>
+                    <p className="text-[10px] text-gray-400">{acc.currencyCode}</p>
+                  </div>
+                  <p className={`text-sm font-bold ${acc.balance >= 0 ? 'text-black' : 'text-red-600'}`}>
+                    {fmt(acc.balance)}
+                  </p>
+                </div>
+              ))}
+              <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100 mt-1">
+                <p className="text-xs font-semibold text-gray-500">Total cash</p>
+                <p className="text-sm font-bold">{fmt(bankData.reduce((s, a) => s + a.balance, 0))}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
+  )
+}
+
+// ─── Transaction row ──────────────────────────────────────────────────────────
+
+function TxRow({ tx, state, loading, onApprove, onIgnore, onUndo }: {
+  tx: XeroTransaction
+  state: TxState
+  loading: boolean
+  onApprove: () => void
+  onIgnore: () => void
+  onUndo: () => void
+}) {
+  const isIncome = tx.type === 'INCOME'
+  return (
+    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+      state === 'approved' ? 'border-green-100 bg-green-50/30' :
+      state === 'ignored'  ? 'border-gray-100 bg-gray-50/40 opacity-55' :
+      'border-gray-100 bg-white'
+    }`}>
+      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide flex-shrink-0 ${
+        isIncome ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'
+      }`}>
+        {isIncome ? 'IN' : 'OUT'}
+      </span>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-gray-800 truncate">{tx.contact}</p>
+        <p className="text-[10px] text-gray-400 truncate">
+          {fmtDate(tx.date)}{tx.description ? ` · ${tx.description}` : ''}
+        </p>
+      </div>
+
+      <span className={`text-sm font-semibold flex-shrink-0 ${isIncome ? 'text-green-700' : 'text-gray-700'}`}>
+        {isIncome ? '+' : '-'}{fmt(tx.amount)}
+      </span>
+
+      {loading ? (
+        <span className="text-[10px] text-gray-400 w-16 text-right">…</span>
+      ) : state === 'pending' ? (
+        <div className="flex gap-1.5 flex-shrink-0">
+          <button onClick={onApprove}
+            className="text-[10px] font-semibold px-2.5 py-1 bg-black text-white rounded-lg hover:bg-gray-800 transition">
+            Approve
+          </button>
+          <button onClick={onIgnore}
+            className="text-[10px] font-medium px-2.5 py-1 border border-gray-200 text-gray-500 rounded-lg hover:border-gray-400 transition">
+            Ignore
+          </button>
+        </div>
+      ) : (
+        <button onClick={onUndo}
+          className="text-[10px] text-gray-400 hover:text-black transition flex-shrink-0 underline w-8 text-right">
+          Undo
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── Xero logo ────────────────────────────────────────────────────────────────
+
+function XeroLogo({ className = '' }: { className?: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 40 40" fill="none" className={className}>
+      <circle cx="20" cy="20" r="20" fill="#13b5ea"/>
+      <path d="M11 20l5-5-5-5M29 20l-5-5 5-5M20 11l5 5-5 5M20 29l-5-5 5-5"
+        stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
   )
 }

@@ -9,7 +9,6 @@ const SCOPES = [
   'openid',
   'profile',
   'email',
-  'accounting.reports.read',
   'accounting.transactions',
   'accounting.settings',
   'offline_access',
