@@ -155,8 +155,8 @@ export async function xeroFetch(path: string, options: RequestInit = {}): Promis
 
 export async function getXeroAllTransactions(): Promise<XeroTransaction[]> {
   const [incomeRes, expenseRes] = await Promise.all([
-    xeroFetch('/Invoices?where=Type=="ACCREC"&Statuses=AUTHORISED,PAID&order=Date DESC&page=1'),
-    xeroFetch('/Invoices?where=Type=="ACCPAY"&Statuses=AUTHORISED,PAID&order=Date DESC&page=1'),
+    xeroFetch('/Invoices?where=Type%3D%3D%22ACCREC%22&Statuses=AUTHORISED,PAID&order=Date+DESC&page=1'),
+    xeroFetch('/Invoices?where=Type%3D%3D%22ACCPAY%22&Statuses=AUTHORISED,PAID&order=Date+DESC&page=1'),
   ])
 
   const [incomeJson, expenseJson] = await Promise.all([

@@ -5,13 +5,17 @@ export const dynamic = 'force-dynamic'
 
 const XERO_AUTH_URL = 'https://login.xero.com/identity/connect/authorize'
 
+// New granular scopes (required for Xero apps created after 2 March 2026)
 const SCOPES = [
   'openid',
   'profile',
   'email',
-  'accounting.transactions',
-  'accounting.settings',
   'offline_access',
+  'app.connections',
+  'accounting.settings.read',
+  'accounting.invoices.read',
+  'accounting.banktransactions.read',
+  'accounting.reports.profitandloss.read',
 ].join(' ')
 
 export async function GET() {
