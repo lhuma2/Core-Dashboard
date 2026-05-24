@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,18 +28,7 @@ export async function GET() {
     )
   }
 
-  // Generate a random nonce for CSRF protection
   const state = crypto.randomUUID()
-
-  // Store state in cookie (httpOnly, short TTL)
-  const cookieStore = cookies()
-  cookieStore.set('xero_oauth_state', state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 600, // 10 minutes
-    path: '/',
-    sameSite: 'lax',
-  })
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -52,5 +40,15 @@ export async function GET() {
 
   const authorizeUrl = `${XERO_AUTH_URL}?${params}`
 
-  return NextResponse.redirect(authorizeUrl)
+  // Set the state cookie ON the redirect response — not on cookieStore separately
+  const response = NextResponse.redirect(authorizeUrl)
+  response.cookies.set('xero_oauth_state', state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 600, // 10 minutes
+    path: '/',
+    sameSite: 'lax',
+  })
+
+  return response
 }
