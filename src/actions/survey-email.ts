@@ -36,40 +36,26 @@ export async function sendSurveyEmailAction(clientId: string): Promise<{ success
 
   const htmlBody = `<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-</head>
-<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif;">
-  <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
+<head><meta charset="utf-8" /></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif;font-size:15px;color:#1a1a1a;line-height:1.6;">
+<div style="max-width:560px;margin:0 auto;padding:40px 24px;">
 
-    <div style="font-size:15px;color:#1a1a1a;line-height:1.7;">
-      <p style="margin:0 0 14px 0;font-size:15px;color:#1a1a1a;line-height:1.7;font-family:Arial,sans-serif;">Hi ${contactName},</p>
-      <p style="margin:0 0 14px 0;font-size:15px;color:#1a1a1a;line-height:1.7;font-family:Arial,sans-serif;">We'd love to hear how we're going at ${client.business_name}. It takes about a minute to complete.</p>
-      <p style="margin:0 0 14px 0;font-size:15px;color:#1a1a1a;line-height:1.7;font-family:Arial,sans-serif;">Your honest feedback helps us keep improving our service.</p>
-    </div>
+<p style="margin:0 0 16px 0;">Hi ${contactName},</p>
 
-    <!-- CTA Button -->
-    <div style="margin:28px 0;">
-      <a href="${surveyUrl}" style="display:inline-block;background:#111111;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;font-family:Arial,sans-serif;">
-        Complete Survey →
-      </a>
-    </div>
+<p style="margin:0 0 16px 0;">Hope you're well. I just wanted to reach out personally and ask how you feel we've been going at ${client.business_name}.</p>
 
-    <div style="font-size:13px;color:#777777;margin-bottom:24px;font-family:Arial,sans-serif;">
-      <p style="margin:0;">Or copy this link: <a href="${surveyUrl}" style="color:#1a1a1a;">${surveyUrl}</a></p>
-    </div>
+<p style="margin:0 0 16px 0;">I put together a short 1-minute survey — your honest feedback means a lot and helps us keep improving.</p>
 
-    <!-- Signature -->
-    <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;">
-      <p style="margin:0 0 2px;font-size:14px;color:#1a1a1a;font-family:Arial,sans-serif;">Best regards,</p>
-      <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#1a1a1a;font-family:Arial,sans-serif;">Jackson Jaillet</p>
-      <p style="margin:0 0 1px;font-size:13px;color:#555555;font-family:Arial,sans-serif;">Founder &amp; Director, Delta Cleaning</p>
-      <p style="margin:0 0 1px;font-size:13px;color:#555555;font-family:Arial,sans-serif;">0412 844 237</p>
-      <a href="https://www.deltacleaning.com.au" style="font-size:13px;color:#1a56db;text-decoration:none;font-family:Arial,sans-serif;">deltacleaning.com.au</a>
-    </div>
+<p style="margin:0 0 24px 0;"><a href="${surveyUrl}" style="color:#1a1a1a;font-weight:600;">${surveyUrl}</a></p>
 
-  </div>
+<p style="margin:0 0 16px 0;">Thanks so much for your time.</p>
+
+<p style="margin:0 0 4px 0;">Jackson Jaillet</p>
+<p style="margin:0 0 4px 0;color:#555555;font-size:14px;">Founder &amp; Director, Delta Cleaning</p>
+<p style="margin:0 0 4px 0;color:#555555;font-size:14px;">0412 844 237</p>
+<p style="margin:0;font-size:14px;"><a href="https://www.deltacleaning.com.au" style="color:#555555;">deltacleaning.com.au</a></p>
+
+</div>
 </body>
 </html>`
 
@@ -79,7 +65,7 @@ export async function sendSurveyEmailAction(clientId: string): Promise<{ success
     to: client.contact_email,
     reply_to: 'hello@deltacleaning.com.au',
     bcc: 'hello@deltacleaning.com.au',
-    subject: `Quick survey — how are we going at ${client.business_name}?`,
+    subject: `How are we going at ${client.business_name}?`,
     html: htmlBody,
   })
 
