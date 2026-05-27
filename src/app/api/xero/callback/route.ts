@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
   const code  = searchParams.get('code')
   const error = searchParams.get('error')
 
+  // Log ALL params Xero sent back so we can diagnose failures
+  console.log('[xero/callback] ALL params:', Object.fromEntries(searchParams.entries()))
   console.log('[xero/callback] code:', !!code, 'error:', error)
 
   if (error) return fail(request, error)

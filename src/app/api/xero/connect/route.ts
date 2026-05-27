@@ -4,13 +4,12 @@ export const dynamic = 'force-dynamic'
 
 const XERO_AUTH_URL = 'https://login.xero.com/identity/connect/authorize'
 
-// New granular scopes (required for Xero apps created after 2 March 2026)
+// Scopes for custom/web app (app.connections is App Store only — excluded)
 const SCOPES = [
   'openid',
   'profile',
   'email',
   'offline_access',
-  'app.connections',
   'accounting.settings.read',
   'accounting.invoices.read',
   'accounting.banktransactions.read',
