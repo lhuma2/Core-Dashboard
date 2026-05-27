@@ -34,30 +34,20 @@ export async function sendSurveyEmailAction(clientId: string): Promise<{ success
   const surveyUrl = `${baseUrl}/survey/${tokenRow.token}`
   const contactName = (client.contact_name || '').split(' ')[0] || 'there'
 
-  const htmlBody = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8" /></head>
-<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif;font-size:15px;color:#1a1a1a;line-height:1.6;">
-<div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+  const plainText = `Hi ${contactName},
 
-<p style="margin:0 0 16px 0;">Hi ${contactName},</p>
+Hope you're well. I just wanted to personally check in and ask how you feel we've been going at ${client.business_name}.
 
-<p style="margin:0 0 16px 0;">Hope you're well. I just wanted to reach out personally and ask how you feel we've been going at ${client.business_name}.</p>
+I put together a short 1-minute survey — your honest feedback really means a lot and helps us keep improving.
 
-<p style="margin:0 0 16px 0;">I put together a short 1-minute survey — your honest feedback means a lot and helps us keep improving.</p>
+${surveyUrl}
 
-<p style="margin:0 0 24px 0;"><a href="${surveyUrl}" style="color:#1a1a1a;font-weight:600;">${surveyUrl}</a></p>
+Thanks so much for your time.
 
-<p style="margin:0 0 16px 0;">Thanks so much for your time.</p>
-
-<p style="margin:0 0 4px 0;">Jackson Jaillet</p>
-<p style="margin:0 0 4px 0;color:#555555;font-size:14px;">Founder &amp; Director, Delta Cleaning</p>
-<p style="margin:0 0 4px 0;color:#555555;font-size:14px;">0412 844 237</p>
-<p style="margin:0;font-size:14px;"><a href="https://www.deltacleaning.com.au" style="color:#555555;">deltacleaning.com.au</a></p>
-
-</div>
-</body>
-</html>`
+Jackson Jaillet
+Founder & Director, Delta Cleaning
+0412 844 237
+deltacleaning.com.au`
 
   const resend = new Resend(apiKey)
   const { error: sendError } = await resend.emails.send({
@@ -66,7 +56,7 @@ export async function sendSurveyEmailAction(clientId: string): Promise<{ success
     reply_to: 'hello@deltacleaning.com.au',
     bcc: 'hello@deltacleaning.com.au',
     subject: `How are we going at ${client.business_name}?`,
-    html: htmlBody,
+    text: plainText,
   })
 
   if (sendError) {
