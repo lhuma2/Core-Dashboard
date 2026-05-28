@@ -103,7 +103,14 @@ export async function submitSurveyAction(data: {
   const scoreLabel = (n: number) => n >= 8 ? '🟢' : n >= 6 ? '🟡' : '🔴'
 
   try {
-    const { data: tokenRow } = await db
+    // Use service role key to bypass RLS on clients table
+    const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+    const adminDb = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    ) as any
+
+    const { data: tokenRow } = await adminDb
       .from('survey_tokens')
       .select('clients(business_name, contact_name)')
       .eq('token', data.token)
