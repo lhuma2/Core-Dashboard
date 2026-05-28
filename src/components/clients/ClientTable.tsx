@@ -58,7 +58,9 @@ export function ClientTable({ clients, thresholds = { red: 24, yellow: 40 } }: C
     {
       key: 'frequency',
       header: 'Frequency',
-      render: c => (c.frequency ? FREQUENCY_LABELS[c.frequency] : '—'),
+      render: c => (c as any).is_multi_site && !c.frequency
+        ? <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Multi-site</span>
+        : (c.frequency ? FREQUENCY_LABELS[c.frequency] : '—'),
     },
     {
       key: 'monthly_value',
