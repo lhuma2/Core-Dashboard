@@ -2,9 +2,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SurveyTable } from '@/components/surveys/SurveyTable'
 import { SurveyTrendChart } from '@/components/charts/SurveyTrendChart'
+import { PendingSurveys } from '@/components/surveys/PendingSurveys'
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { StatCard } from '@/components/ui/StatCard'
-import { AlertTriangle, Star } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
 
 export default async function SurveysPage({
   searchParams,
@@ -13,15 +16,21 @@ export default async function SurveysPage({
 }) {
   const supabase = createClient()
 
-  const [surveysRes, clientsRes] = await Promise.all([
+  const [surveysRes, clientsRes, pendingRes] = await Promise.all([
     supabase
       .from('surveys')
       .select('*, clients(business_name, ref_number)')
       .order('submitted_at', { ascending: false }),
     supabase.from('clients').select('id, business_name').eq('active', true).order('business_name'),
+    (supabase as any)
+      .from('survey_tokens')
+      .select('id, token, created_at, clients(id, business_name, contact_name, contact_email)')
+      .is('submitted_at', null)
+      .order('created_at', { ascending: false }),
   ])
 
   let surveys = surveysRes.data || []
+  const pending: any[] = pendingRes.data || []
 
   if (searchParams.client) {
     surveys = surveys.filter((s) => s.client_id === searchParams.client)
@@ -63,7 +72,7 @@ export default async function SurveysPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
-          {count} response{count !== 1 ? 's' : ''} · sent from client profiles
+          {count} response{count !== 1 ? 's' : ''} · {pending.length} awaiting response
         </p>
       </div>
 
@@ -81,6 +90,9 @@ export default async function SurveysPage({
           className={atRiskCount > 0 ? 'border-red-200 bg-red-50' : ''}
         />
       </div>
+
+      {/* Pending surveys */}
+      {pending.length > 0 && <PendingSurveys pending={pending} />}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
@@ -113,10 +125,12 @@ export default async function SurveysPage({
         </Card>
       )}
 
-      {/* Table */}
-      <Card padding={false}>
-        <SurveyTable surveys={surveys as Parameters<typeof SurveyTable>[0]['surveys']} />
-      </Card>
+      {/* Completed table */}
+      {surveys.length > 0 && (
+        <Card padding={false}>
+          <SurveyTable surveys={surveys as Parameters<typeof SurveyTable>[0]['surveys']} />
+        </Card>
+      )}
     </div>
   )
 }

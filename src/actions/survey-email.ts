@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
 
@@ -151,5 +152,59 @@ export async function submitSurveyAction(data: {
     // Notification failure should never block the client's submission
   }
 
+  return { success: true }
+}
+
+export async function sendSurveyReminderAction(tokenId: string): Promise<{ success?: boolean; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return { error: 'RESEND_API_KEY not configured' }
+
+  const supabase = createClient()
+  const db = supabase as any
+
+  const { data: tokenRow, error } = await db
+    .from('survey_tokens')
+    .select('token, submitted_at, clients(id, business_name, contact_name, contact_email)')
+    .eq('id', tokenId)
+    .single()
+
+  if (error || !tokenRow) return { error: 'Survey token not found' }
+  if (tokenRow.submitted_at) return { error: 'Survey already completed' }
+
+  const client = tokenRow.clients
+  if (!client?.contact_email) return { error: 'Client has no email address' }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.deltacleaning.com.au'
+  const surveyUrl = `${baseUrl}/survey/${tokenRow.token}`
+  const contactName = (client.contact_name || '').split(' ')[0] || 'there'
+
+  const htmlBody = `<html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;font-size:15px;color:#1a1a1a;line-height:1.6;background:#fff;">
+<div style="max-width:540px;padding:40px 24px;">
+<p>Hi ${contactName},</p>
+<p>Just a quick follow-up — I sent through a short survey for ${client.business_name} a little while ago and wanted to check if you had a chance to fill it in.</p>
+<p>It only takes about a minute and your feedback really helps us keep improving.</p>
+<p><a href="${surveyUrl}" style="color:#1a1a1a;">Click here to complete the survey</a></p>
+<p>Thanks so much — really appreciate it.</p>
+<p style="margin-top:24px;">Jackson Jaillet<br>
+<span style="color:#555;font-size:14px;">Founder &amp; Director, Delta Cleaning</span><br>
+<span style="color:#555;font-size:14px;">0412 844 237</span><br>
+<a href="https://www.deltacleaning.com.au" style="color:#555;font-size:14px;text-decoration:none;">deltacleaning.com.au</a></p>
+</div>
+</body></html>`
+
+  const resend = new Resend(apiKey)
+  const { error: sendError } = await resend.emails.send({
+    from: 'Jackson Jaillet <hello@deltacleaning.com.au>',
+    to: client.contact_email,
+    reply_to: 'hello@deltacleaning.com.au',
+    bcc: 'hello@deltacleaning.com.au',
+    subject: `Following up — survey for ${client.business_name}`,
+    html: htmlBody,
+  })
+
+  if (sendError) return { error: (sendError as any).message || 'Failed to send reminder' }
+
+  revalidatePath('/surveys')
   return { success: true }
 }
