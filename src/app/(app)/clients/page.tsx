@@ -21,16 +21,21 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   const supabase = createClient()
   const settings = await getSettings()
 
-  const [clientsRes, surveysRes] = await Promise.all([
+  const [clientsRes, surveysRes, pendingTokensRes] = await Promise.all([
     (supabase as any).from('clients').select('*').order('business_name'),
     (supabase as any)
       .from('surveys')
       .select('client_id, quality_score, reliability_score, communication_score, value_score, nps_score, submitted_at')
       .order('submitted_at', { ascending: false }),
+    (supabase as any)
+      .from('survey_tokens')
+      .select('client_id')
+      .is('submitted_at', null),
   ])
 
-  const rawClients: any[] = clientsRes.data || []
-  const surveys:    any[] = surveysRes.data  || []
+  const rawClients: any[]    = clientsRes.data      || []
+  const surveys:    any[]    = surveysRes.data       || []
+  const pendingClientIds     = new Set((pendingTokensRes.data || []).map((t: any) => t.client_id))
 
   const surveyAvgs: Record<string, number | null> = {}
   for (const s of surveys) {
@@ -47,7 +52,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
       surveyAvgs[c.id] ?? null,
       settings.margin_thresholds
     )
-    return { ...c, healthStatus: h.status, latestSurveyAvg: surveyAvgs[c.id] ?? null }
+    return { ...c, healthStatus: h.status, latestSurveyAvg: surveyAvgs[c.id] ?? null, surveyPending: pendingClientIds.has(c.id) }
   })
 
   let filtered = clients

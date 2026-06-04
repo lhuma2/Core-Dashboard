@@ -11,6 +11,7 @@ import {
   HEALTH_STATUS_DOT,
 } from '@/lib/constants'
 import { computeClientHealth } from '@/lib/health'
+import { Clock } from 'lucide-react'
 import type { Client, HealthStatus } from '@/types/app'
 
 type ClientRow = Client & {
@@ -36,7 +37,15 @@ export function ClientTable({ clients, thresholds = { red: 24, yellow: 40 } }: C
       sortable: true,
       render: c => (
         <div>
-          <p className="font-medium text-gray-900">{c.business_name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-gray-900">{c.business_name}</p>
+            {(c as any).surveyPending && (
+              <span title="Survey sent — awaiting response" className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                <Clock className="w-3 h-3" />
+                Survey pending
+              </span>
+            )}
+          </div>
           {c.contact_name && <p className="text-xs text-gray-500">{c.contact_name}</p>}
         </div>
       ),
