@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/weekly-incomplete-jobs",
       "schedule": "0 22 * * 0"
+    },
+    {
+      "path": "/api/cron/cold-call-reminders",
+      "schedule": "30 21 * * 0-4"
     }
   ]
 }

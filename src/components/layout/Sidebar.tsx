@@ -15,11 +15,13 @@ import {
   ClipboardCheck,
   FileText,
   BookOpen,
+  Phone,
   X,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/calls',     label: 'Cold Calls', icon: Phone },
   { href: '/leads',     label: 'Leads',     icon: TrendingUp },
   { href: '/clients',   label: 'Clients',   icon: Users },
   { href: '/documents', label: 'Documents', icon: FileText },

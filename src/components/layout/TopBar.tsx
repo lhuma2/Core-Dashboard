@@ -8,6 +8,7 @@ import { EnablePushButton } from '@/components/portal/EnablePushButton'
 
 const ROUTE_LABELS: Record<string, string> = {
   '/dashboard': 'Dashboard',
+  '/calls':     'Cold Calls',
   '/clients':   'Clients',
   '/leads':     'Leads',
   '/documents': 'Documents',
