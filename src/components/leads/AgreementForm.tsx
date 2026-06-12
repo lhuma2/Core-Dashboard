@@ -11,8 +11,8 @@ interface AgreementFormProps {
   loading?: boolean
 }
 
-const inputClass = 'w-full bg-slate-700/50 border border-slate-600 text-slate-100 placeholder-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50'
-const labelClass = 'text-xs font-medium text-slate-400 block mb-1.5'
+const inputClass = 'w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-3 text-[16px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400'
+const labelClass = 'text-xs font-medium text-gray-600 block mb-1.5'
 
 export function AgreementForm({ lead, onSave, onCancel, loading }: AgreementFormProps) {
   const existing = lead.agreement_data || {}
@@ -39,8 +39,8 @@ export function AgreementForm({ lead, onSave, onCancel, loading }: AgreementForm
     setForm(p => ({ ...p, [field]: e.target.value }))
 
   return (
-    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-      <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Contact Name</label>
           <input value={form.contactName} onChange={update('contactName')} className={inputClass} />
@@ -54,7 +54,7 @@ export function AgreementForm({ lead, onSave, onCancel, loading }: AgreementForm
         <label className={labelClass}>Site Address</label>
         <input value={form.address} onChange={update('address')} className={inputClass} />
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className={labelClass}>Services</label>
           <input value={form.serviceTypes} onChange={update('serviceTypes')} className={inputClass} />
@@ -62,7 +62,7 @@ export function AgreementForm({ lead, onSave, onCancel, loading }: AgreementForm
         <div>
           <label className={labelClass}>Frequency</label>
           <select value={form.frequency} onChange={update('frequency')} className={inputClass + ' cursor-pointer'}>
-            <option value="">Select…</option>
+            <option value="">SelectÃ¢â‚¬Â¦</option>
             {['Daily', 'Weekly', 'Fortnightly', 'Monthly', 'Quarterly', 'One-off'].map(f => (
               <option key={f} value={f}>{f}</option>
             ))}
@@ -70,10 +70,10 @@ export function AgreementForm({ lead, onSave, onCancel, loading }: AgreementForm
         </div>
         <div>
           <label className={labelClass}>Rate Per Visit ($)</label>
-          <input type="number" value={form.ratePerVisit} onChange={update('ratePerVisit')} className={inputClass} placeholder="0.00" />
+          <input type="number" inputMode="decimal" value={form.ratePerVisit} onChange={update('ratePerVisit')} className={inputClass} placeholder="0.00" />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Commencement Date</label>
           <input type="date" value={form.commencementDate} onChange={update('commencementDate')} className={inputClass} />
@@ -83,7 +83,7 @@ export function AgreementForm({ lead, onSave, onCancel, loading }: AgreementForm
           <input value={form.contractLength} onChange={update('contractLength')} className={inputClass} placeholder="e.g. 12 months" />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Notice Period</label>
           <input value={form.noticePeriod} onChange={update('noticePeriod')} className={inputClass} placeholder="e.g. 30 days" />
@@ -95,13 +95,13 @@ export function AgreementForm({ lead, onSave, onCancel, loading }: AgreementForm
       </div>
       <div>
         <label className={labelClass}>Special Instructions</label>
-        <textarea value={form.specialInstructions} onChange={update('specialInstructions')} rows={3} className={inputClass + ' resize-none'} placeholder="Access instructions, special requirements…" />
+        <textarea value={form.specialInstructions} onChange={update('specialInstructions')} rows={3} className={inputClass + ' resize-none'} placeholder="Access instructions, special requirementsÃ¢â‚¬Â¦" />
       </div>
       <div>
         <label className={labelClass}>Termination Clause</label>
         <textarea value={form.terminationClause} onChange={update('terminationClause')} rows={2} className={inputClass + ' resize-none'} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Signatory Name</label>
           <input value={form.signatoryName} onChange={update('signatoryName')} className={inputClass} />
@@ -111,10 +111,10 @@ export function AgreementForm({ lead, onSave, onCancel, loading }: AgreementForm
           <input value={form.signatoryTitle} onChange={update('signatoryTitle')} className={inputClass} placeholder="e.g. Director" />
         </div>
       </div>
-      <div className="flex justify-end gap-3 pt-2 sticky bottom-0 bg-slate-800 pb-1">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="button" onClick={() => onSave({ ...form, generatedDate: new Date().toISOString() })} disabled={loading}>
-          {loading ? 'Saving…' : 'Save Agreement'}
+          {loading ? 'SavingÃ¢â‚¬Â¦' : 'Save Agreement'}
         </Button>
       </div>
     </div>

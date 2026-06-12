@@ -34,10 +34,10 @@ interface Props {
 }
 
 function MarginPill({ pct }: { pct: number | null }) {
-  if (pct == null) return <span className="text-slate-600 text-xs">—</span>
-  const color = pct >= 55 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+  if (pct == null) return <span className="text-gray-400 text-xs">Ã¢â‚¬â€</span>
+  const color = pct >= 55 ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
     : pct >= 35 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-    : 'text-red-400 bg-red-500/10 border-red-500/20'
+    : 'text-red-600 bg-red-50 border-red-200'
   return (
     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${color}`}>
       {pct.toFixed(0)}%
@@ -46,11 +46,11 @@ function MarginPill({ pct }: { pct: number | null }) {
 }
 
 function VarianceCell({ variance, isHours }: { variance: number | null; isHours?: boolean }) {
-  if (variance == null) return <span className="text-slate-600 text-xs">—</span>
+  if (variance == null) return <span className="text-gray-400 text-xs">Ã¢â‚¬â€</span>
   const abs = Math.abs(variance)
   const over = variance > 0
   const display = isHours ? `${variance > 0 ? '+' : ''}${variance.toFixed(1)}h` : `${variance > 0 ? '+' : '-'}${formatAUD(abs)}`
-  const color = over ? 'text-red-400' : variance < 0 ? 'text-emerald-400' : 'text-slate-500'
+  const color = over ? 'text-red-600' : variance < 0 ? 'text-emerald-600' : 'text-gray-400'
   const Icon = over ? TrendingUp : variance < 0 ? TrendingDown : Minus
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-medium ${color}`}>
@@ -65,8 +65,8 @@ export function MonthlyPLTable({ rows, month, showClient = true }: Props) {
   if (filtered.length === 0) {
     return (
       <div className="py-10 text-center">
-        <p className="text-sm text-slate-500">No P&L data yet</p>
-        <p className="text-xs text-slate-600 mt-1">Upload a cleaner invoice to generate per-client P&L</p>
+        <p className="text-sm text-gray-400">No P&L data yet</p>
+        <p className="text-xs text-gray-400 mt-1">Upload a cleaner invoice to generate per-client P&L</p>
       </div>
     )
   }
@@ -90,14 +90,14 @@ export function MonthlyPLTable({ rows, month, showClient = true }: Props) {
         const totalMargin   = totalIncome > 0 ? (totalProfit / totalIncome) * 100 : null
 
         return (
-          <div key={mk} className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+          <div key={mk} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             {/* Month header */}
-            <div className="flex items-center justify-between px-5 py-3 bg-slate-700/30 border-b border-slate-700">
-              <p className="text-sm font-semibold text-slate-200">{monthLabel(mk + '-01')}</p>
+            <div className="flex items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-200">
+              <p className="text-sm font-semibold text-gray-800">{monthLabel(mk + '-01')}</p>
               <div className="flex items-center gap-5 text-xs">
-                <span className="text-slate-400">Revenue <span className="text-slate-200 font-semibold ml-1 tabular-nums">{formatAUD(totalIncome)}</span></span>
-                <span className="text-slate-400">Cost <span className="text-slate-200 font-semibold ml-1 tabular-nums">{formatAUD(totalCost)}</span></span>
-                <span className="text-slate-400">Profit <span className={`font-bold ml-1 tabular-nums ${totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatAUD(totalProfit)}</span></span>
+                <span className="text-gray-500">Revenue <span className="text-gray-800 font-semibold ml-1 tabular-nums">{formatAUD(totalIncome)}</span></span>
+                <span className="text-gray-500">Cost <span className="text-gray-800 font-semibold ml-1 tabular-nums">{formatAUD(totalCost)}</span></span>
+                <span className="text-gray-500">Profit <span className={`font-bold ml-1 tabular-nums ${totalProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatAUD(totalProfit)}</span></span>
                 <MarginPill pct={totalMargin} />
               </div>
             </div>
@@ -105,41 +105,41 @@ export function MonthlyPLTable({ rows, month, showClient = true }: Props) {
             {/* Table */}
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700/50">
-                  {showClient && <th className="text-left text-xs text-slate-500 font-medium px-5 py-2">Client</th>}
-                  <th className="text-right text-xs text-slate-500 font-medium px-4 py-2">Visits</th>
-                  <th className="text-right text-xs text-slate-500 font-medium px-4 py-2">Revenue</th>
-                  <th className="text-right text-xs text-slate-500 font-medium px-4 py-2">Hours</th>
-                  <th className="text-right text-xs text-slate-500 font-medium px-4 py-2">Cleaner Cost</th>
-                  <th className="text-right text-xs text-slate-500 font-medium px-4 py-2">Profit</th>
-                  <th className="text-center text-xs text-slate-500 font-medium px-4 py-2">Margin</th>
-                  <th className="text-center text-xs text-slate-500 font-medium px-4 py-2">Hr Variance</th>
-                  <th className="text-center text-xs text-slate-500 font-medium px-4 py-2">Cost Variance</th>
+                <tr className="border-b border-gray-200/50">
+                  {showClient && <th className="text-left text-xs text-gray-400 font-medium px-5 py-2">Client</th>}
+                  <th className="text-right text-xs text-gray-400 font-medium px-4 py-2">Visits</th>
+                  <th className="text-right text-xs text-gray-400 font-medium px-4 py-2">Revenue</th>
+                  <th className="text-right text-xs text-gray-400 font-medium px-4 py-2">Hours</th>
+                  <th className="text-right text-xs text-gray-400 font-medium px-4 py-2">Cleaner Cost</th>
+                  <th className="text-right text-xs text-gray-400 font-medium px-4 py-2">Profit</th>
+                  <th className="text-center text-xs text-gray-400 font-medium px-4 py-2">Margin</th>
+                  <th className="text-center text-xs text-gray-400 font-medium px-4 py-2">Hr Variance</th>
+                  <th className="text-center text-xs text-gray-400 font-medium px-4 py-2">Cost Variance</th>
                   {showClient && <th className="px-3 py-2" />}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/40">
+              <tbody className="divide-y divide-gray-100">
                 {monthRows.map(row => (
-                  <tr key={row.id} className="hover:bg-slate-700/20 transition-colors group">
+                  <tr key={row.id} className="hover:bg-gray-50 transition-colors group">
                     {showClient && (
                       <td className="px-5 py-3">
-                        <p className="text-sm font-medium text-slate-200">{row.client_name}</p>
+                        <p className="text-sm font-medium text-gray-800">{row.client_name}</p>
                         {row.rate_per_visit && (
-                          <p className="text-xs text-slate-500">{formatAUD(row.rate_per_visit)}/visit</p>
+                          <p className="text-xs text-gray-400">{formatAUD(row.rate_per_visit)}/visit</p>
                         )}
                       </td>
                     )}
-                    <td className="px-4 py-3 text-right text-sm text-slate-300 tabular-nums">{row.service_count ?? '—'}</td>
-                    <td className="px-4 py-3 text-right text-sm font-medium text-slate-200 tabular-nums">{row.income_ex_gst != null ? formatAUD(row.income_ex_gst) : '—'}</td>
-                    <td className="px-4 py-3 text-right text-sm text-slate-300 tabular-nums">
-                      {row.cleaner_hours != null ? `${row.cleaner_hours}h` : '—'}
+                    <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">{row.service_count ?? 'Ã¢â‚¬â€'}</td>
+                    <td className="px-4 py-3 text-right text-sm font-medium text-gray-800 tabular-nums">{row.income_ex_gst != null ? formatAUD(row.income_ex_gst) : 'Ã¢â‚¬â€'}</td>
+                    <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">
+                      {row.cleaner_hours != null ? `${row.cleaner_hours}h` : 'Ã¢â‚¬â€'}
                       {row.cleaner_rate_per_hour && (
-                        <span className="text-xs text-slate-500 block">{formatAUD(row.cleaner_rate_per_hour)}/hr</span>
+                        <span className="text-xs text-gray-400 block">{formatAUD(row.cleaner_rate_per_hour)}/hr</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right text-sm text-slate-300 tabular-nums">{row.cleaner_cost_ex_gst != null ? formatAUD(row.cleaner_cost_ex_gst) : '—'}</td>
-                    <td className={`px-4 py-3 text-right text-sm font-semibold tabular-nums ${(row.profit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {row.profit != null ? formatAUD(row.profit) : '—'}
+                    <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">{row.cleaner_cost_ex_gst != null ? formatAUD(row.cleaner_cost_ex_gst) : 'Ã¢â‚¬â€'}</td>
+                    <td className={`px-4 py-3 text-right text-sm font-semibold tabular-nums ${(row.profit ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {row.profit != null ? formatAUD(row.profit) : 'Ã¢â‚¬â€'}
                     </td>
                     <td className="px-4 py-3 text-center"><MarginPill pct={row.margin_pct} /></td>
                     <td className="px-4 py-3 text-center"><VarianceCell variance={row.hours_variance} isHours /></td>
@@ -147,7 +147,7 @@ export function MonthlyPLTable({ rows, month, showClient = true }: Props) {
                     {showClient && (
                       <td className="px-3 py-3">
                         <Link href={`/clients/${row.client_id}`}
-                          className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                          className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                           <ChevronRight className="w-4 h-4" />
                         </Link>
                       </td>

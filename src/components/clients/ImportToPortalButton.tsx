@@ -19,8 +19,8 @@ export function ImportToPortalButton({ clientId, clientName, contactEmail }: Pro
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const inp = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-slate-800 border-slate-600 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500'
-  const lbl = 'block text-xs font-medium text-slate-400 mb-1.5'
+  const inp = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500'
+  const lbl = 'block text-xs font-medium text-gray-500 mb-1.5'
 
   async function handleCreate() {
     if (!email || !contactName || !password) return setError('All fields required')
@@ -42,7 +42,7 @@ export function ImportToPortalButton({ clientId, clientName, contactEmail }: Pro
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-200 border border-slate-700 hover:border-slate-600 px-2.5 py-1.5 rounded-lg transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-300 px-2.5 py-1.5 rounded-lg transition-colors"
       >
         <Globe className="w-3.5 h-3.5" />
         Import to Portal
@@ -53,25 +53,25 @@ export function ImportToPortalButton({ clientId, clientName, contactEmail }: Pro
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
         >
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="font-semibold text-slate-100">Create Client Portal</h3>
-                <p className="text-xs text-slate-500 mt-0.5">{clientName}</p>
+                <h3 className="font-semibold text-gray-900">Create Client Portal</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{clientName}</p>
               </div>
-              <button onClick={() => setOpen(false)} className="text-slate-500 hover:text-slate-300">
+              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {success ? (
               <div className="text-center py-6">
-                <p className="text-emerald-400 font-semibold">✓ Portal access created</p>
-                <p className="text-xs text-slate-500 mt-1">Share the login credentials with the client.</p>
+                <p className="text-emerald-600 font-semibold">âœ“ Portal access created</p>
+                <p className="text-xs text-gray-400 mt-1">Share the login credentials with the client.</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {error && <p className="text-xs text-red-400 bg-red-900/20 border border-red-800 rounded-lg px-3 py-2">{error}</p>}
+                {error && <p className="text-xs text-red-600 bg-red-900/20 border border-red-800 rounded-lg px-3 py-2">{error}</p>}
                 <div>
                   <label className={lbl}>Contact Name</label>
                   <input className={inp} value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Jane Smith" />
@@ -89,7 +89,7 @@ export function ImportToPortalButton({ clientId, clientName, contactEmail }: Pro
                     Cancel
                   </button>
                   <button onClick={handleCreate} disabled={submitting} className="flex-1 bg-[#1e3a5f] text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-[#162d4a] disabled:opacity-50 transition-colors">
-                    {submitting ? 'Creating…' : 'Create Access'}
+                    {submitting ? 'Creatingâ€¦' : 'Create Access'}
                   </button>
                 </div>
               </div>

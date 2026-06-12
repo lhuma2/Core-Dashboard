@@ -13,12 +13,12 @@ export const SERVICE_TYPE_LABELS: Record<ExtendedServiceType, string> = {
 }
 
 export const SERVICE_TYPE_COLORS: Record<ExtendedServiceType, string> = {
-  general_cleaning:  'bg-blue-500/15 text-blue-400 border border-blue-500/20',
-  pressure_washing:  'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20',
-  window_cleaning:   'bg-sky-500/15 text-sky-400 border border-sky-500/20',
-  floor_care:        'bg-amber-500/15 text-amber-400 border border-amber-500/20',
-  carpet_cleaning:   'bg-purple-500/15 text-purple-400 border border-purple-500/20',
-  hygiene_bins:      'bg-green-500/15 text-green-400 border border-green-500/20',
+  general_cleaning:  'bg-blue-50 text-blue-600 border border-blue-100',
+  pressure_washing:  'bg-cyan-50 text-cyan-700 border border-cyan-100',
+  window_cleaning:   'bg-sky-50 text-sky-700 border border-sky-100',
+  floor_care:        'bg-amber-50 text-amber-700 border border-amber-100',
+  carpet_cleaning:   'bg-purple-50 text-purple-700 border border-purple-100',
+  hygiene_bins:      'bg-green-50 text-green-700 border border-green-100',
 }
 
 export const FREQUENCY_LABELS: Record<FrequencyType, string> = {
@@ -40,11 +40,11 @@ export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
 }
 
 export const DOCUMENT_STATUS_COLORS: Record<DocumentStatus, string> = {
-  draft:     'bg-slate-700 text-slate-300',
-  sent:      'bg-blue-500/15 text-blue-400 border border-blue-500/20',
-  signed:    'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
-  expired:   'bg-orange-500/15 text-orange-400 border border-orange-500/20',
-  cancelled: 'bg-red-500/15 text-red-400 border border-red-500/20',
+  draft:     'bg-gray-100 text-gray-500 border border-gray-200',
+  sent:      'bg-blue-50 text-blue-600 border border-blue-100',
+  signed:    'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  expired:   'bg-orange-50 text-orange-600 border border-orange-100',
+  cancelled: 'bg-red-50 text-red-600 border border-red-100',
 }
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
@@ -110,13 +110,13 @@ export const LEAD_STATUS_LABELS: Record<string, string> = {
 }
 
 export const LEAD_STATUS_COLORS: Record<string, string> = {
-  lead:           'bg-slate-700 text-slate-300',
-  contacted:      'bg-blue-500/15 text-blue-400',
-  quoted:         'bg-amber-500/15 text-amber-400',
-  proposal_sent:  'bg-purple-500/15 text-purple-400',
-  agreement_sent: 'bg-indigo-500/15 text-indigo-400',
-  won:            'bg-emerald-500/15 text-emerald-400',
-  lost:           'bg-red-500/15 text-red-400',
+  lead:           'bg-gray-100 text-gray-500 border border-gray-200',
+  contacted:      'bg-blue-50 text-blue-600 border border-blue-100',
+  quoted:         'bg-amber-50 text-amber-700 border border-amber-100',
+  proposal_sent:  'bg-purple-50 text-purple-700 border border-purple-100',
+  agreement_sent: 'bg-indigo-50 text-indigo-700 border border-indigo-100',
+  won:            'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  lost:           'bg-red-50 text-red-600 border border-red-100',
 }
 
 export const LEAD_STATUS_OPTIONS: LeadStatus[] = ['lead', 'contacted', 'quoted', 'won', 'lost']

@@ -82,7 +82,7 @@ export default function LeadsPage() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Pipeline</h2>
           <p className="text-sm text-gray-400 mt-0.5">
-            {activeLeads.length} active · {wonLeads.length} won
+            {activeLeads.length} active Â· {wonLeads.length} won
           </p>
         </div>
         <Button onClick={() => { setAddError(null); setShowAdd(true) }}>
@@ -94,9 +94,9 @@ export default function LeadsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'In Pipeline',  value: String(activeLeads.length), sub: 'active leads' },
-          { label: 'Quoted Value', value: quotedValue > 0 ? formatAUD(quotedValue) : '—', sub: `${leads.filter(l => l.status === 'quoted').length} quoted` },
+          { label: 'Quoted Value', value: quotedValue > 0 ? formatAUD(quotedValue) : 'â€”', sub: `${leads.filter(l => l.status === 'quoted').length} quoted` },
           { label: 'Won Total',    value: String(wonLeads.length), sub: 'all time' },
-          { label: 'Conversion',   value: conversionPct != null ? `${conversionPct}%` : '—', sub: `${wonLeads.length} of ${leads.length}` },
+          { label: 'Conversion',   value: conversionPct != null ? `${conversionPct}%` : 'â€”', sub: `${wonLeads.length} of ${leads.length}` },
         ].map(kpi => (
           <div key={kpi.label} className="bg-white border border-gray-100 shadow-sm rounded-xl p-4">
             <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">{kpi.label}</p>
@@ -139,7 +139,7 @@ export default function LeadsPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search leads…"
+            placeholder="Search leadsâ€¦"
             className="w-full pl-8 pr-3 py-2 text-sm bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
           />
         </div>
@@ -168,16 +168,16 @@ export default function LeadsPage() {
       {/* Table */}
       <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
         {loading ? (
-          <div className="py-12 text-center text-sm text-gray-400">Loading…</div>
+          <div className="py-12 text-center text-sm text-gray-400">Loadingâ€¦</div>
         ) : filtered.length === 0 ? (
           <div className="py-12 text-center">
-            <TrendingUp className="w-8 h-8 text-slate-600 mx-auto mb-3" />
+            <TrendingUp className="w-8 h-8 text-gray-400 mx-auto mb-3" />
             <p className="text-sm font-medium text-gray-500">No leads found</p>
             <button
               onClick={() => { setAddError(null); setShowAdd(true) }}
-              className="text-xs text-blue-400 hover:underline mt-1"
+              className="text-xs text-blue-600 hover:underline mt-1"
             >
-              Add your first lead →
+              Add your first lead â†’
             </button>
           </div>
         ) : (
@@ -192,13 +192,13 @@ export default function LeadsPage() {
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/50">
+            <tbody className="divide-y divide-gray-100">
               {filtered.map(lead => (
                 <tr key={lead.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-5 py-3.5">
                     <Link
                       href={`/leads/${lead.id}`}
-                      className="text-sm font-medium text-gray-900 hover:text-blue-400 transition-colors"
+                      className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors"
                     >
                       {lead.business_name}
                     </Link>
@@ -207,7 +207,7 @@ export default function LeadsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3.5 hidden sm:table-cell">
-                    <p className="text-sm text-gray-800">{lead.contact_name || '—'}</p>
+                    <p className="text-sm text-gray-800">{lead.contact_name || 'â€”'}</p>
                     <p className="text-xs text-gray-400">{lead.contact_email || ''}</p>
                   </td>
                   <td className="px-4 py-3.5">
@@ -215,20 +215,20 @@ export default function LeadsPage() {
                   </td>
                   <td className="px-4 py-3.5 hidden md:table-cell">
                     <span className="text-sm text-gray-800 tabular-nums">
-                      {lead.quote_value ? formatAUD(lead.quote_value) : '—'}
+                      {lead.quote_value ? formatAUD(lead.quote_value) : 'â€”'}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 hidden lg:table-cell">
                     <span className="text-sm text-gray-500">
-                      {lead.last_contact_date ? formatDate(lead.last_contact_date) : '—'}
+                      {lead.last_contact_date ? formatDate(lead.last_contact_date) : 'â€”'}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-right">
                     <Link
                       href={`/leads/${lead.id}`}
-                      className="text-xs text-blue-400 hover:text-blue-300 opacity-0 group-hover:opacity-100 transition-all"
+                      className="text-xs text-blue-600 hover:text-blue-700 opacity-0 group-hover:opacity-100 transition-all"
                     >
-                      View →
+                      View â†’
                     </Link>
                   </td>
                 </tr>
@@ -240,7 +240,7 @@ export default function LeadsPage() {
 
       <Modal open={showAdd} onOpenChange={o => { if (!o) setShowAdd(false) }} title="New Lead">
         {addError && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-sm text-red-400">
+          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
             {addError}
           </div>
         )}

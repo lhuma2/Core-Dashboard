@@ -29,8 +29,8 @@ export function RevenueByServiceType({ clients }: RevenueByServiceTypeProps) {
       <div className="space-y-2">
         {data.map(d => (
           <div key={d.name} className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">{d.name}</span>
-            <span className="font-semibold text-slate-200 tabular-nums">{formatAUD(d.value)}/mo</span>
+            <span className="text-gray-500">{d.name}</span>
+            <span className="font-semibold text-gray-900 tabular-nums">{formatAUD(d.value)}/mo</span>
           </div>
         ))}
       </div>

@@ -12,6 +12,9 @@ import {
   BarChart3,
   Settings,
   UserCog,
+  ClipboardCheck,
+  FileText,
+  BookOpen,
   X,
 } from 'lucide-react'
 
@@ -19,9 +22,12 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/leads',     label: 'Leads',     icon: TrendingUp },
   { href: '/clients',   label: 'Clients',   icon: Users },
+  { href: '/documents', label: 'Documents', icon: FileText },
+  { href: '/surveys',   label: 'Surveys',   icon: ClipboardCheck },
   { href: '/financial', label: 'Financials', icon: DollarSign },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/team',      label: 'Team',      icon: UserCog },
+  { href: '/sops',      label: 'SOPs',      icon: BookOpen },
 ]
 
 const BOTTOM_ITEMS = [

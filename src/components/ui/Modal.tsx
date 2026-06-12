@@ -27,9 +27,12 @@ export function Modal({
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
         <Dialog.Content
           className={cn(
-            'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50',
-            'bg-white border border-gray-200 rounded-2xl shadow-xl',
-            'w-full max-w-md max-h-[90vh] overflow-y-auto p-6',
+            // Mobile: full-width bottom sheet sliding up from bottom
+            'fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl',
+            // Desktop: centered modal
+            'sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:w-full sm:max-w-md',
+            'bg-white border border-gray-200 shadow-xl',
+            'max-h-[92dvh] overflow-y-auto overscroll-contain p-6',
             'focus:outline-none',
             className
           )}

@@ -66,16 +66,16 @@ export default async function AdminJobsPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-800">
-                          {job.clients?.business_name ?? '—'}
+                          {job.clients?.business_name ?? 'â€”'}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
                           {new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', {
                             weekday: 'short', day: 'numeric', month: 'short',
                           })}
-                          {job.profiles?.full_name ? ` · ${job.profiles.full_name}` : ' · Unassigned'}
+                          {job.profiles?.full_name ? ` Â· ${job.profiles.full_name}` : ' Â· Unassigned'}
                         </p>
                       </div>
-                      <span className={`text-xs font-semibold capitalize flex-shrink-0 ${STATUS_COLORS[job.status] ?? 'text-slate-400'}`}>
+                      <span className={`text-xs font-semibold capitalize flex-shrink-0 ${STATUS_COLORS[job.status] ?? 'text-gray-500'}`}>
                         {job.status.replace('_', ' ')}
                       </span>
                     </div>

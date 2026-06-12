@@ -17,7 +17,7 @@ export function DeleteComplianceDocButton({ docId }: { docId: string }) {
   }
 
   return (
-    <button onClick={handle} disabled={loading} className="p-1.5 text-slate-600 hover:text-red-400 transition-colors disabled:opacity-50">
+    <button onClick={handle} disabled={loading} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50">
       <Trash2 className="w-3.5 h-3.5" />
     </button>
   )

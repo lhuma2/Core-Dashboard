@@ -40,7 +40,7 @@ export function ClientTable({ clients, thresholds = { red: 24, yellow: 40 } }: C
           <div className="flex items-center gap-2">
             <p className="font-medium text-gray-900">{c.business_name}</p>
             {(c as any).surveyPending && (
-              <span title="Survey sent — awaiting response" className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+              <span title="Survey sent â€” awaiting response" className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
                 <Clock className="w-3 h-3" />
                 Survey pending
               </span>
@@ -69,7 +69,7 @@ export function ClientTable({ clients, thresholds = { red: 24, yellow: 40 } }: C
       header: 'Frequency',
       render: c => (c as any).is_multi_site && !c.frequency
         ? <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Multi-site</span>
-        : (c.frequency ? FREQUENCY_LABELS[c.frequency] : '—'),
+        : (c.frequency ? FREQUENCY_LABELS[c.frequency] : 'â€”'),
     },
     {
       key: 'monthly_value',
@@ -79,7 +79,7 @@ export function ClientTable({ clients, thresholds = { red: 24, yellow: 40 } }: C
       headerClassName: 'text-right',
       render: c => (
         <span className="block text-right font-semibold text-gray-900">
-          {c.monthly_value ? formatAUD(c.monthly_value) : '—'}
+          {c.monthly_value ? formatAUD(c.monthly_value) : 'â€”'}
         </span>
       ),
     },
@@ -92,9 +92,9 @@ export function ClientTable({ clients, thresholds = { red: 24, yellow: 40 } }: C
       render: c => {
         const m = c.margin_pct
         if (m == null) {
-          return <span className="block text-right text-xs text-slate-600">No data</span>
+          return <span className="block text-right text-xs text-gray-400">No data</span>
         }
-        const color = m < thresholds.red ? 'text-red-400' : m < thresholds.yellow ? 'text-amber-400' : 'text-emerald-400'
+        const color = m < thresholds.red ? 'text-red-600' : m < thresholds.yellow ? 'text-amber-400' : 'text-emerald-600'
         return (
           <span className={`block text-right font-bold tabular-nums ${color}`}>
             {m.toFixed(0)}%
