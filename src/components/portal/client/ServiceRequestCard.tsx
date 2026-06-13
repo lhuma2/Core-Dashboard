@@ -44,7 +44,7 @@ export function ServiceRequestCard({ serviceName, clientId }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden">
       <button
         onClick={() => { if (!done) setOpen((o) => !o) }}
         className="w-full flex items-center justify-between px-6 py-5 hover:bg-gray-50 transition-colors"

@@ -75,7 +75,7 @@ export default async function ClientContactPage() {
       </div>
 
       <div className="max-w-2xl">
-        <div className="bg-white rounded-2xl p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl p-8 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
           <ContactForms clientId={clientId} recentJobs={recentJobs} />
         </div>
       </div>

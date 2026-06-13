@@ -8,7 +8,7 @@ export function HowItWorksButton() {
   return (
     <button
       onClick={open}
-      className="text-sm font-medium text-gray-400 hover:text-black transition-colors"
+      className="text-xs font-medium text-slate-400 hover:text-white transition-colors"
     >
       How it works
     </button>

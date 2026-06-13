@@ -91,7 +91,7 @@ export default async function ClientCompliancePage() {
 
       {/* Cleaner assurance */}
       <section className="mb-8">
-        <div className="bg-white rounded-2xl px-6 py-5 border border-gray-100">
+        <div className="bg-white rounded-2xl px-6 py-5 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
           <p className="text-sm text-gray-700 leading-relaxed">
             All of our cleaners are fully checked, trained, and approved before working on any site.
           </p>
@@ -106,7 +106,7 @@ export default async function ClientCompliancePage() {
             {(signedContracts as any[]).map((doc: any) => (
               <div
                 key={doc.id}
-                className="flex items-center justify-between bg-white rounded-2xl px-6 py-5 border border-gray-100"
+                className="flex items-center justify-between bg-white rounded-2xl px-6 py-5 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]"
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
@@ -131,7 +131,7 @@ export default async function ClientCompliancePage() {
 
       {/* No documents state */}
       {!hasAnything && (
-        <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center mb-8">
+        <div className="bg-white rounded-2xl p-10 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] text-center mb-8">
           <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">No documents uploaded yet.</p>
           <p className="text-gray-400 text-xs mt-1">Contact Delta Cleaning for support documents.</p>
@@ -149,7 +149,7 @@ export default async function ClientCompliancePage() {
               {section.docs.map((doc: any) => (
                 <div
                   key={doc.id}
-                  className="flex items-center justify-between bg-white rounded-2xl px-6 py-5 border border-gray-100 hover:border-gray-300 transition-colors"
+                  className="flex items-center justify-between bg-white rounded-2xl px-6 py-5 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] hover:border-gray-300 transition-colors"
                 >
                   <div className="flex items-center gap-4 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
@@ -195,7 +195,7 @@ export default async function ClientCompliancePage() {
       {/* Key Contact + Business Information */}
       <div className="border-t border-gray-200 pt-8">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Contact & Business Details</p>
-        <div className="bg-white rounded-2xl px-6 py-5 border border-gray-100 space-y-4">
+        <div className="bg-white rounded-2xl px-6 py-5 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] space-y-4">
           {/* Contact */}
           <div className="space-y-3">
             <div className="flex items-center gap-3">

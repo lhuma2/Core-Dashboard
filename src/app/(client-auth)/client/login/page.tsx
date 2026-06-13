@@ -38,66 +38,76 @@ export default function ClientLoginPage() {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-5">
-            <Image src="/logo-white.png" alt="Delta Cleaning" width={160} height={50} className="object-contain invert" priority />
+    <div className="min-h-[100dvh] flex items-center justify-center relative overflow-hidden bg-[#0b1320] p-6">
+      {/* Glow + watermark */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 110%, rgba(30,58,95,0.8), transparent 65%)' }}
+      />
+      <span
+        aria-hidden
+        className="font-display absolute -right-20 -bottom-32 text-[24rem] font-black leading-none select-none text-white/[0.04]"
+      >
+        Δ
+      </span>
+
+      <div className="relative w-full max-w-sm">
+        <div className="flex justify-center mb-3">
+          <Image src="/logo-white.png" alt="Delta Cleaning" width={150} height={46} className="object-contain" priority />
+        </div>
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-400/80 mb-8">
+          Client Portal
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/25 text-red-300 text-sm rounded-xl px-4 py-3">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="email" className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="username"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value.trim())}
+              className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-[16px] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/30 focus:border-sky-400/50 transition"
+              placeholder="you@company.com.au"
+            />
           </div>
-          <p className="text-gray-400 text-sm">Client portal</p>
-        </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3">
-                {error}
-              </div>
-            )}
+          <div>
+            <label htmlFor="password" className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-[16px] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/30 focus:border-sky-400/50 transition"
+              placeholder="••••••••"
+            />
+          </div>
 
-            <div>
-              <label htmlFor="email" className="block text-xs font-medium text-gray-500 mb-1.5">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="username"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value.trim())}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-black placeholder-gray-400 focus:outline-none focus:border-black transition"
-                placeholder="you@company.com.au"
-              />
-            </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-white hover:bg-slate-100 text-[#0b1320] text-sm font-bold rounded-xl shadow-[0_4px_20px_rgba(255,255,255,0.12)] transition-all active:scale-[0.99] disabled:opacity-50"
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
 
-            <div>
-              <label htmlFor="password" className="block text-xs font-medium text-gray-500 mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-black placeholder-gray-400 focus:outline-none focus:border-black transition"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl transition disabled:opacity-50"
-            >
-              {loading ? 'Signing in…' : 'Sign in'}
-            </button>
-          </form>
-        </div>
-
-        <p className="text-center text-xs text-gray-400 mt-6">Delta Cleaning · Brisbane, QLD</p>
+        <p className="text-center text-xs text-slate-500 mt-8">Delta Cleaning · Brisbane, QLD</p>
       </div>
     </div>
   )

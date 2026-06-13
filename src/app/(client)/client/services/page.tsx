@@ -85,7 +85,7 @@ export default async function ClientServicesPage() {
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Your Services</p>
           <div className="space-y-3">
             {additionalServices.map((service: any, i: number) => (
-              <div key={i} className="bg-white rounded-2xl px-6 py-5 border border-gray-100">
+              <div key={i} className="bg-white rounded-2xl px-6 py-5 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-semibold text-black">{service.name}</p>

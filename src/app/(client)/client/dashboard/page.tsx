@@ -148,7 +148,7 @@ export default async function ClientDashboardPage({
             const isInProgress = nextJob?.status === 'in_progress'
 
             return (
-              <div key={site.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div key={site.id} className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden">
                 {/* Site header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
                   <div className="flex items-center gap-2.5">
@@ -201,7 +201,7 @@ export default async function ClientDashboardPage({
 
         {/* Combined history */}
         {history.length > 0 && (
-          <div className="bg-white rounded-2xl p-7 border border-gray-100">
+          <div className="bg-white rounded-2xl p-7 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
                 <History className="w-4 h-4 text-gray-600" />
@@ -311,7 +311,7 @@ export default async function ClientDashboardPage({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {/* Next clean */}
-        <div className="bg-white rounded-2xl p-7 border border-gray-100">
+        <div className="bg-white rounded-2xl p-7 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
               <CalendarDays className="w-4 h-4 text-gray-600" />
@@ -355,7 +355,7 @@ export default async function ClientDashboardPage({
         </div>
 
         {/* Last clean */}
-        <div className="bg-white rounded-2xl p-7 border border-gray-100">
+        <div className="bg-white rounded-2xl p-7 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4 text-gray-600" />
@@ -374,7 +374,7 @@ export default async function ClientDashboardPage({
       </div>
 
       {/* Service History */}
-      <div className="bg-white rounded-2xl p-7 border border-gray-100">
+      <div className="bg-white rounded-2xl p-7 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
             <History className="w-4 h-4 text-gray-600" />
