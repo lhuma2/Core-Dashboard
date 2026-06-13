@@ -16,10 +16,11 @@ export default function LoginPage() {
     setLoading(true)
 
     // Cleaners log in with just their username (e.g. "john.smith")
-    // Admins/managers use their full email address
+    // Admins/managers/clients use their full email address
     const email = login.includes('@') ? login : `${login}@delta-cleaner.internal`
 
-    const supabase = createClient()
+    // First sign-in (admin namespace) just discovers the user's role
+    const supabase = createClient('admin')
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -31,15 +32,28 @@ export default function LoginPage() {
       return
     }
 
-    // Get the user's role and redirect to the correct portal
     const { data: { user } } = await supabase.auth.getUser()
-    const role = user?.user_metadata?.role ?? 'admin'
+    const role = (user?.user_metadata?.role ?? 'admin') as 'admin' | 'manager' | 'cleaner' | 'client'
 
     const roleHome: Record<string, string> = {
       admin:   '/dashboard',
       manager: '/manager/dashboard',
       cleaner: '/cleaner/dashboard',
       client:  '/client/dashboard',
+    }
+
+    // Non-admin roles read a different cookie namespace — sign in again with
+    // the right one so their portal actually sees the session, then drop the
+    // discovery session so it can't shadow a real admin login later.
+    if (role !== 'admin') {
+      const portalClient = createClient(role)
+      const { error: portalError } = await portalClient.auth.signInWithPassword({ email, password })
+      await supabase.auth.signOut()
+      if (portalError) {
+        setError('Sign in failed. Please try again.')
+        setLoading(false)
+        return
+      }
     }
 
     // Hard navigation ensures session cookies are sent fresh on the next request

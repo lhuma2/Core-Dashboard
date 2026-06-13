@@ -1,14 +1,15 @@
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
-import { getPortalKey, cookiePrefix } from './portal'
+import { getPortalKey, cookiePrefix, type PortalKey } from './portal'
 
-export function createClient() {
+export function createClient(portalOverride?: PortalKey) {
   // Detect which portal we're in from the current URL path.
   // Falls back to 'admin' during SSR (window not available) — browser clients
   // are only ever called client-side so this is always safe.
-  const portal = typeof window !== 'undefined'
-    ? getPortalKey(window.location.pathname)
-    : 'admin'
+  // The shared login page passes an explicit portal so the session cookie
+  // lands in the namespace the user's role actually reads.
+  const portal = portalOverride
+    ?? (typeof window !== 'undefined' ? getPortalKey(window.location.pathname) : 'admin')
   const prefix = cookiePrefix(portal) // "sb-admin" | "sb-manager" | "sb-cleaner" | "sb-client"
 
   return createBrowserClient<Database>(

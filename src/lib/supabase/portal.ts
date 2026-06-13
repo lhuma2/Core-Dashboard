@@ -18,10 +18,10 @@ export function cookiePrefix(portal: PortalKey): string {
   return `sb-${portal}`
 }
 
-/** Login path for each portal */
+/** Login path for each portal — everyone uses the single shared login page */
 export const PORTAL_LOGIN: Record<PortalKey, string> = {
   admin:   '/login',
-  manager: '/manager/login',
-  cleaner: '/cleaner/login',
-  client:  '/client/login',
+  manager: '/login',
+  cleaner: '/login',
+  client:  '/login',
 }
