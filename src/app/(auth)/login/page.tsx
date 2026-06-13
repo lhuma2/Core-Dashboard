@@ -87,11 +87,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Form panel ────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden p-6 lg:border-l lg:border-white/5 bg-[#0e1729]">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 90% 70% at 80% -10%, rgba(30,58,95,0.55), transparent 60%)' }}
-        />
+      <div className="flex-1 flex items-center justify-center relative overflow-hidden p-6">
         <div className="relative w-full max-w-sm">
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
