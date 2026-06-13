@@ -48,7 +48,9 @@ export default function LoginPage() {
     if (role !== 'admin') {
       const portalClient = createClient(role)
       const { error: portalError } = await portalClient.auth.signInWithPassword({ email, password })
-      await supabase.auth.signOut()
+      // scope:'local' clears only this browser's discovery cookie — a plain
+      // signOut() revokes every session globally, killing the portal login too
+      await supabase.auth.signOut({ scope: 'local' })
       if (portalError) {
         setError('Sign in failed. Please try again.')
         setLoading(false)
