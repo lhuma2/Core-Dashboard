@@ -61,117 +61,78 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex bg-[#0b1320]">
-      {/* ── Brand panel ───────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-col justify-between w-[52%] relative overflow-hidden p-12">
-        {/* Glow + watermark */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 80% 60% at 20% 110%, rgba(30,58,95,0.9), transparent 65%)' }}
-        />
-        <span
-          aria-hidden
-          className="font-display absolute -right-24 -bottom-44 text-[34rem] font-black leading-none select-none text-white/[0.04]"
-        >
-          Δ
-        </span>
-
-        <Image
-          src="/logo-white.png"
-          alt="Delta Cleaning"
-          width={150}
-          height={46}
-          className="object-contain relative"
-          priority
-        />
-
-        <div className="relative max-w-md">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-400/80 mb-4">
-            Client &amp; Team Portal
-          </p>
-          <h2 className="font-display text-4xl xl:text-5xl font-extrabold text-white leading-[1.08] tracking-tight">
-            Every site.<br />Every clean.<br />One system.
-          </h2>
-          <p className="text-sm text-slate-400 mt-5 leading-relaxed">
-            Your Delta Cleaning portal — schedules, services and support in one place.
-          </p>
+    <div className="min-h-[100dvh] flex items-center justify-center bg-white p-6">
+      <div className="w-full max-w-sm">
+        <div className="flex justify-center mb-3">
+          <Image
+            src="/logo-white.png"
+            alt="Delta Cleaning"
+            width={150}
+            height={46}
+            className="object-contain invert"
+            priority
+          />
         </div>
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400 mb-10">
+          Client &amp; Team Portal
+        </p>
 
-        <p className="relative text-xs text-slate-500">Brisbane, QLD · deltacleaning.com.au</p>
-      </div>
+        <h1 className="font-display text-[26px] font-extrabold text-gray-900 tracking-tight text-center">
+          Welcome back
+        </h1>
+        <p className="text-sm text-gray-400 mt-1 mb-8 text-center">Sign in to your account to continue</p>
 
-      {/* ── Form panel ────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden p-6">
-        <div className="relative w-full max-w-sm">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex justify-center mb-8">
-            <Image
-              src="/logo-white.png"
-              alt="Delta Cleaning"
-              width={150}
-              height={46}
-              className="object-contain"
-              priority
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && (
+            <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="login" className="block text-xs font-semibold text-gray-600 mb-1.5">
+              Username or Email
+            </label>
+            <input
+              id="login"
+              type="text"
+              autoComplete="username"
+              required
+              value={login}
+              onChange={(e) => setLogin(e.target.value.trim())}
+              className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-[16px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/25 focus:border-[#1e3a5f] transition"
+              placeholder="john.smith or you@deltacleaning.com.au"
             />
           </div>
 
-          <h1 className="font-display text-[28px] font-extrabold text-white tracking-tight">
-            Welcome back
-          </h1>
-          <p className="text-sm text-slate-400 mt-1 mb-8">Sign in to your account to continue</p>
+          <div>
+            <label htmlFor="password" className="block text-xs font-semibold text-gray-600 mb-1.5">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-[16px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/25 focus:border-[#1e3a5f] transition"
+              placeholder="••••••••"
+            />
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/25 text-red-300 text-sm rounded-xl px-4 py-3">
-                {error}
-              </div>
-            )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl shadow-[0_4px_14px_rgba(30,58,95,0.25)] transition-all active:scale-[0.99] disabled:opacity-50"
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
 
-            <div>
-              <label htmlFor="login" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Username or Email
-              </label>
-              <input
-                id="login"
-                type="text"
-                autoComplete="username"
-                required
-                value={login}
-                onChange={(e) => setLogin(e.target.value.trim())}
-                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-[16px] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/30 focus:border-sky-400/50 transition"
-                placeholder="john.smith or you@deltacleaning.com.au"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-[16px] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/30 focus:border-sky-400/50 transition"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 bg-white hover:bg-slate-100 text-[#0b1320] text-sm font-bold rounded-xl shadow-[0_4px_20px_rgba(255,255,255,0.12)] transition-all active:scale-[0.99] disabled:opacity-50"
-            >
-              {loading ? 'Signing in…' : 'Sign in'}
-            </button>
-          </form>
-
-          <p className="text-center text-xs text-slate-500 mt-8">
-            Delta Cleaning · Brisbane, QLD
-          </p>
-        </div>
+        <p className="text-center text-xs text-gray-400 mt-8">
+          Delta Cleaning · Brisbane, QLD
+        </p>
       </div>
     </div>
   )
