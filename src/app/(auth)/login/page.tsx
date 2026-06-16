@@ -79,11 +79,6 @@ export default function LoginPage() {
           Client &amp; Team Portal
         </p>
 
-        <h1 className="font-display text-[26px] font-extrabold text-gray-900 tracking-tight text-center">
-          Welcome back
-        </h1>
-        <p className="text-sm text-gray-400 mt-1 mb-8 text-center">Sign in to your account to continue</p>
-
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
             <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3">
