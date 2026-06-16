@@ -10,8 +10,8 @@ import {
 } from 'lucide-react'
 import {
   importColdLeadsAction, logCallAction, deleteColdLeadAction,
-  sendIntroEmailAction, markIntroSmsSentAction, updateColdLeadAction,
-  type ColdLead,
+  sendIntroEmailAction, sendFollowUpEmailAction, markIntroSmsSentAction,
+  updateColdLeadAction, type ColdLead,
 } from '@/actions/cold-leads'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -45,8 +45,8 @@ function smsBody(lead: ColdLead): string {
   const first = (lead.contact_name || '').split(' ')[0]
   const hi = first ? `Hi ${first}, ` : 'Hi, '
   return (
-    `${hi}Jackson from Delta Cleaning here — just tried calling about cleaning for ${lead.business_name}. ` +
-    `Happy to come past for a free 15-min walk-through and put a fixed monthly price on it, whenever suits. Jackson`
+    `${hi}Jackson from Delta Cleaning — great chatting just now. As mentioned, happy to come past for a free 15-min ` +
+    `walk-through and a fixed monthly price whenever suits. Just reply here to lock in a time. Jackson`
   )
 }
 
@@ -106,7 +106,16 @@ function LeadCard({ lead, dueToday, onChanged }: { lead: ColdLead; dueToday: boo
     const res = await sendIntroEmailAction(lead.id)
     setBusy(null)
     setFlash(res.error ? res.error : 'Intro email sent')
-    setTimeout(() => setFlash(null), 2500)
+    setTimeout(() => setFlash(null), 3000)
+    onChanged()
+  }
+
+  async function sendFollowUp() {
+    setBusy('email')
+    const res = await sendFollowUpEmailAction(lead.id)
+    setBusy(null)
+    setFlash(res.error ? res.error : 'Follow-up sent in the same thread')
+    setTimeout(() => setFlash(null), 3000)
     onChanged()
   }
 
@@ -171,7 +180,7 @@ function LeadCard({ lead, dueToday, onChanged }: { lead: ColdLead; dueToday: boo
         </div>
 
         {/* Comms history chips */}
-        {(lead.intro_email_sent_at || lead.intro_sms_sent_at || lead.next_follow_up) && (
+        {(lead.intro_email_sent_at || lead.follow_up_email_sent_at || lead.intro_sms_sent_at || lead.next_follow_up) && (
           <div className="flex items-center flex-wrap gap-1.5 mt-3">
             {lead.intro_sms_sent_at && (
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-1.5 py-0.5">
@@ -181,6 +190,11 @@ function LeadCard({ lead, dueToday, onChanged }: { lead: ColdLead; dueToday: boo
             {lead.intro_email_sent_at && (
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-1.5 py-0.5">
                 <MailCheck className="w-3 h-3" /> Email sent {relativeDay(lead.intro_email_sent_at)}
+              </span>
+            )}
+            {lead.follow_up_email_sent_at && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-1.5 py-0.5">
+                <MailCheck className="w-3 h-3" /> Follow-up sent {relativeDay(lead.follow_up_email_sent_at)}
               </span>
             )}
             {lead.next_follow_up && !dueToday && (
@@ -236,23 +250,31 @@ function LeadCard({ lead, dueToday, onChanged }: { lead: ColdLead; dueToday: boo
               <span className="flex-1 text-center text-xs text-gray-400 py-3 border border-dashed border-gray-200 rounded-xl">No phone number</span>
             )}
 
-            {lead.phone && (
-              <button onClick={openSms} title="Send intro text"
+            {/* Text & Email only unlock once you've actually spoken with them */}
+            {lead.has_spoken && lead.phone && (
+              <button onClick={openSms} title="Send a text (opens Messages)"
                 className={`inline-flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-colors ${
                   lead.intro_sms_sent_at ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}>
                 <MessageSquare className="w-4 h-4" /> <span className="hidden md:inline">Text</span>
               </button>
             )}
-            {lead.email && (
-              <button onClick={sendIntro} disabled={busy === 'email'}
-                title={lead.intro_email_sent_at ? 'Intro email already sent — send again' : 'Send intro email'}
-                className={`inline-flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 ${
-                  lead.intro_email_sent_at ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}>
-                {lead.intro_email_sent_at ? <MailCheck className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
-                <span className="hidden md:inline">{busy === 'email' ? '…' : 'Email'}</span>
-              </button>
+            {lead.has_spoken && lead.email && (
+              lead.intro_email_sent_at ? (
+                <button onClick={sendFollowUp} disabled={busy === 'email'}
+                  title="Send a follow-up email in the same thread"
+                  className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 bg-white border-amber-200 text-amber-700 hover:border-amber-300">
+                  <Mail className="w-4 h-4" />
+                  <span className="hidden md:inline">{busy === 'email' ? '…' : 'Follow up'}</span>
+                </button>
+              ) : (
+                <button onClick={sendIntro} disabled={busy === 'email'}
+                  title="Send the intro email they asked for"
+                  className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300">
+                  <Mail className="w-4 h-4" />
+                  <span className="hidden md:inline">{busy === 'email' ? '…' : 'Email'}</span>
+                </button>
+              )
             )}
             <button onClick={() => setLogging(true)} title="Log a call outcome"
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl border bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors text-sm font-medium">

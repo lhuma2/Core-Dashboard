@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail } from '@/lib/email'
 
 export interface ColdLead {
   id: string
@@ -17,7 +16,11 @@ export interface ColdLead {
   last_called_at: string | null
   next_follow_up: string | null
   follow_up_note: string | null
+  has_spoken: boolean
   intro_email_sent_at: string | null
+  intro_email_message_id: string | null
+  intro_email_subject: string | null
+  follow_up_email_sent_at: string | null
   intro_sms_sent_at: string | null
   notes: string | null
   created_at: string
@@ -132,11 +135,15 @@ export async function logCallAction(
     not_interested: 'not_interested',
   }
 
+  // Reaching a person — these outcomes unlock the intro email / text
+  const spokenOutcomes = ['spoke', 'follow_up', 'walkthrough']
+
   const update: Record<string, any> = {
     call_count: lead.call_count + 1,
     last_called_at: new Date().toISOString(),
     status: statusMap[outcome],
   }
+  if (spokenOutcomes.includes(outcome)) update.has_spoken = true
   if (followUpDate) update.next_follow_up = followUpDate
   if (note !== undefined) update.follow_up_note = note || null
 
@@ -174,40 +181,131 @@ export async function deleteColdLeadAction(id: string) {
   return { success: true }
 }
 
-// ─── Intro email ─────────────────────────────────────────────────────────────
-// Plain, human copy. No marketing fluff — reads like a real person wrote it.
+// ─── Email (post-conversation) ───────────────────────────────────────────────
+// These are only sent after you've actually spoken with the lead and they've
+// asked for something in writing. Plain, human copy — no marketing fluff.
+
+const SIGNATURE = `
+  <p style="margin-top: 24px;">
+    Jackson<br/>
+    Delta Cleaning · Brisbane<br/>
+    <a href="mailto:hello@deltacleaning.com.au" style="color: #1e3a5f;">hello@deltacleaning.com.au</a>
+  </p>`
+
+const EMAIL_WRAP = (inner: string) =>
+  `<div style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #1a1a1a; line-height: 1.65; max-width: 560px;">${inner}${SIGNATURE}</div>`
+
+// The imported "suburb" field often holds a full street address. Only echo it
+// back when it's a clean locality, otherwise keep it generic.
+function localityPhrase(suburb: string | null): string {
+  if (!suburb) return ' in Brisbane'
+  const s = suburb.trim()
+  if (/\d/.test(s) || s.includes(',')) return ' in Brisbane'
+  return ` around ${s}`
+}
+
+// Low-level threaded sender. Sets a Message-ID we control so a later follow-up
+// can reference it (In-Reply-To / References) and land in the same email thread.
+async function sendThreadedEmail(opts: {
+  to: string
+  subject: string
+  html: string
+  messageId?: string
+  inReplyTo?: string
+}): Promise<{ success: boolean; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return { success: false, error: 'Email is not configured.' }
+
+  const headers: Record<string, string> = {}
+  if (opts.messageId) headers['Message-ID'] = opts.messageId
+  if (opts.inReplyTo) {
+    headers['In-Reply-To'] = opts.inReplyTo
+    headers['References']  = opts.inReplyTo
+  }
+
+  try {
+    const { Resend } = await import('resend')
+    const resend = new Resend(apiKey)
+    const res = await resend.emails.send({
+      from: 'Jackson at Delta Cleaning <hello@deltacleaning.com.au>',
+      reply_to: 'hello@deltacleaning.com.au',
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
+      headers: Object.keys(headers).length ? headers : undefined,
+    })
+    if (res.error) return { success: false, error: res.error.message }
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Email failed to send' }
+  }
+}
 
 export async function sendIntroEmailAction(id: string) {
   const db = createAdminClient() as any
   const { data: lead } = await db.from('cold_leads').select('*').eq('id', id).single()
   if (!lead) return { error: 'Lead not found' }
   if (!lead.email) return { error: 'This lead has no email address.' }
+  if (!lead.has_spoken) return { error: 'Only send this once you’ve spoken with them on the phone.' }
 
   const firstName = (lead.contact_name || '').split(' ')[0]
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
-  const area = lead.suburb ? ` around ${lead.suburb}` : ' in Brisbane'
+  const locality = localityPhrase(lead.suburb)
 
-  const html = `
-<div style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #1a1a1a; line-height: 1.65; max-width: 560px;">
+  // A Message-ID we own, so the follow-up can thread under this email
+  const messageId = `<intro-${id}-${Date.now()}@deltacleaning.com.au>`
+  const subject = `Delta Cleaning — ${lead.business_name}`
+
+  const html = EMAIL_WRAP(`
   <p>${greeting}</p>
-  <p>I'm Jackson from Delta Cleaning. We look after commercial cleaning for businesses${area} — offices, clinics, retail and shared spaces.</p>
-  <p>I tried giving ${lead.business_name} a quick call. If your cleaning is up for review at any point, I'd be glad to come past, walk the site with you and put a fixed monthly price on it. The walk-through is free and takes about fifteen minutes.</p>
-  <p>Either way, happy to be a contact for when you need one.</p>
-  <p style="margin-top: 24px;">
-    Jackson<br/>
-    Delta Cleaning · Brisbane<br/>
-    <a href="mailto:hello@deltacleaning.com.au" style="color: #1e3a5f;">hello@deltacleaning.com.au</a>
-  </p>
-</div>`
+  <p>Great to chat just now — thanks for taking my call. As promised, here’s a quick note from Delta Cleaning.</p>
+  <p>We look after commercial cleaning for businesses${locality} — offices, clinics, retail and shared spaces.</p>
+  <p>Whenever suits, I’d be glad to come past, walk the site with you and put a fixed monthly price on it. The walk-through is free, takes about fifteen minutes, and there’s no obligation.</p>
+  <p>Just reply here and we’ll lock in a time that works for you.</p>`)
 
-  const result = await sendEmail(
-    lead.email,
-    `Commercial cleaning for ${lead.business_name}`,
-    html
-  )
+  const result = await sendThreadedEmail({ to: lead.email, subject, html, messageId })
   if (!result.success) return { error: result.error || 'Email failed to send' }
 
-  await db.from('cold_leads').update({ intro_email_sent_at: new Date().toISOString() }).eq('id', id)
+  await db.from('cold_leads').update({
+    intro_email_sent_at: new Date().toISOString(),
+    intro_email_message_id: messageId,
+    intro_email_subject: subject,
+  }).eq('id', id)
+  revalidatePath('/calls')
+  return { success: true }
+}
+
+export async function sendFollowUpEmailAction(id: string) {
+  const db = createAdminClient() as any
+  const { data: lead } = await db.from('cold_leads').select('*').eq('id', id).single()
+  if (!lead) return { error: 'Lead not found' }
+  if (!lead.email) return { error: 'This lead has no email address.' }
+  if (!lead.intro_email_message_id || !lead.intro_email_subject) {
+    return { error: 'Send the first email before following up.' }
+  }
+
+  const firstName = (lead.contact_name || '').split(' ')[0]
+  const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
+
+  // "Re:" + the original subject + the original Message-ID = same Gmail thread
+  const subject = lead.intro_email_subject.startsWith('Re: ')
+    ? lead.intro_email_subject
+    : `Re: ${lead.intro_email_subject}`
+
+  const html = EMAIL_WRAP(`
+  <p>${greeting}</p>
+  <p>Just following up on my note below — I know things get busy.</p>
+  <p>The offer still stands: a free 15-minute walk-through and a fixed monthly price, no obligation. If you’d like me to come past, just reply with a day that suits and I’ll make it work.</p>`)
+
+  const result = await sendThreadedEmail({
+    to: lead.email,
+    subject,
+    html,
+    inReplyTo: lead.intro_email_message_id,
+  })
+  if (!result.success) return { error: result.error || 'Email failed to send' }
+
+  await db.from('cold_leads').update({ follow_up_email_sent_at: new Date().toISOString() }).eq('id', id)
   revalidatePath('/calls')
   return { success: true }
 }
