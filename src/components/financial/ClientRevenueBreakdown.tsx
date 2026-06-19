@@ -38,11 +38,22 @@ export function ClientRevenueBreakdown({ clients }: ClientRevenueBreakdownProps)
         one_off: 1,
       }
       const visitsPerMonth = c.frequency ? (freqMultipliers[c.frequency] ?? 1) : 1
-      const cleanerCostPerMonth = hourlyRate * hoursPerVisit * visitsPerMonth
-      const grossProfit = monthly - cleanerCostPerMonth
-      const marginPct = monthly > 0 ? (grossProfit / monthly) * 100 : 0
+      const computedCost = hourlyRate * hoursPerVisit * visitsPerMonth
 
-      return { ...c, monthly, cleanerCostPerMonth, grossProfit, marginPct }
+      // Prefer the stored aggregated figures (these already roll up every site
+      // for multi-site clients). Fall back to the per-visit computation only
+      // when no stored cost exists.
+      const storedCost   = (c as any).monthly_labour_cost
+      const storedProfit = (c as any).monthly_profit
+      const storedMargin = (c as any).margin_pct
+
+      const cleanerCostPerMonth = storedCost != null ? Number(storedCost) : computedCost
+      const grossProfit = storedProfit != null ? Number(storedProfit) : (monthly - cleanerCostPerMonth)
+      const marginPct = storedMargin != null
+        ? Number(storedMargin)
+        : (monthly > 0 ? (grossProfit / monthly) * 100 : 0)
+
+      return { ...c, monthly, cleanerCostPerMonth, grossProfit, marginPct, isMultiSite: (c as any).is_multi_site === true }
     })
     .sort((a, b) => b.monthly - a.monthly)
 
@@ -86,10 +97,10 @@ export function ClientRevenueBreakdown({ clients }: ClientRevenueBreakdownProps)
                   <p style={{ fontSize: 10.5, color: '#AAAAAA' }}>{share.toFixed(1)}% of MRR</p>
                 </td>
                 <td style={{ padding: '10px 14px', color: '#777772', textTransform: 'capitalize' }}>
-                  {c.frequency?.replace('_', ' ') || '—'}
+                  {(c as any).isMultiSite ? 'Multi-site' : (c.frequency?.replace('_', ' ') || '—')}
                 </td>
                 <td style={{ padding: '10px 14px', textAlign: 'right', color: '#111111' }}>
-                  {c.rate_per_visit ? formatAUD(c.rate_per_visit) : '—'}
+                  {(c as any).isMultiSite ? 'Per site' : (c.rate_per_visit ? formatAUD(c.rate_per_visit) : '—')}
                 </td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>
                   {c.cleanerCostPerMonth > 0 ? (

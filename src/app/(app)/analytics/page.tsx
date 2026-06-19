@@ -4,7 +4,7 @@ import { ClientRatioSection } from '@/components/analytics/ClientRatioSection'
 import { TenureTable } from '@/components/analytics/TenureTable'
 import { MoMGrowthChart } from '@/components/analytics/MoMGrowthChart'
 import { formatAUD } from '@/lib/formatters'
-import { format, subMonths } from 'date-fns'
+import { format, subMonths, endOfMonth } from 'date-fns'
 import { CheckCircle, AlertTriangle, TrendingDown, Info, Activity, Users, DollarSign } from 'lucide-react'
 
 const FREQ_MULTIPLIERS: Record<string, number> = {
@@ -137,13 +137,16 @@ export default async function AnalyticsPage() {
     ? `Cleaner costs · ${latestInvoicedMonth}${manualExpenses > 0 ? ' + overhead' : ''}`
     : manualExpenses > 0 ? 'Recorded overhead expenses' : 'No expenses recorded yet'
 
+  // Reconstruct historical MRR from when each client came on board. (The
+  // financial_records income table isn't populated, so derive the curve from
+  // recurring revenue: a client contributes from its start month onward.)
   const monthlyRevenue = Array.from({ length: 12 }, (_, i) => {
     const d = subMonths(new Date(), 11 - i)
-    const monthStr = format(d, 'yyyy-MM')
-    const revenue = financialRecords
-      .filter(r => r.record_date.startsWith(monthStr))
-      .reduce((s, r) => s + r.amount, 0)
-    return { month: format(d, 'MMM yy'), revenue, monthStr }
+    const monthEnd = endOfMonth(d)
+    const revenue = activeClients
+      .filter(c => !c.start_date || new Date(c.start_date as string) <= monthEnd)
+      .reduce((s, c) => s + (c.monthly_value || 0), 0)
+    return { month: format(d, 'MMM yy'), revenue, monthStr: format(d, 'yyyy-MM') }
   })
 
   const growthData = monthlyRevenue.map((m, i) => {

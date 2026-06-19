@@ -1,16 +1,15 @@
 'use client'
 
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
 } from 'recharts'
-import { formatAUD } from '@/lib/formatters'
+import { formatAUD, formatAUDCompact } from '@/lib/formatters'
 
 interface DataPoint {
   month: string
@@ -23,9 +22,25 @@ interface MoMGrowthChartProps {
 }
 
 export function MoMGrowthChart({ data }: MoMGrowthChartProps) {
+  const hasData = data.some((d) => d.revenue > 0)
+
+  if (!hasData) {
+    return (
+      <div className="h-[220px] flex items-center justify-center text-sm text-gray-400">
+        No revenue history yet — add clients with start dates to build the trend.
+      </div>
+    )
+  }
+
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+      <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+        <defs>
+          <linearGradient id="momFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#1e3a5f" stopOpacity={0.18} />
+            <stop offset="100%" stopColor="#1e3a5f" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
         <XAxis
           dataKey="month"
@@ -34,33 +49,30 @@ export function MoMGrowthChart({ data }: MoMGrowthChartProps) {
           tickLine={false}
         />
         <YAxis
-          tickFormatter={(v) => `${v > 0 ? '+' : ''}${v?.toFixed(0)}%`}
+          tickFormatter={(v) => formatAUDCompact(v)}
           tick={{ fontSize: 11, fill: '#6b7280' }}
           axisLine={false}
           tickLine={false}
-          width={45}
+          width={52}
         />
-        <ReferenceLine y={0} stroke="#e5e7eb" strokeWidth={1} />
         <Tooltip
-          formatter={(value: number) => [
-            `${value > 0 ? '+' : ''}${value?.toFixed(1)}%`,
-            'MoM Growth',
-          ]}
-          contentStyle={{
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            fontSize: '12px',
+          formatter={(value: number, _name, item: any) => {
+            const g = item?.payload?.growth
+            const growthStr = g == null ? '' : `  (${g > 0 ? '+' : ''}${g.toFixed(1)}% MoM)`
+            return [`${formatAUD(value)}${growthStr}`, 'Revenue']
           }}
+          contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '12px' }}
         />
-        <Line
+        <Area
           type="monotone"
-          dataKey="growth"
+          dataKey="revenue"
           stroke="#1e3a5f"
           strokeWidth={2}
-          dot={{ r: 3, fill: '#1e3a5f' }}
-          connectNulls={false}
+          fill="url(#momFill)"
+          dot={{ r: 2.5, fill: '#1e3a5f' }}
+          activeDot={{ r: 4 }}
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   )
 }

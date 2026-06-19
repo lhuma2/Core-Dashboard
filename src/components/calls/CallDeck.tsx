@@ -6,7 +6,7 @@ import {
   Phone, PhoneCall, PhoneMissed, MessageSquare, Mail, MailCheck,
   CalendarClock, Footprints, Trash2, Plus, Search, X, Check,
   ThumbsDown, Flame, Upload, MapPin, Building2, User, Clock,
-  StickyNote, ChevronDown, RotateCcw,
+  StickyNote, ChevronDown, RotateCcw, TrendingUp,
 } from 'lucide-react'
 import {
   importColdLeadsAction, logCallAction, deleteColdLeadAction,
@@ -49,8 +49,8 @@ function smsBody(lead: ColdLead): string {
   const first = (lead.contact_name || '').split(' ')[0]
   const hi = first ? `Hi ${first}, ` : 'Hi, '
   return (
-    `${hi}Jackson from Delta Cleaning — great chatting just now. As mentioned, happy to come past for a free 15-min ` +
-    `walk-through and a fixed monthly price whenever suits. Just reply here to lock in a time. Jackson`
+    `${hi}Jackson from Delta Cleaning here. Great chatting just now. As mentioned, happy to come past for a free ` +
+    `site visit of about fifteen minutes and a fixed monthly price whenever suits. Just reply here to lock in a time. Jackson`
   )
 }
 
@@ -242,6 +242,12 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-1.5 py-0.5">
                 <MailCheck className="w-3 h-3" /> Followed up {relativeDay(lead.follow_up_email_sent_at)}
               </span>
+            )}
+            {lead.lead_id && (
+              <a href={`/leads/${lead.lead_id}`} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e3a5f] bg-[#1e3a5f]/5 border border-[#1e3a5f]/20 rounded-md px-1.5 py-0.5 hover:bg-[#1e3a5f]/10">
+                <TrendingUp className="w-3 h-3" /> In pipeline
+              </a>
             )}
           </div>
         )}

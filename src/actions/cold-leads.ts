@@ -25,6 +25,7 @@ export interface ColdLead {
   follow_up_note: string | null
   next_attempt: string | null
   has_spoken: boolean
+  lead_id: string | null
   intro_email_sent_at: string | null
   intro_email_message_id: string | null
   intro_email_subject: string | null
@@ -148,7 +149,7 @@ export async function logCallAction(
 ) {
   const db = createAdminClient() as any
 
-  const { data: lead } = await db.from('cold_leads').select('call_count').eq('id', id).single()
+  const { data: lead } = await db.from('cold_leads').select('*').eq('id', id).single()
   if (!lead) return { error: 'Lead not found' }
 
   const statusMap: Record<string, string> = {
@@ -181,10 +182,35 @@ export async function logCallAction(
   if (followUpDate) update.next_follow_up = followUpDate
   if (note !== undefined) update.follow_up_note = note || null
 
+  // Booking a walk-through means this is a real opportunity — push it into the
+  // sales pipeline so cold calls and Leads stay in sync. Idempotent: only once.
+  if (outcome === 'walkthrough' && !lead.lead_id) {
+    const timeline = [{
+      id: crypto.randomUUID(),
+      type: 'status_change' as const,
+      message: 'Created from a cold call (walkthrough booked)',
+      timestamp: new Date().toISOString(),
+    }]
+    const { data: newLead } = await db.from('leads').insert({
+      business_name: lead.business_name,
+      contact_name:  lead.contact_name,
+      contact_email: lead.email,
+      contact_phone: lead.phone,
+      suburb:        lead.suburb,
+      state:         'QLD',
+      source:        'Cold call',
+      notes:         lead.notes,
+      status:        'contacted',
+      timeline,
+    }).select('id').single()
+    if (newLead?.id) update.lead_id = newLead.id
+  }
+
   const { error } = await db.from('cold_leads').update(update).eq('id', id)
   if (error) return { error: error.message }
 
   revalidatePath('/calls')
+  revalidatePath('/leads')
   return { success: true }
 }
 
@@ -216,8 +242,9 @@ export async function deleteColdLeadAction(id: string) {
 }
 
 // ─── Email (post-conversation) ───────────────────────────────────────────────
-// These are only sent after you've actually spoken with the lead and they've
-// asked for something in writing. Plain, human copy — no marketing fluff.
+// Only sent after you have actually spoken with the lead and they have asked
+// for something in writing. Plain, human copy. No dashes anywhere in the copy
+// or subject lines (deliberate house style for these messages).
 
 const SIGNATURE = `
   <p style="margin-top: 24px;">
@@ -288,21 +315,21 @@ export async function sendIntroEmailAction(id: string) {
 
   // A Message-ID we own, so the follow-up can thread under this email
   const messageId = `<intro-${id}-${Date.now()}@deltacleaning.com.au>`
-  const subject = `Delta Cleaning — ${lead.business_name}`
+  const subject = `Cleaning quote for ${lead.business_name}`
 
   const bodyText =
     `${greeting}\n\n` +
-    `Great to chat just now — thanks for taking my call. As promised, here's a quick note from Delta Cleaning.\n\n` +
-    `We look after commercial cleaning for businesses${locality} — offices, clinics, retail and shared spaces.\n\n` +
-    `Whenever suits, I'd be glad to come past, walk the site with you and put a fixed monthly price on it. The walk-through is free, takes about fifteen minutes, and there's no obligation.\n\n` +
-    `Just reply here and we'll lock in a time that works for you.\n\n— Jackson, Delta Cleaning`
+    `Great to chat just now and thanks for taking my call. As promised, here is a quick note from Delta Cleaning.\n\n` +
+    `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces.\n\n` +
+    `Whenever suits, I would be glad to come past, walk through the site with you and put a fixed monthly price on it. The visit is free, takes about fifteen minutes, and there is no obligation.\n\n` +
+    `Just reply here and we will lock in a time that works for you.\n\nThanks,\nJackson\nDelta Cleaning`
 
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
-  <p>Great to chat just now — thanks for taking my call. As promised, here’s a quick note from Delta Cleaning.</p>
-  <p>We look after commercial cleaning for businesses${locality} — offices, clinics, retail and shared spaces.</p>
-  <p>Whenever suits, I’d be glad to come past, walk the site with you and put a fixed monthly price on it. The walk-through is free, takes about fifteen minutes, and there’s no obligation.</p>
-  <p>Just reply here and we’ll lock in a time that works for you.</p>`)
+  <p>Great to chat just now and thanks for taking my call. As promised, here is a quick note from Delta Cleaning.</p>
+  <p>We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces.</p>
+  <p>Whenever suits, I would be glad to come past, walk through the site with you and put a fixed monthly price on it. The visit is free, takes about fifteen minutes, and there is no obligation.</p>
+  <p>Just reply here and we will lock in a time that works for you.</p>`)
 
   const result = await sendThreadedEmail({ to: lead.email, subject, html, messageId })
   if (!result.success) return { error: result.error || 'Email failed to send' }
@@ -338,13 +365,13 @@ export async function sendFollowUpEmailAction(id: string) {
 
   const bodyText =
     `${greeting}\n\n` +
-    `Just following up on my note below — I know things get busy.\n\n` +
-    `The offer still stands: a free 15-minute walk-through and a fixed monthly price, no obligation. If you'd like me to come past, just reply with a day that suits and I'll make it work.\n\n— Jackson, Delta Cleaning`
+    `Just following up on my note below. I know things get busy.\n\n` +
+    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nDelta Cleaning`
 
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
-  <p>Just following up on my note below — I know things get busy.</p>
-  <p>The offer still stands: a free 15-minute walk-through and a fixed monthly price, no obligation. If you’d like me to come past, just reply with a day that suits and I’ll make it work.</p>`)
+  <p>Just following up on my note below. I know things get busy.</p>
+  <p>The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.</p>`)
 
   const result = await sendThreadedEmail({
     to: lead.email,
