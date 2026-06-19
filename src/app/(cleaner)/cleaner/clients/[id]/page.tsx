@@ -8,7 +8,7 @@ import { StartCleanButton } from '@/components/portal/cleaner/StartCleanButton'
 import { SubmitJobForm } from '@/components/portal/cleaner/SubmitJobForm'
 import { FlagModal } from '@/components/portal/cleaner/FlagModal'
 import { MapPin, Calendar, Key, ClipboardList, CheckCircle2 } from 'lucide-react'
-import { getUpcomingDates } from '@/lib/schedule'
+import { getUpcomingDates, actionableDates, brisbaneTodayStr } from '@/lib/schedule'
 
 const FREQ_LABELS: Record<string, string> = {
   weekly:       'Weekly',
@@ -51,15 +51,24 @@ export default async function CleanerClientPage({ params }: { params: { id: stri
 
   if (!client) notFound()
 
-  // Check for an active job today
-  const today = new Date().toISOString().split('T')[0]
-  const { data: todayJob } = await (supabase as any)
+  // Check for an actionable job — today's, or a Saturday job carried into Sunday
+  const today = brisbaneTodayStr()
+  const dates = actionableDates(today)
+  const { data: candidateJobs } = await (supabase as any)
     .from('job_assignments')
     .select('*, job_submissions(*)')
     .eq('client_id', params.id)
     .eq('cleaner_id', profile.id)
-    .eq('scheduled_date', today)
-    .single()
+    .in('scheduled_date', dates)
+    .order('scheduled_date', { ascending: false })
+
+  // Prefer an in-progress/flagged job, then one still to do, then a completed one
+  const jobs = (candidateJobs ?? []) as any[]
+  const todayJob =
+    jobs.find((j) => j.status === 'in_progress' || j.status === 'flagged')
+    ?? jobs.find((j) => j.status === 'not_started')
+    ?? jobs.find((j) => j.status === 'completed')
+    ?? null
 
   const serviceDays: string[] = client.service_days ?? []
   const checklist = todayJob?.checklist ?? []

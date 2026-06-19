@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
+import { actionableDates } from '@/lib/schedule'
 
 // ─── Helper: get current user's profile ───────────────────────────────────────
 
@@ -245,13 +246,15 @@ export async function startCleanForClientAction(clientId: string) {
   if (!profile) return { error: 'Not authenticated' }
 
   const today = new Date().toISOString().split('T')[0]
+  // Saturday jobs stay actionable on Sunday, so consider the whole weekend window
+  const dates = actionableDates()
 
   // Block if cleaner already has a job in progress at a different client
   const { data: activeElsewhere } = await (supabase as any)
     .from('job_assignments')
     .select('id, client_id, clients(business_name)')
     .eq('cleaner_id', profile.id)
-    .eq('scheduled_date', today)
+    .in('scheduled_date', dates)
     .in('status', ['in_progress', 'flagged'])
     .neq('client_id', clientId)
     .limit(1)
@@ -262,14 +265,18 @@ export async function startCleanForClientAction(clientId: string) {
     return { error: `You already have an active job at ${name}. Finish that one first.` }
   }
 
-  // Check if a job already exists for this client today
-  const { data: existing } = await (supabase as any)
+  // Resume an existing job within the weekend window (today, or Saturday's job
+  // when it's Sunday) rather than creating a duplicate. Prefer a not-yet-done one.
+  const { data: existingJobs } = await (supabase as any)
     .from('job_assignments')
-    .select('id, status')
+    .select('id, status, scheduled_date')
     .eq('client_id', clientId)
     .eq('cleaner_id', profile.id)
-    .eq('scheduled_date', today)
-    .single()
+    .in('scheduled_date', dates)
+    .order('scheduled_date', { ascending: false })
+
+  const existing = (existingJobs ?? []).find((j: any) => j.status !== 'completed')
+    ?? (existingJobs ?? [])[0]
 
   let jobId: string
 

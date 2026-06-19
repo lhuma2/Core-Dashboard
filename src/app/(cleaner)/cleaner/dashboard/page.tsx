@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { AcceptClientButton } from '@/components/portal/cleaner/AcceptClientButton'
-import { buildSchedule } from '@/lib/schedule'
+import { buildSchedule, actionableDates, brisbaneTodayStr } from '@/lib/schedule'
 import { ChevronRight, Briefcase, Calendar, AlertCircle, XCircle } from 'lucide-react'
 
 const DAY_LABELS: Record<string, string> = {
@@ -41,11 +41,12 @@ export default async function CleanerDashboard() {
     .from('profiles').select('*').eq('user_id', user.id).single()
   if (!profile) redirect('/login')
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = brisbaneTodayStr()
+  const dates = actionableDates(today)   // today + Saturday when it's Sunday
 
   const pastFrom = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0]
 
-  // Fetch clients + today's in-progress job + missed past jobs in parallel
+  // Fetch clients + active jobs (weekend-aware) + past not-started jobs in parallel
   const [{ data: clients }, { data: activeJobs }, { data: missedJobsRaw }] = await Promise.all([
     (supabase as any)
       .from('clients')
@@ -57,11 +58,11 @@ export default async function CleanerDashboard() {
       .from('job_assignments')
       .select('id, status, client_id, clients(business_name, address, suburb)')
       .eq('cleaner_id', profile.id)
-      .eq('scheduled_date', today)
+      .in('scheduled_date', dates)
       .in('status', ['in_progress', 'flagged']),
     (supabase as any)
       .from('job_assignments')
-      .select('id, scheduled_date, status, client_id, clients(business_name)')
+      .select('id, scheduled_date, status, client_id, clients(business_name, suburb)')
       .eq('cleaner_id', profile.id)
       .gte('scheduled_date', pastFrom)
       .lt('scheduled_date', today)
@@ -73,7 +74,12 @@ export default async function CleanerDashboard() {
   const pending  = allClients.filter((c) => !c.assignment_accepted)
   const accepted = allClients.filter((c) => c.assignment_accepted)
   const inProgressJob = (activeJobs ?? [])[0] ?? null
-  const missedJobs: any[] = missedJobsRaw ?? []
+
+  // Split past not-started jobs: a Saturday job carried into Sunday is still due
+  // (actionable), everything older is a genuine missed clean.
+  const pastNotStarted: any[] = missedJobsRaw ?? []
+  const dueWeekend: any[] = pastNotStarted.filter((j) => dates.includes(j.scheduled_date))
+  const missedJobs: any[]  = pastNotStarted.filter((j) => !dates.includes(j.scheduled_date))
 
   // Build upcoming schedule (next 14 days) from accepted clients
   const schedule = buildSchedule(accepted, 14)
@@ -130,7 +136,34 @@ export default async function CleanerDashboard() {
         </section>
       )}
 
-      {/* ── 1b. MISSED CLEANS ── */}
+      {/* ── 1a. DUE THIS WEEKEND (Saturday jobs carried into Sunday) ── */}
+      {dueWeekend.length > 0 && (
+        <section className="mb-6">
+          <p className="text-xs font-semibold text-amber-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5" />
+            Still due this weekend
+          </p>
+          <div className="space-y-2">
+            {dueWeekend.map((job: any) => {
+              const d = new Date(job.scheduled_date + 'T00:00:00')
+              const dl = d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })
+              return (
+                <Link key={job.id} href={`/cleaner/clients/${job.client_id}`} className="block">
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-3 active:bg-amber-100 transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-black truncate">{job.clients?.business_name ?? '—'}</p>
+                      <p className="text-xs text-amber-600 mt-0.5">{dl}'s clean · tap to start</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── 1b. MISSED CLEANS (tap to do them late) ── */}
       {missedJobs.length > 0 && (
         <section className="mb-6">
           <p className="text-xs font-semibold text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -142,13 +175,15 @@ export default async function CleanerDashboard() {
               const d = new Date(job.scheduled_date + 'T00:00:00')
               const dateLabel = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
               return (
-                <div key={job.id} className="bg-red-50 border border-red-100 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-black truncate">{job.clients?.business_name ?? '—'}</p>
-                    <p className="text-xs text-red-400 mt-0.5">{dateLabel} · Not completed</p>
+                <Link key={job.id} href={`/cleaner/clients/${job.client_id}`} className="block">
+                  <div className="bg-red-50 border border-red-100 rounded-2xl px-5 py-4 flex items-center justify-between gap-3 active:bg-red-100 transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-black truncate">{job.clients?.business_name ?? '—'}</p>
+                      <p className="text-xs text-red-400 mt-0.5">{dateLabel} · Not completed — tap to catch up</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-red-400 flex-shrink-0" />
                   </div>
-                  <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                </div>
+                </Link>
               )
             })}
           </div>

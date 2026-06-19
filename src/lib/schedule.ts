@@ -11,6 +11,30 @@ const DAY_NUM: Record<string, number> = {
   sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
 }
 
+/** Today's date in Brisbane (YYYY-MM-DD), independent of server timezone. */
+export function brisbaneTodayStr(): string {
+  return new Date()
+    .toLocaleString('en-AU', { timeZone: 'Australia/Brisbane', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .split('/').reverse().join('-')
+}
+
+/**
+ * The set of scheduled dates a cleaner can still action "today".
+ * Normally just today — but a Saturday clean stays actionable through the
+ * Sunday of the same weekend, since weekend jobs often slip a day.
+ */
+export function actionableDates(todayStr?: string): string[] {
+  const today = todayStr ?? brisbaneTodayStr()
+  const dates = [today]
+  const d = new Date(today + 'T00:00:00')
+  if (d.getDay() === 0) {
+    // Sunday — Saturday's jobs are still in play
+    const sat = new Date(d.getTime() - 86_400_000)
+    dates.push(sat.toISOString().split('T')[0])
+  }
+  return dates
+}
+
 export interface ClientSchedule {
   id:           string
   business_name: string
