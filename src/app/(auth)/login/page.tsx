@@ -42,15 +42,15 @@ export default function LoginPage() {
       client:  '/client/dashboard',
     }
 
-    // Non-admin roles read a different cookie namespace — sign in again with
-    // the right one so their portal actually sees the session, then drop the
-    // discovery session so it can't shadow a real admin login later.
+    // Non-admin roles read a different cookie namespace. Sign in again with the
+    // correct portal client so the session lands in that namespace's cookie.
+    // We do NOT sign out the discovery session: the two clients can share auth
+    // storage, so signing one out wipes the freshly-created portal session and
+    // bounces the user back to login. The leftover admin-namespace session is
+    // harmless — middleware role-gates it, and a later admin login overwrites it.
     if (role !== 'admin') {
       const portalClient = createClient(role)
       const { error: portalError } = await portalClient.auth.signInWithPassword({ email, password })
-      // scope:'local' clears only this browser's discovery cookie — a plain
-      // signOut() revokes every session globally, killing the portal login too
-      await supabase.auth.signOut({ scope: 'local' })
       if (portalError) {
         setError('Login incorrect. Please check your username and password and try again.')
         setLoading(false)
