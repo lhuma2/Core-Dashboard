@@ -1,4 +1,4 @@
-const CACHE = 'delta-v3'
+const CACHE = 'delta-v4'
 
 // ── Install: skip waiting immediately ────────────────────────────────────
 self.addEventListener('install', (e) => {
@@ -22,8 +22,9 @@ self.addEventListener('fetch', (e) => {
   // Never intercept external requests or API routes
   if (url.hostname !== self.location.hostname || url.pathname.startsWith('/api/')) return
 
-  // Only cache static assets (JS, CSS, fonts, images) — never HTML pages
-  if (!url.pathname.match(/\.(js|css|woff2?|png|jpg|jpeg|svg|webp|ico)(\?.*)?$/)) return
+  // Only cache fonts and images — never JS/CSS/HTML, so app code and server
+  // actions are always fresh from the network after a deploy.
+  if (!url.pathname.match(/\.(woff2?|png|jpg|jpeg|svg|webp|ico)(\?.*)?$/)) return
 
   e.respondWith(
     caches.match(e.request).then((cached) => {

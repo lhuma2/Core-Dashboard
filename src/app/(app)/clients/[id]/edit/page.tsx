@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { updateClientAction } from '@/actions/clients'
+import { updateClientFromFormAction } from '@/actions/clients'
 import { ClientForm } from '@/components/clients/ClientForm'
 import { Card } from '@/components/ui/Card'
 import { ArrowLeft } from 'lucide-react'
@@ -59,14 +59,6 @@ export default async function EditClientPage({
     notes:                  s.notes                   ?? '',
   }))
 
-  async function action(formData: FormData) {
-    'use server'
-    // Read id from the form body rather than a captured closure variable so the
-    // save doesn't depend on Next.js server-action arg encryption (deploy-safe).
-    const clientId = (formData.get('__client_id') as string) || params.id
-    return updateClientAction(clientId, formData)
-  }
-
   return (
     <div className="max-w-2xl space-y-5">
       <div>
@@ -85,7 +77,7 @@ export default async function EditClientPage({
         <ClientForm
           defaultValues={client as any}
           defaultSites={defaultSites.length > 0 ? defaultSites : undefined}
-          action={action}
+          action={updateClientFromFormAction}
           submitLabel="Save Changes"
           cleaners={cleaners}
         />

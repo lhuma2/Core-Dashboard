@@ -366,6 +366,15 @@ export async function updateClientAction(id: string, formData: FormData) {
   redirect(`/clients/${id}`)
 }
 
+// Stable, top-level form action for the edit page. Reads the client id from a
+// hidden form field instead of a captured closure, so its action ID stays
+// consistent across deploys (no "missing server action" after a redeploy).
+export async function updateClientFromFormAction(formData: FormData) {
+  const id = formData.get('__client_id') as string | null
+  if (!id) return { error: { _form: ['Could not determine which client to save. Please reload and try again.'] } }
+  return updateClientAction(id, formData)
+}
+
 export async function toggleClientActiveAction(id: string, active: boolean) {
   const supabase = createClient()
   await supabase.from('clients').update({ active }).eq('id', id)
