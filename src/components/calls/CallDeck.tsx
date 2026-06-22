@@ -9,9 +9,9 @@ import {
   StickyNote, ChevronDown, RotateCcw, TrendingUp,
 } from 'lucide-react'
 import {
-  importColdLeadsAction, logCallAction, deleteColdLeadAction,
+  importColdLeadsAction, previewColdLeadsCsvAction, logCallAction, deleteColdLeadAction,
   sendIntroEmailAction, sendFollowUpEmailAction, markIntroSmsSentAction,
-  updateColdLeadAction, type ColdLead, type CommsEntry,
+  updateColdLeadAction, type ColdLead, type CommsEntry, type ColumnMap,
 } from '@/actions/cold-leads'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -393,6 +393,15 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
 
 // ─── Import modal (drag & drop) ──────────────────────────────────────────────
 
+const MAP_FIELDS: { key: keyof ColumnMap; label: string; required?: boolean }[] = [
+  { key: 'business', label: 'Business name', required: true },
+  { key: 'contact',  label: 'Contact / ask for' },
+  { key: 'phone',    label: 'Phone' },
+  { key: 'email',    label: 'Email' },
+  { key: 'suburb',   label: 'Suburb / area' },
+  { key: 'industry', label: 'Industry' },
+]
+
 function ImportPanel({ onClose, onDone }: { onClose: () => void; onDone: (msg: string) => void }) {
   const [csv, setCsv] = useState('')
   const [fileName, setFileName] = useState<string | null>(null)
@@ -400,6 +409,12 @@ function ImportPanel({ onClose, onDone }: { onClose: () => void; onDone: (msg: s
   const [error, setError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [showPaste, setShowPaste] = useState(false)
+
+  // Mapping step
+  const [headers, setHeaders] = useState<string[] | null>(null)
+  const [sample, setSample] = useState<string[][]>([])
+  const [rowCount, setRowCount] = useState(0)
+  const [map, setMap] = useState<ColumnMap | null>(null)
 
   function readFile(f: File) {
     setFileName(f.name)
@@ -416,13 +431,28 @@ function ImportPanel({ onClose, onDone }: { onClose: () => void; onDone: (msg: s
     if (f) readFile(f)
   }
 
-  async function run() {
+  async function preview() {
     setBusy(true); setError(null)
-    const res = await importColdLeadsAction(csv) as any
+    const res = await previewColdLeadsCsvAction(csv) as any
+    setBusy(false)
+    if (res.error) { setError(res.error); return }
+    setHeaders(res.headers)
+    setSample(res.sample ?? [])
+    setRowCount(res.rowCount)
+    setMap(res.guess)
+  }
+
+  async function run() {
+    if (!map) return
+    if (map.business < 0) { setError('Pick which column is the business name.'); return }
+    setBusy(true); setError(null)
+    const res = await importColdLeadsAction(csv, map) as any
     setBusy(false)
     if (res.error) { setError(res.error); return }
     onDone(`${res.imported} lead${res.imported === 1 ? '' : 's'} imported${res.skipped ? ` · ${res.skipped} duplicate${res.skipped === 1 ? '' : 's'} skipped` : ''}`)
   }
+
+  const previewBusiness = map && map.business >= 0 && sample[0] ? (sample[0][map.business] || '—') : null
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -431,52 +461,100 @@ function ImportPanel({ onClose, onDone }: { onClose: () => void; onDone: (msg: s
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="font-display text-lg font-bold text-gray-900">Import leads</h3>
-            <p className="text-xs text-gray-400 mt-0.5">From Google Sheets: File → Download → CSV</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {headers ? 'Check the columns match, then import' : 'From Google Sheets: File → Download → CSV'}
+            </p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"><X className="w-4 h-4" /></button>
         </div>
 
-        {/* Drop zone */}
-        <label
-          onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-10 px-4 cursor-pointer transition-colors text-center ${
-            dragOver ? 'border-[#1e3a5f] bg-[#1e3a5f]/5' : csv ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-300 hover:border-[#1e3a5f]/50 hover:bg-gray-50'
-          }`}
-        >
-          {csv ? (
-            <>
-              <Check className="w-6 h-6 text-emerald-600" />
-              <p className="text-sm font-semibold text-emerald-700">{fileName || 'CSV ready'}</p>
-              <p className="text-xs text-gray-400">{csv.trim().split('\n').length - 1} rows detected · drop another to replace</p>
-            </>
-          ) : (
-            <>
-              <Upload className={`w-6 h-6 ${dragOver ? 'text-[#1e3a5f]' : 'text-gray-400'}`} />
-              <p className="text-sm font-semibold text-gray-700">Drag & drop your CSV here</p>
-              <p className="text-xs text-gray-400">or tap to choose a file</p>
-            </>
-          )}
-          <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
-        </label>
+        {/* ── Step 2: column mapping ── */}
+        {headers ? (
+          <>
+            <div className="rounded-xl bg-gray-50 border border-gray-200 px-3 py-2.5 mb-3">
+              <p className="text-xs text-gray-500">{rowCount} row{rowCount === 1 ? '' : 's'} found · match each field to a column from your sheet.</p>
+            </div>
+            <div className="space-y-2.5">
+              {MAP_FIELDS.map(({ key, label, required }) => (
+                <div key={key} className="flex items-center gap-3">
+                  <label className="text-xs font-medium text-gray-600 w-32 flex-shrink-0">
+                    {label}{required && <span className="text-red-500"> *</span>}
+                  </label>
+                  <select
+                    value={map?.[key] ?? -1}
+                    onChange={e => setMap(m => m ? { ...m, [key]: Number(e.target.value) } : m)}
+                    className="flex-1 min-w-0 bg-white border border-gray-200 text-gray-900 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                  >
+                    <option value={-1}>{required ? 'Select a column…' : 'Not in my sheet'}</option>
+                    {headers.map((h, i) => (
+                      <option key={i} value={i}>{h || `Column ${i + 1}`}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
 
-        {/* Paste fallback */}
-        {showPaste ? (
-          <textarea value={csv} onChange={e => { setCsv(e.target.value); setFileName(null) }} rows={4}
-            placeholder={'Business,Contact,Phone,Email,Suburb\nAcme Dental,Sarah,0400 111 222,sarah@acme.com,Chermside'}
-            className="w-full mt-3 bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-2.5 text-[12px] font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
+            {previewBusiness && (
+              <p className="text-xs text-gray-400 mt-3">
+                First lead will be: <span className="font-semibold text-gray-700">{previewBusiness}</span>
+              </p>
+            )}
+
+            {error && <div className="mt-3 rounded-xl bg-red-50 border border-red-100 px-3 py-2.5 text-sm text-red-600">{error}</div>}
+
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => { setHeaders(null); setMap(null); setError(null) }}
+                className="px-4 text-sm text-gray-400 hover:text-gray-600">Back</button>
+              <button onClick={run} disabled={busy || !map || map.business < 0}
+                className="flex-1 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
+                {busy ? 'Importing…' : `Import ${rowCount} lead${rowCount === 1 ? '' : 's'}`}
+              </button>
+            </div>
+          </>
         ) : (
-          <button onClick={() => setShowPaste(true)} className="mt-2.5 text-xs text-gray-400 hover:text-gray-600">or paste rows instead</button>
+          /* ── Step 1: choose file ── */
+          <>
+            <label
+              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-10 px-4 cursor-pointer transition-colors text-center ${
+                dragOver ? 'border-[#1e3a5f] bg-[#1e3a5f]/5' : csv ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-300 hover:border-[#1e3a5f]/50 hover:bg-gray-50'
+              }`}
+            >
+              {csv ? (
+                <>
+                  <Check className="w-6 h-6 text-emerald-600" />
+                  <p className="text-sm font-semibold text-emerald-700">{fileName || 'CSV ready'}</p>
+                  <p className="text-xs text-gray-400">drop another to replace</p>
+                </>
+              ) : (
+                <>
+                  <Upload className={`w-6 h-6 ${dragOver ? 'text-[#1e3a5f]' : 'text-gray-400'}`} />
+                  <p className="text-sm font-semibold text-gray-700">Drag & drop your CSV here</p>
+                  <p className="text-xs text-gray-400">or tap to choose a file</p>
+                </>
+              )}
+              <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
+            </label>
+
+            {showPaste ? (
+              <textarea value={csv} onChange={e => { setCsv(e.target.value); setFileName(null) }} rows={4}
+                placeholder={'Business,Contact,Phone,Email,Suburb\nAcme Dental,Sarah,0400 111 222,sarah@acme.com,Chermside'}
+                className="w-full mt-3 bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-2.5 text-[12px] font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
+            ) : (
+              <button onClick={() => setShowPaste(true)} className="mt-2.5 text-xs text-gray-400 hover:text-gray-600">or paste rows instead</button>
+            )}
+
+            {error && <div className="mt-3 rounded-xl bg-red-50 border border-red-100 px-3 py-2.5 text-sm text-red-600">{error}</div>}
+
+            <button onClick={preview} disabled={!csv.trim() || busy}
+              className="w-full mt-4 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
+              {busy ? 'Reading…' : 'Next: match columns'}
+            </button>
+            <p className="text-[11px] text-gray-400 text-center mt-2">You'll confirm which column is which · duplicates skipped</p>
+          </>
         )}
-
-        {error && <div className="mt-3 rounded-xl bg-red-50 border border-red-100 px-3 py-2.5 text-sm text-red-600">{error}</div>}
-
-        <button onClick={run} disabled={!csv.trim() || busy}
-          className="w-full mt-4 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
-          {busy ? 'Importing…' : 'Import leads'}
-        </button>
-        <p className="text-[11px] text-gray-400 text-center mt-2">Columns auto-detected · duplicates skipped</p>
       </div>
     </div>
   )

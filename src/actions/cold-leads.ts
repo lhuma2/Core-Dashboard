@@ -91,22 +91,43 @@ function parseCsv(text: string): string[][] {
   return rows
 }
 
-export async function importColdLeadsAction(csvText: string) {
+export interface ColumnMap {
+  business: number; contact: number; phone: number; email: number; suburb: number; industry: number
+}
+
+// Best-guess column mapping. Deliberately avoids picking an address column as
+// the business name (a "Business Address" header would otherwise win).
+function guessColumns(headers: string[]): ColumnMap {
+  const has = (h: string, ...subs: string[]) => subs.some(s => h.includes(s))
+  let business = headers.findIndex(h => has(h, 'business', 'company', 'organisation', 'organization', 'trading name') && !h.includes('address'))
+  if (business === -1) business = headers.findIndex(h => h === 'name' || h.endsWith(' name') && !h.includes('contact') && !h.includes('first') && !h.includes('last'))
+  return {
+    business,
+    contact:  detectColumn(headers, ['contact', 'owner', 'first name', 'full name', 'person', 'director', 'manager']),
+    phone:    detectColumn(headers, ['phone', 'mobile', 'number', 'tel']),
+    email:    detectColumn(headers, ['email', 'e-mail']),
+    suburb:   detectColumn(headers, ['suburb', 'city', 'locality', 'area']),
+    industry: detectColumn(headers, ['industry', 'category', 'type', 'niche', 'sector']),
+  }
+}
+
+// Step 1: parse and return columns + a guess so the user can confirm the mapping
+export async function previewColdLeadsCsvAction(csvText: string) {
+  const rows = parseCsv(csvText)
+  if (rows.length < 2) return { error: 'Could not find any rows. Make sure the header row is included.' }
+  const headers = rows[0].map(h => h.trim())
+  const guess = guessColumns(headers.map(h => h.toLowerCase()))
+  return { success: true as const, headers, guess, rowCount: rows.length - 1, sample: rows.slice(1, 4) }
+}
+
+// Step 2: import using an explicit mapping (falls back to a guess if omitted)
+export async function importColdLeadsAction(csvText: string, mapping?: ColumnMap) {
   const rows = parseCsv(csvText)
   if (rows.length < 2) return { error: 'Could not find any rows. Paste the CSV including the header row.' }
 
   const headers = rows[0].map(h => h.trim().toLowerCase())
-  const col = {
-    business: detectColumn(headers, ['business', 'company', 'name of business', 'organisation', 'organization']),
-    contact:  detectColumn(headers, ['contact', 'owner', 'first name', 'full name', 'person']),
-    phone:    detectColumn(headers, ['phone', 'mobile', 'number', 'tel']),
-    email:    detectColumn(headers, ['email', 'e-mail']),
-    suburb:   detectColumn(headers, ['suburb', 'city', 'location', 'area', 'address']),
-    industry: detectColumn(headers, ['industry', 'category', 'type', 'niche']),
-  }
-  // If no obvious business column, fall back to a generic "name" column
-  if (col.business === -1) col.business = detectColumn(headers, ['name'])
-  if (col.business === -1) return { error: `Couldn't find a business name column. Found columns: ${headers.join(', ')}` }
+  const col = mapping ?? guessColumns(headers)
+  if (col.business < 0) return { error: 'Choose which column holds the business name.' }
 
   const get = (r: string[], i: number) => (i >= 0 ? (r[i] ?? '').trim() || null : null)
 
