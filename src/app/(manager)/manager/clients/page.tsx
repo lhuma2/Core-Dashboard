@@ -30,7 +30,7 @@ export default async function ManagerClientsPage() {
 
   const { data: clients } = await (supabase as any)
     .from('clients')
-    .select('id, business_name, address, suburb, frequency, service_days, assigned_cleaner_id, profiles!clients_assigned_cleaner_id_fkey(full_name)')
+    .select('id, business_name, address, suburb, frequency, service_days, is_multi_site, assigned_cleaner_id, profiles!clients_assigned_cleaner_id_fkey(full_name)')
     .eq('active', true)
     .order('business_name')
 
@@ -61,7 +61,7 @@ export default async function ManagerClientsPage() {
                   </p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                      {freqLabel}
+                      {client.is_multi_site ? 'Multi-site' : freqLabel}
                     </span>
                     {days.map((d) => (
                       <span

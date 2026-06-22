@@ -57,7 +57,7 @@ export default async function ManagerClientDetailPage({ params }: { params: { id
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: profile }, { data: client }, { data: jobs }, { data: cleanerProfiles }] = await Promise.all([
+  const [{ data: profile }, { data: client }, { data: jobs }, { data: cleanerProfiles }, { data: sitesData }] = await Promise.all([
     (supabase as any)
       .from('profiles').select('full_name').eq('user_id', user.id).single(),
     (supabase as any)
@@ -76,10 +76,17 @@ export default async function ManagerClientDetailPage({ params }: { params: { id
       .select('id, full_name')
       .eq('role', 'cleaner')
       .order('full_name'),
+    (supabase as any)
+      .from('client_sites')
+      .select('*, profiles!client_sites_assigned_cleaner_id_fkey(full_name)')
+      .eq('client_id', params.id)
+      .order('sort_order', { ascending: true }),
   ])
 
   if (!client) notFound()
 
+  const sites: any[] = sitesData ?? []
+  const isMultiSite = client.is_multi_site && sites.length > 0
   const days: string[] = client.service_days ?? []
   const freqLabel = FREQUENCY_LABELS[client.frequency] ?? client.frequency ?? '—'
   const additionalServices: any[] = client.additional_services ?? []
@@ -114,21 +121,28 @@ export default async function ManagerClientDetailPage({ params }: { params: { id
           )}
 
 
-          {/* Frequency + days */}
-          <div className="flex items-start gap-3">
-            <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-gray-700">{freqLabel}</p>
-              {days.length > 0 && (
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {days.map((d) => DAY_LABELS[d.toLowerCase()] ?? d).join(', ')}
-                </p>
-              )}
+          {/* Frequency + days (single-site; multi-site shows per-site below) */}
+          {isMultiSite ? (
+            <div className="flex items-start gap-3">
+              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-gray-700">Multi-site · {sites.length} sites</p>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-start gap-3">
+              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-gray-700">{freqLabel}</p>
+                {days.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {days.map((d) => DAY_LABELS[d.toLowerCase()] ?? d).join(', ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Assigned cleaner */}
-          {client.profiles?.full_name && (
+          {!isMultiSite && client.profiles?.full_name && (
             <div className="flex items-start gap-3">
               <User className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
               <div>
@@ -138,29 +152,99 @@ export default async function ManagerClientDetailPage({ params }: { params: { id
             </div>
           )}
 
-          {/* Scope of work */}
-          <div className="flex items-start gap-3">
-            <ClipboardList className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Scope of Work</p>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                {client.scope_of_work || 'Not set'}
-              </p>
-            </div>
-          </div>
-
-          {/* Access details */}
-          {client.access_details && (
-            <div className="flex items-start gap-3">
-              <Key className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs text-gray-400 mb-0.5">Access Details</p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{client.access_details}</p>
+          {/* Scope + access (single-site only; per-site for multi-site below) */}
+          {!isMultiSite && (
+            <>
+              <div className="flex items-start gap-3">
+                <ClipboardList className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Scope of Work</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {client.scope_of_work || 'Not set'}
+                  </p>
+                </div>
               </div>
-            </div>
+              {client.access_details && (
+                <div className="flex items-start gap-3">
+                  <Key className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">Access Details</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{client.access_details}</p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
+
+      {/* Sites (multi-site clients) */}
+      {isMultiSite && (
+        <section className="mb-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            Sites · {sites.length}
+          </p>
+          <div className="space-y-2">
+            {sites.map((site: any) => {
+              const sDays: string[] = site.service_days ?? []
+              const sFreq = FREQUENCY_LABELS[site.frequency] ?? site.frequency ?? '—'
+              return (
+                <div key={site.id} className="bg-white rounded-2xl px-5 py-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-black">{site.site_name}</p>
+                      {(site.address || site.suburb) && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {[site.address, site.suburb].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full flex-shrink-0">{sFreq}</span>
+                  </div>
+
+                  {sDays.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {sDays.map((d) => (
+                        <span key={d} className="text-[11px] border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full">
+                          {DAY_LABELS[d.toLowerCase()] ?? d}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-3">
+                    <ClipboardList className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">Scope of Work</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{site.scope_of_work || 'Not set'}</p>
+                    </div>
+                  </div>
+
+                  {site.access_details && (
+                    <div className="flex items-start gap-3">
+                      <Key className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-400 mb-0.5">Access Details</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{site.access_details}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {site.profiles?.full_name && (
+                    <div className="flex items-start gap-3">
+                      <User className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-400">Assigned Cleaner</p>
+                        <p className="text-sm text-gray-700">{site.profiles.full_name}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Additional Services */}
       {additionalServices.length > 0 && (
