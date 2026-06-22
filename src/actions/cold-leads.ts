@@ -120,13 +120,18 @@ export async function previewColdLeadsCsvAction(csvText: string) {
   return { success: true as const, headers, guess, rowCount: rows.length - 1, sample: rows.slice(1, 4) }
 }
 
-// Step 2: import using an explicit mapping (falls back to a guess if omitted)
+// Step 2: import using an explicit mapping. A missing mapping means the call
+// came from an out-of-date (cached) version of the app — refuse it so stale
+// code can't silently import mis-mapped data, and prompt the user to update.
 export async function importColdLeadsAction(csvText: string, mapping?: ColumnMap) {
+  if (!mapping) {
+    return { error: 'Your app needs to update. Fully close Delta (swipe it away in the app switcher) and reopen it, then import again — you’ll get a step to match your columns.' }
+  }
+
   const rows = parseCsv(csvText)
   if (rows.length < 2) return { error: 'Could not find any rows. Paste the CSV including the header row.' }
 
-  const headers = rows[0].map(h => h.trim().toLowerCase())
-  const col = mapping ?? guessColumns(headers)
+  const col = mapping
   if (col.business < 0) return { error: 'Choose which column holds the business name.' }
 
   const get = (r: string[], i: number) => (i >= 0 ? (r[i] ?? '').trim() || null : null)
