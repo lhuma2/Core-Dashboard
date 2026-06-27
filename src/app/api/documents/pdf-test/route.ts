@@ -30,10 +30,19 @@ export async function GET() {
       return files
     }
     const all = walk('/tmp')
-    out.tmpTop = (() => { try { return fs.readdirSync('/tmp') } catch { return [] } })()
-    out.soFiles = all.filter(f => f.endsWith('.so') || f.includes('.so.')).slice(0, 40)
-    out.hasLibnss3 = all.some(f => f.includes('libnss3'))
-    out.totalTmpFiles = all.length
+    out.hasLibnss3InTmp = all.some(f => f.includes('libnss3'))
+
+    // Does the system base image provide libnss3 anywhere?
+    const sysDirs = ['/lib64', '/usr/lib64', '/lib', '/usr/lib', '/var/lang/lib', '/var/task']
+    out.systemLibnss3 = []
+    out.sysDirsExist = {}
+    for (const d of sysDirs) {
+      try {
+        const files = fs.readdirSync(d)
+        out.sysDirsExist[d] = true
+        for (const f of files) if (f.includes('libnss3') || f.includes('libnssutil3')) out.systemLibnss3.push(`${d}/${f}`)
+      } catch { out.sysDirsExist[d] = false }
+    }
     return NextResponse.json(out)
   } catch (e: any) {
     out.error = e?.message ?? String(e)
