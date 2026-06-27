@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, Check, Download, Loader2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Check, Download, Loader2, Send } from 'lucide-react'
 import { ProposalDocument } from '@/components/documents/render/ProposalDocument'
+import { SendProposalModal } from '@/components/documents/SendProposalModal'
 import { withProposalDefaults, type ProposalData, type ScopeGroup, type PricingRow } from '@/lib/documents/proposal'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
 
@@ -36,6 +37,7 @@ export function ProposalEditor({ id, initialData, status }: { id: string; initia
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previewWrap = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.55)
+  const [showSend, setShowSend] = useState(false)
 
   const set = useCallback(<K extends keyof ProposalData>(key: K, val: ProposalData[K]) => {
     setData(prev => ({ ...prev, [key]: val }))
@@ -97,11 +99,16 @@ export function ProposalEditor({ id, initialData, status }: { id: string; initia
             {saved === 'saving' ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : <><Check className="w-3 h-3 text-emerald-500" /> Saved</>}
           </span>
           <a href={`/documents/${id}/print`} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#1e3a5f] hover:bg-[#162d4a] text-white rounded-lg px-3 py-2 transition-colors">
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:border-gray-300 rounded-lg px-3 py-2 transition-colors">
             <Download className="w-3.5 h-3.5" /> PDF
           </a>
+          <button onClick={() => setShowSend(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#1e3a5f] hover:bg-[#162d4a] text-white rounded-lg px-3 py-2 transition-colors">
+            <Send className="w-3.5 h-3.5" /> Send
+          </button>
         </div>
       </div>
+      {showSend && <SendProposalModal id={id} onClose={() => setShowSend(false)} />}
 
       {/* Two-pane */}
       <div className="flex-1 flex min-h-0">
