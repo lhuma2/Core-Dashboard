@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const XERO_API_BASE = 'https://api.xero.com/api.xro/2.0'
 const XERO_TOKEN_URL = 'https://identity.xero.com/connect/token'
@@ -56,7 +56,7 @@ export interface XeroBankAccount {
 // ─── Token management ─────────────────────────────────────────────────────────
 
 export async function getXeroTokens(): Promise<XeroTokens | null> {
-  const supabase = createClient()
+  const supabase = createAdminClient()
   const { data, error } = await (supabase as any)
     .from('xero_tokens')
     .select('*')
@@ -108,7 +108,7 @@ async function refreshXeroTokens(row: XeroTokenRow): Promise<XeroTokens | null> 
     const tokenData = await res.json()
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000)
 
-    const supabase = createClient()
+    const supabase = createAdminClient()
     await (supabase as any)
       .from('xero_tokens')
       .update({
@@ -196,7 +196,7 @@ export async function getXeroAllTransactions(): Promise<XeroTransaction[]> {
 // ─── P&L derived from approved transactions only ──────────────────────────────
 
 export async function getApprovedPL(months = 3): Promise<XeroPLPeriod[]> {
-  const supabase = createClient()
+  const supabase = createAdminClient()
 
   // Get all approved transaction IDs
   const { data: approved } = await (supabase as any)

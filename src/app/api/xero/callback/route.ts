@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
   const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000)
 
   // Save — delete existing row first, then insert fresh
-  const supabase = createClient()
+  const supabase = createAdminClient()
   await (supabase as any).from('xero_tokens').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
   const { error: dbError } = await (supabase as any).from('xero_tokens').insert({

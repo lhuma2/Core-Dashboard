@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing xeroId or action' }, { status: 400 })
   }
 
-  const supabase = createClient()
+  const supabase = createAdminClient()
 
   if (action === 'approve') {
     const { error } = await (supabase as any)
@@ -55,7 +55,7 @@ export async function DELETE(request: NextRequest) {
   const xeroId = request.nextUrl.searchParams.get('xeroId')
   if (!xeroId) return NextResponse.json({ error: 'Missing xeroId' }, { status: 400 })
 
-  const supabase = createClient()
+  const supabase = createAdminClient()
   await (supabase as any).from('xero_approved_transactions').delete().eq('xero_id', xeroId)
   await (supabase as any).from('xero_ignored_transactions').delete().eq('xero_id', xeroId)
 
