@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = [
   '/client/login',
   '/api/cleaner-calendar',
   '/api/docusign/webhook',
+  '/api/docusign/test',
   '/survey',
 ]
 

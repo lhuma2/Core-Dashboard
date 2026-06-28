@@ -13,7 +13,7 @@ function cfg() {
     integrationKey: process.env.DOCUSIGN_INTEGRATION_KEY?.trim(),
     userId: process.env.DOCUSIGN_USER_ID?.trim(),
     accountId: process.env.DOCUSIGN_ACCOUNT_ID?.trim(),
-    rsaKey: process.env.DOCUSIGN_RSA_PRIVATE_KEY?.replace(/\\n/g, '\n').trim(),
+    rsaKey: process.env.DOCUSIGN_RSA_PRIVATE_KEY?.replace(/\\n/g, '\n').replace(/\r/g, '').trim(),
     oauthBase: (process.env.DOCUSIGN_OAUTH_BASE || 'account-d.docusign.com').trim(),
     apiBase: (process.env.DOCUSIGN_API_BASE || 'https://demo.docusign.net/restapi').trim(),
   }
