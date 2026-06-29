@@ -48,7 +48,7 @@ export function ClientShell({ children, clientName, userName, activePath, sites,
             <Image
               src="/logo-mark-white.png"
               alt="Delta Cleaning"
-              width={34}
+              width={80}
               height={34}
               className="object-contain flex-shrink-0"
               priority

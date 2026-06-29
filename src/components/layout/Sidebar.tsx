@@ -81,8 +81,8 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         <Image
           src="/logo-mark-white.png"
           alt="Delta Cleaning"
-          width={38}
-          height={38}
+          width={104}
+          height={44}
           className="object-contain"
           priority
         />

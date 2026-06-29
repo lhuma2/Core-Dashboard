@@ -69,8 +69,8 @@ export default function LoginPage() {
           <Image
             src="/logo-mark-white.png"
             alt="Delta Cleaning"
-            width={52}
-            height={52}
+            width={150}
+            height={63}
             className="object-contain invert"
             priority
           />
