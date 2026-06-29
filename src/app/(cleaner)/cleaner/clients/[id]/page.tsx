@@ -7,6 +7,8 @@ import { PortalShell } from '@/components/portal/PortalShell'
 import { StartCleanButton } from '@/components/portal/cleaner/StartCleanButton'
 import { SubmitJobForm } from '@/components/portal/cleaner/SubmitJobForm'
 import { FlagModal } from '@/components/portal/cleaner/FlagModal'
+import { CleanerSchedule } from '@/components/portal/cleaner/CleanerSchedule'
+import type { ScopeTask } from '@/lib/scope'
 import { MapPin, Calendar, Key, ClipboardList, CheckCircle2 } from 'lucide-react'
 import { getUpcomingDates, actionableDates, brisbaneTodayStr } from '@/lib/schedule'
 
@@ -87,6 +89,23 @@ export default async function CleanerClientPage({ params }: { params: { id: stri
   const isInProgress = todayJob?.status === 'in_progress' || todayJob?.status === 'flagged'
   const isCompleted  = todayJob?.status === 'completed'
 
+  // ── Scope-of-works checklist ──
+  const scope: ScopeTask[] = Array.isArray(client.scope) ? client.scope : []
+  const cleanDayKeys: string[] = (client.clean_days?.length
+    ? client.clean_days
+    : serviceDays.map((d: string) => d.slice(0, 3).replace(/^./, (c: string) => c.toUpperCase())))
+  const { data: comps } = await (supabase as any)
+    .from('schedule_completions')
+    .select('task_id')
+    .eq('client_id', params.id)
+    .eq('clean_date', today)
+    .eq('done', true)
+  const completedIds: string[] = (comps ?? []).map((r: any) => r.task_id)
+  const siteShort = [client.suburb, FREQ_LABELS[client.frequency] ?? client.frequency].filter(Boolean).join(' · ')
+  const dateLabel = new Date(today + 'T00:00:00').toLocaleDateString('en-AU', {
+    weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Australia/Brisbane',
+  })
+
   return (
     <PortalShell
       userName={profile.full_name}
@@ -97,6 +116,22 @@ export default async function CleanerClientPage({ params }: { params: { id: stri
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-black tracking-tight">{client.business_name}</h1>
       </div>
+
+      {/* Today's schedule checklist */}
+      {scope.length > 0 && (
+        <div className="mb-6">
+          <CleanerSchedule
+            clientId={params.id}
+            clientName={client.business_name}
+            siteShort={siteShort}
+            scope={scope}
+            cleanDays={cleanDayKeys}
+            todayISO={today}
+            dateLabel={dateLabel}
+            initialCompleted={completedIds}
+          />
+        </div>
+      )}
 
       {/* Client details */}
       <div className="space-y-3 mb-6">

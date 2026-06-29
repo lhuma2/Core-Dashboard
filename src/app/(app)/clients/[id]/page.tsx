@@ -5,6 +5,7 @@ import { getSettings } from '@/actions/settings'
 import { computeClientHealth } from '@/lib/health'
 import { ClientDocuments } from '@/components/clients/ClientDocuments'
 import { ClientSurveys } from '@/components/clients/ClientSurveys'
+import { ScopeEditor } from '@/components/clients/ScopeEditor'
 import { SendSurveyButton } from '@/components/clients/SendSurveyButton'
 import { ImportToPortalButton } from '@/components/clients/ImportToPortalButton'
 import { Button } from '@/components/ui/Button'
@@ -335,6 +336,17 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
           </div>
         </div>
       </div>
+
+      {/* Cleaning schedule & scope — drives the cleaner checklist */}
+      <ScopeEditor
+        clientId={params.id}
+        initialScope={Array.isArray(client.scope) ? client.scope : []}
+        initialCleanDays={
+          (client.clean_days?.length
+            ? client.clean_days
+            : ((client.service_days as string[]) ?? []).map((d) => d.slice(0, 3).replace(/^./, (c) => c.toUpperCase())))
+        }
+      />
 
       {/* Additional Services */}
       {((client as any).additional_services as AdditionalService[] | undefined)?.length ? (
