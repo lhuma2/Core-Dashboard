@@ -1,5 +1,10 @@
-import { formatAUD, formatAUDCompact } from '@/lib/formatters'
+import { formatAUDCompact } from '@/lib/formatters'
 import { VALUATION_MULTIPLE } from '@/lib/constants'
+
+// Whole-dollar currency (no cents) — keeps the headline KPI numbers short so they
+// don't overflow the narrow 2-column tiles on phones.
+const aud0 = (v: number) =>
+  new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(v)
 
 interface KPIGridProps {
   activeClients:     number
@@ -23,10 +28,10 @@ function KPITile({
   accentBar?: string
 }) {
   return (
-    <div className="group bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] hover:shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:-translate-y-0.5 transition-all duration-200 p-5 relative overflow-hidden">
+    <div className="group bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] hover:shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:-translate-y-0.5 transition-all duration-200 p-4 sm:p-5 relative overflow-hidden">
       <div className={`absolute top-0 left-0 w-full h-[3px] ${accentBar ?? 'bg-[#1e3a5f]/15'}`} />
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.14em]">{label}</p>
-      <p className={`font-display text-[28px] font-extrabold mt-2.5 leading-none tabular-nums tracking-tight ${valueColor}`}>{value}</p>
+      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.14em] truncate">{label}</p>
+      <p className={`font-display text-[22px] sm:text-[26px] xl:text-[28px] font-extrabold mt-2.5 leading-none tabular-nums tracking-tight whitespace-nowrap ${valueColor}`}>{value}</p>
       {subtext && <p className="text-xs text-gray-400 mt-2.5">{subtext}</p>}
     </div>
   )
@@ -45,12 +50,12 @@ export function KPIGrid({ activeClients, mrr, netMonthlyProfit, avgMarginPct, va
       />
       <KPITile
         label="Monthly Revenue"
-        value={formatAUD(mrr)}
+        value={aud0(mrr)}
         subtext={`${formatAUDCompact(mrr * 12)} ARR`}
       />
       <KPITile
         label="Net Profit / Month"
-        value={netMonthlyProfit != null ? formatAUD(netMonthlyProfit) : '—'}
+        value={netMonthlyProfit != null ? aud0(netMonthlyProfit) : '—'}
         subtext={
           netMonthlyProfit == null
             ? 'Add cost data to unlock'
