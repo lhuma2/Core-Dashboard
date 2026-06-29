@@ -8,6 +8,7 @@ const PUBLIC_ROUTES = [
   '/manager/login',
   '/cleaner/login',
   '/client/login',
+  '/auth/callback',
   '/api/cleaner-calendar',
   '/api/docusign/webhook',
   '/api/docusign/test',
