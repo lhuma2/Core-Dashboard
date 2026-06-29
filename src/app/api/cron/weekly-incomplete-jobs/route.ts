@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
+import { sendPushToRole } from '@/lib/push'
 import { getUpcomingDates } from '@/lib/schedule'
 
 // Vercel cron: runs every Monday at 8 AM Brisbane time (Monday 22:00 UTC Sun)
@@ -218,6 +219,18 @@ export async function GET(request: Request) {
       </div>
     </div>
   `
+
+  // Push heads-up to managers + admins (the detailed email is kept below).
+  const pushNote = {
+    title: `📋 ${totalIssues} incomplete job${totalIssues !== 1 ? 's' : ''} this week`,
+    body: [
+      incompleteList.length ? `${incompleteList.length} not completed` : '',
+      missingRecords.length ? `${missingRecords.length} with no record` : '',
+    ].filter(Boolean).join(' · ') || 'Review the weekly job report.',
+    url: '/dashboard',
+  }
+  sendPushToRole('manager', pushNote).catch(() => {})
+  sendPushToRole('admin', pushNote).catch(() => {})
 
   const subject = `📋 Weekly Report: ${totalIssues} incomplete job${totalIssues !== 1 ? 's' : ''} (${periodLabel})`
   const result  = await sendEmail(REPORT_EMAIL, subject, html)

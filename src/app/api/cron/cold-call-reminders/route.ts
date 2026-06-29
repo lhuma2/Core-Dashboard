@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
+import { sendPushToRole } from '@/lib/push'
 
 // Vercel cron: every weekday morning (Brisbane). Emails Jackson the day's
 // due follow-ups and booked walk-throughs from the cold-call deck.
@@ -63,6 +64,20 @@ export async function GET(request: Request) {
   </p>
 </div>`
 
+  // Push heads-up to managers + admins (taps through to the full list in the app).
+  const pushNote = {
+    title: `📞 ${due.length} cold-call follow-up${due.length === 1 ? '' : 's'} due today`,
+    body: [
+      walkthroughs.length ? `${walkthroughs.length} walk-through${walkthroughs.length === 1 ? '' : 's'}` : '',
+      followUps.length ? `${followUps.length} follow-up${followUps.length === 1 ? '' : 's'}` : '',
+      retries.length ? `${retries.length} to retry` : '',
+    ].filter(Boolean).join(' · ') || 'Tap to open today’s call list.',
+    url: '/calls',
+  }
+  sendPushToRole('manager', pushNote).catch(() => {})
+  sendPushToRole('admin', pushNote).catch(() => {})
+
+  // Detailed email kept — a push can't hold the full call-list table.
   const result = await sendEmail(
     REPORT_EMAIL,
     `${due.length} cold-call follow-up${due.length === 1 ? '' : 's'} due today`,

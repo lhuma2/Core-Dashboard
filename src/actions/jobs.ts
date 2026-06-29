@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { actionableDates } from '@/lib/schedule'
 
@@ -91,37 +90,30 @@ export async function submitJobAction(input: {
 
   if (jobErr) return { error: jobErr.message }
 
-  // Send admin notification email (non-blocking)
+  // Notify managers + admins by push (replaces the old admin email).
   try {
     const { data: jobData } = await (supabase as any)
       .from('job_assignments')
-      .select('scheduled_date, clients(business_name)')
+      .select('clients(business_name)')
       .eq('id', input.jobId)
       .single()
 
-    const clientName = jobData?.clients?.business_name ?? 'Unknown Client'
-    const date       = jobData?.scheduled_date ?? now.split('T')[0]
-    const cleanerName = profile.full_name ?? 'Unknown Cleaner'
-    const photoCount  = input.photoUrls.length
+    const clientName  = jobData?.clients?.business_name ?? 'a client'
+    const cleanerName = profile.full_name ?? 'A cleaner'
 
-    await sendEmail(
-      'hello@deltacleaning.com.au',
-      `Job Submitted — ${clientName} ${date}`,
-      `
-        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 20px; color: #111;">
-          <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Job Submitted</h2>
-          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <tr><td style="padding: 8px 0; color: #555; width: 120px;">Client</td><td style="padding: 8px 0; font-weight: 600;">${clientName}</td></tr>
-            <tr><td style="padding: 8px 0; color: #555;">Date</td><td style="padding: 8px 0;">${date}</td></tr>
-            <tr><td style="padding: 8px 0; color: #555;">Cleaner</td><td style="padding: 8px 0;">${cleanerName}</td></tr>
-            <tr><td style="padding: 8px 0; color: #555;">Photos</td><td style="padding: 8px 0;">${photoCount}</td></tr>
-            ${input.notes ? `<tr><td style="padding: 8px 0; color: #555; vertical-align: top;">Notes</td><td style="padding: 8px 0;">${input.notes}</td></tr>` : ''}
-          </table>
-        </div>
-      `
-    )
+    // "Didn't finish" = submitted with some checklist items left unticked.
+    const vals = Object.values(input.checklistCompleted ?? {})
+    const unfinished = vals.filter(v => !v).length
+    const allDone = vals.length > 0 && unfinished === 0
+
+    const payload = allDone
+      ? { title: '✅ Job completed', body: `${cleanerName} finished the clean at ${clientName}.`, url: '/manager/dashboard' }
+      : { title: '⚠️ Job left unfinished', body: `${cleanerName} submitted ${clientName} with ${unfinished} item${unfinished === 1 ? '' : 's'} not ticked off.`, url: '/manager/dashboard' }
+
+    sendPushToRole('manager', payload).catch(() => {})
+    sendPushToRole('admin', payload).catch(() => {})
   } catch {
-    // Email failure should not block job submission
+    // Notification failure should not block job submission
   }
 
   revalidatePath('/cleaner/dashboard')
