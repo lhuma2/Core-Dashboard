@@ -48,11 +48,6 @@ export function CleanerSchedule({
   const visitTasks = useMemo(() => scope.filter(t => t.frequency === 'visit'), [scope])
   const dueTasks   = useMemo(() => scope.filter(t => t.frequency !== 'visit' && t.day === day), [scope, day])
 
-  const todayAll = [...visitTasks, ...dueTasks]
-  const doneCount = todayAll.filter(t => done.has(t.id)).length
-  const totalCount = todayAll.length
-  const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0
-
   if (!scope.length) {
     return (
       <div className="bg-white rounded-2xl border border-dashed border-gray-200 py-12 text-center">
@@ -118,15 +113,10 @@ export function CleanerSchedule({
 
       {view === 'today' ? (
         <>
-          {/* progress */}
-          <div className="px-5 pt-4 pb-2">
-            <div className="flex items-baseline justify-between mb-2">
-              <div className="font-semibold text-[15px] text-slate-900">{doneCount >= totalCount && totalCount ? 'All done — nice work' : "Today's tasks"}</div>
-              <div className="text-xs text-slate-500">{doneCount} of {totalCount} done</div>
-            </div>
-            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-              <div className="h-full bg-slate-900 rounded-full transition-all duration-200" style={{ width: `${pct}%` }} />
-            </div>
+          {/* heading — this list is just a reference; ticking is optional */}
+          <div className="px-5 pt-4 pb-1">
+            <div className="font-semibold text-[15px] text-slate-900">Today&apos;s tasks</div>
+            <div className="text-xs text-slate-400 mt-0.5">A reference for the day — tick if you like. Only Start &amp; Finish are required.</div>
           </div>
 
           {/* task list */}
