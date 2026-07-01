@@ -17,18 +17,9 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
 
-    // Demo logins: typing "client" / "cleaner" / "manager" maps to a sandbox account
-    // (still requires the demo password). Lets you tour each portal with fake data.
-    const DEMO_EMAILS: Record<string, string> = {
-      client:  'demo.client@deltacleaning.com.au',
-      cleaner: 'demo.cleaner@deltacleaning.com.au',
-      manager: 'demo.manager@deltacleaning.com.au',
-    }
-    const key = login.toLowerCase()
-
     // Cleaners log in with just their username (e.g. "john.smith")
     // Admins/managers/clients use their full email address
-    const email = DEMO_EMAILS[key] ?? (login.includes('@') ? login : `${login}@delta-cleaner.internal`)
+    const email = login.includes('@') ? login : `${login}@delta-cleaner.internal`
 
     // First sign-in (admin namespace) just discovers the user's role
     const supabase = createClient('admin')

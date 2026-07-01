@@ -6,7 +6,7 @@ import {
   Phone, PhoneCall, PhoneMissed, MessageSquare, Mail, MailCheck,
   CalendarClock, Footprints, Trash2, Plus, Search, X, Check,
   ThumbsDown, Flame, Upload, MapPin, Building2, User, Clock,
-  StickyNote, ChevronDown, RotateCcw, TrendingUp, Sparkles,
+  StickyNote, ChevronDown, RotateCcw, TrendingUp,
 } from 'lucide-react'
 import {
   importColdLeadsAction, previewColdLeadsCsvAction, logCallAction, deleteColdLeadAction,
@@ -118,54 +118,6 @@ function CommsHistory({ comms }: { comms: CommsEntry[] }) {
             </div>
           ))}
         </div>
-      )}
-    </div>
-  )
-}
-
-// Deterministic pre-call talking points — tuned a little by industry, no AI needed.
-function talkingPoints(lead: ColdLead): string[] {
-  const pts: string[] = []
-  const ind = (lead.industry || '').toLowerCase()
-  if (/dental|medical|doctor|clinic|health|vet|physio|pharм|pharmacy/.test(ind))
-    pts.push('Lead with hygiene + infection control — clinics want spotless, compliant cleaning.')
-  else if (/real ?estate|property|realty/.test(ind))
-    pts.push('Angle: a sharp office for walk-ins, plus presentation cleans for inspections.')
-  else if (/gym|fitness|studio/.test(ind))
-    pts.push('Angle: high-traffic sanitising and change-room hygiene.')
-  else if (/cafe|restaurant|food|hospitality|bakery/.test(ind))
-    pts.push('Angle: kitchen + front-of-house hygiene, council-ready.')
-  else if (/office|account|legal|law|finance|corporate|insurance/.test(ind))
-    pts.push('Angle: reliable after-hours office cleaning with no disruption.')
-  else if (/warehouse|industrial|factory|workshop/.test(ind))
-    pts.push('Angle: floors, amenities and bins kept on top of — safe and tidy.')
-  else
-    pts.push('Angle: reliable, fixed-price commercial cleaning with no lock-in.')
-
-  pts.push('Offer a free 15-minute site visit and a fixed monthly price.')
-  if (lead.has_spoken) pts.push('You’ve already spoken — aim to book the walk-through today.')
-  else if (lead.call_count > 0) pts.push(`Attempt #${lead.call_count + 1} — reference your last note if they remember you.`)
-  if (lead.follow_up_note) pts.push(`Last note: “${lead.follow_up_note}”.`)
-  return pts
-}
-
-function CallPrep({ lead }: { lead: ColdLead }) {
-  const [open, setOpen] = useState(false)
-  const points = talkingPoints(lead)
-  return (
-    <div className="mt-3 rounded-xl border border-[#1e3a5f]/15 bg-[#1e3a5f]/[0.03] overflow-hidden">
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-[#1e3a5f]/[0.05] transition-colors">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1e3a5f]">
-          <Sparkles className="w-3.5 h-3.5" /> Before you call
-        </span>
-        <ChevronDown className={`w-4 h-4 text-[#1e3a5f]/60 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <ul className="px-3 pb-3 pt-1 space-y-1.5 text-[13px] text-gray-700">
-          {points.map((p, i) => (
-            <li key={i} className="flex gap-2"><span className="text-[#1e3a5f] flex-shrink-0">•</span><span className="leading-snug">{p}</span></li>
-          ))}
-        </ul>
       )}
     </div>
   )
@@ -368,9 +320,6 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
 
         {flash && <p className="text-xs font-medium text-emerald-600 mt-3">{flash}</p>}
 
-        {/* Pre-call brief */}
-        {!logging && !pickDate && !emailPreview && <CallPrep lead={lead} />}
-
         {/* Action row */}
         {!logging && !pickDate && !emailPreview && (
           <div className="flex items-center gap-2 mt-4">
@@ -472,10 +421,10 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
             <input type="date" value={date} min={today} onChange={e => setDate(e.target.value)}
               className="w-full bg-white border border-gray-200 text-gray-900 rounded-xl px-3 py-3 text-[16px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
             <input type="text" value={note} onChange={e => setNote(e.target.value)}
-              placeholder={pickDate === 'walkthrough' ? 'e.g. 10am, ask for Sarah' : 'e.g. call back after 2pm'}
+              placeholder={pickDate === 'walkthrough' ? 'e.g. 10am, ask for Sarah' : 'Add a note (required) — e.g. call back after 2pm'}
               className="w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-3 text-[16px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
             <div className="flex gap-2">
-              <button onClick={outcomeWithDate} disabled={!date || !!busy}
+              <button onClick={outcomeWithDate} disabled={!date || (pickDate === 'follow_up' && !note.trim()) || !!busy}
                 className="flex-1 bg-[#1e3a5f] text-white text-sm font-semibold rounded-xl py-2.5 disabled:opacity-40 active:scale-[0.98] transition-all">
                 {busy ? 'Saving…' : 'Save'}
               </button>
