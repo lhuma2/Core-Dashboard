@@ -90,25 +90,34 @@ export async function submitJobAction(input: {
 
   if (jobErr) return { error: jobErr.message }
 
-  // Notify managers + admins by push (replaces the old admin email).
+  // Notify managers + admins by push. Ticking the scope checklist is optional, so a
+  // submitted job is simply "complete" — the notification shows who + how long it took.
   try {
     const { data: jobData } = await (supabase as any)
       .from('job_assignments')
-      .select('clients(business_name)')
+      .select('clients(business_name), client_sites(site_name), job_submissions(started_at)')
       .eq('id', input.jobId)
       .single()
 
     const clientName  = jobData?.clients?.business_name ?? 'a client'
+    const siteName    = jobData?.client_sites?.site_name
+    const label       = siteName ? `${clientName} — ${siteName}` : clientName
     const cleanerName = profile.full_name ?? 'A cleaner'
 
-    // "Didn't finish" = submitted with some checklist items left unticked.
-    const vals = Object.values(input.checklistCompleted ?? {})
-    const unfinished = vals.filter(v => !v).length
-    const allDone = vals.length > 0 && unfinished === 0
+    // How long it took (from start to submit)
+    const sub = Array.isArray(jobData?.job_submissions) ? jobData.job_submissions[0] : jobData?.job_submissions
+    let took = ''
+    if (sub?.started_at) {
+      const mins = Math.max(1, Math.round((new Date(now).getTime() - new Date(sub.started_at).getTime()) / 60000))
+      const h = Math.floor(mins / 60), m = mins % 60
+      took = h > 0 ? `${h}h ${m}m` : `${m}m`
+    }
 
-    const payload = allDone
-      ? { title: '✅ Job completed', body: `${cleanerName} finished the clean at ${clientName}.`, url: '/manager/dashboard' }
-      : { title: '⚠️ Job left unfinished', body: `${cleanerName} submitted ${clientName} with ${unfinished} item${unfinished === 1 ? '' : 's'} not ticked off.`, url: '/manager/dashboard' }
+    const payload = {
+      title: `${label} marked complete by ${cleanerName}`,
+      body:  took ? `Took ${took}.` : 'Clean submitted.',
+      url:   '/manager/dashboard',
+    }
 
     sendPushToRole('manager', payload).catch(() => {})
     sendPushToRole('admin', payload).catch(() => {})

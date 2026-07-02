@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
-import { sendPushToRole } from '@/lib/push'
+import { sendPushToRole, sendPushToUser } from '@/lib/push'
 import { getUpcomingDates } from '@/lib/schedule'
 
 // Vercel cron: runs every Monday at 8 AM Brisbane time (Monday 22:00 UTC Sun)
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   // ── 1. Job assignments that exist but weren't completed ───────────────────
   const { data: incompleteJobs, error: jobsError } = await (supabase as any)
     .from('job_assignments')
-    .select('id, scheduled_date, status, client_id, clients(business_name, suburb), profiles(full_name)')
+    .select('id, scheduled_date, status, client_id, clients(business_name, suburb), client_sites(site_name), profiles(full_name, user_id)')
     .gte('scheduled_date', weekAgo)
     .lt('scheduled_date', today)
     .neq('status', 'completed')
@@ -231,6 +231,20 @@ export async function GET(request: Request) {
   }
   sendPushToRole('manager', pushNote).catch(() => {})
   sendPushToRole('admin', pushNote).catch(() => {})
+
+  // Also nudge each assigned cleaner about their own missed clean. Cleaners are push-only
+  // (their .internal emails aren't real inboxes; the app already forces notifications on).
+  for (const j of incompleteList) {
+    const uid = j.profiles?.user_id
+    if (!uid) continue
+    const site  = j.client_sites?.site_name
+    const label = site ? `${j.clients?.business_name ?? 'a client'} — ${site}` : (j.clients?.business_name ?? 'a client')
+    sendPushToUser(uid, {
+      title: 'Please mark off your clean',
+      body:  `${label} (${formatDate(j.scheduled_date)}) is still open — mark it done, or flag it if it was missed.`,
+      url:   '/cleaner/dashboard',
+    }).catch(() => {})
+  }
 
   const subject = `📋 Weekly Report: ${totalIssues} incomplete job${totalIssues !== 1 ? 's' : ''} (${periodLabel})`
   const result  = await sendEmail(REPORT_EMAIL, subject, html)
