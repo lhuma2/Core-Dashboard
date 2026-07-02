@@ -115,6 +115,23 @@ export async function submitSignatureAction(code: string, typedName: string) {
   return { success: true, date: auDate(signedAt) }
 }
 
+// ─── Ensure a signing link exists (backs the editor's "Copy signing link") ─────
+// Idempotent: mints a sign_code once so the /sign/<code> link is ready to copy,
+// without emailing or changing the document's status.
+export async function ensureSignCode(id: string): Promise<string | null> {
+  const db = createAdminClient() as any
+  const { data: doc } = await db
+    .from('proposal_documents')
+    .select('id, kind, sign_code, data')
+    .eq('id', id).maybeSingle()
+  if (!doc || doc.kind !== 'agreement') return null
+  if (doc.sign_code) return doc.sign_code
+  const agreement = withAgreementDefaults(doc.data)
+  const code = await uniqueSignCode(db, agreement.clientName)
+  await db.from('proposal_documents').update({ sign_code: code }).eq('id', id)
+  return code
+}
+
 // ─── Email templates ───────────────────────────────────────────────────────────
 
 function inviteEmail(a: AgreementData, link: string, message?: string): string {

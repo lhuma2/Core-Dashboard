@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Trash2, Check, Download, Loader2, PenLine } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Check, Download, Loader2, PenLine, Link2 } from 'lucide-react'
 import { AgreementDocument } from '@/components/documents/render/AgreementDocument'
 import { withAgreementDefaults, type AgreementData } from '@/lib/documents/agreement'
 import type { ScopeGroup } from '@/lib/documents/proposal'
-import { saveAgreementDocAction } from '@/actions/proposal-docs'
+import { saveAgreementDocAction, setDocStatusAction } from '@/actions/proposal-docs'
 import { SendAgreementModal } from '@/components/documents/SendAgreementModal'
 
 const inputCls = 'w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400'
@@ -19,14 +19,26 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return <div className="border-b border-gray-100 pb-5 mb-5"><p className="font-display text-sm font-bold text-gray-900 mb-3">{title}</p><div className="space-y-3">{children}</div></div>
 }
 
-export function AgreementEditor({ id, initialData, status }: { id: string; initialData: AgreementData; status: string }) {
+export function AgreementEditor({ id, initialData, status, signCode }: { id: string; initialData: AgreementData; status: string; signCode?: string | null }) {
   const [data, setData] = useState<AgreementData>(withAgreementDefaults(initialData))
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('idle')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previewWrap = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.55)
   const [showSend, setShowSend] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit')
+
+  function copySignLink() {
+    if (!signCode) return
+    const link = `${window.location.origin}/sign/${signCode}`
+    navigator.clipboard?.writeText(link).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2200)
+      // Grabbing the link to send it counts as issuing it — reflect that on the doc.
+      if (status === 'draft') setDocStatusAction(id, 'out_for_signature').catch(() => {})
+    }).catch(() => {})
+  }
 
   const set = useCallback(<K extends keyof AgreementData>(key: K, val: AgreementData[K]) => setData(prev => ({ ...prev, [key]: val })), [])
 
@@ -73,8 +85,12 @@ export function AgreementEditor({ id, initialData, status }: { id: string; initi
             <Download className="w-3.5 h-3.5" /> PDF
           </a>
           <button onClick={() => setShowSend(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#1e3a5f] hover:bg-[#162d4a] text-white rounded-lg px-3 py-2 transition-colors">
-            <PenLine className="w-3.5 h-3.5" /> Send for signature
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:border-gray-300 rounded-lg px-3 py-2 transition-colors">
+            <PenLine className="w-3.5 h-3.5" /> Email it
+          </button>
+          <button onClick={copySignLink} disabled={!signCode}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#1e3a5f] hover:bg-[#162d4a] text-white rounded-lg px-3 py-2 transition-colors disabled:opacity-40">
+            {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Link2 className="w-3.5 h-3.5" /> Copy signing link</>}
           </button>
         </div>
       </div>

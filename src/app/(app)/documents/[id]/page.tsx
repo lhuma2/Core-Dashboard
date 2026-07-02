@@ -7,6 +7,7 @@ import { ProposalEditor } from '@/components/documents/ProposalEditor'
 import { AgreementEditor } from '@/components/documents/AgreementEditor'
 import { withProposalDefaults } from '@/lib/documents/proposal'
 import { withAgreementDefaults } from '@/lib/documents/agreement'
+import { ensureSignCode } from '@/actions/signing'
 
 export default async function DocumentEditorPage({ params }: { params: { id: string } }) {
   const db = createAdminClient() as any
@@ -14,7 +15,8 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
   if (!doc) notFound()
 
   if (doc.kind === 'agreement') {
-    return <AgreementEditor id={doc.id} status={doc.status} initialData={withAgreementDefaults(doc.data)} />
+    const signCode = await ensureSignCode(doc.id)
+    return <AgreementEditor id={doc.id} status={doc.status} initialData={withAgreementDefaults(doc.data)} signCode={signCode} />
   }
   return <ProposalEditor id={doc.id} status={doc.status} initialData={withProposalDefaults(doc.data)} />
 }
