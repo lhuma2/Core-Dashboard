@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
-import { sendPushToRole, sendPushToUser } from '@/lib/push'
+import { sendPushToRole } from '@/lib/push'
 import { getUpcomingDates } from '@/lib/schedule'
 
 // Vercel cron: runs every Monday at 8 AM Brisbane time (Monday 22:00 UTC Sun)
@@ -156,97 +156,44 @@ export async function GET(request: Request) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.deltacleaning.com.au'
 
+  const jobCards = incompleteList.map((j: any) => {
+    const site    = j.client_sites?.site_name
+    const label   = site ? `${j.clients?.business_name ?? 'a client'} — ${site}` : (j.clients?.business_name ?? 'a client')
+    const cleaner = j.profiles?.full_name ?? 'No cleaner assigned'
+    return `
+      <div style="border:1px solid #eef2f6;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <p style="margin:0;font-weight:700;color:#0f172a;font-size:14px;">${label}</p>
+        <p style="margin:4px 0 0;color:#64748b;font-size:12px;">${cleaner} · ${formatDate(j.scheduled_date)}</p>
+      </div>`
+  }).join('')
+
   const html = `
-    <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;padding:32px 20px;color:#111;">
-      <div style="background:#1e3a5f;padding:20px 24px;border-radius:8px 8px 0 0;">
-        <h2 style="color:white;margin:0;font-size:18px;">📋 Weekly Job Report — ${periodLabel}</h2>
-        <p style="color:#93c5fd;margin:6px 0 0;font-size:13px;">Jobs not marked complete</p>
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px 18px;color:#0f172a;">
+      <div style="background:#0b1320;border-radius:12px 12px 0 0;padding:22px 26px;">
+        <p style="margin:0;color:#93c5fd;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;">Delta Cleaning · Alert</p>
+        <h1 style="margin:6px 0 0;color:#fff;font-size:20px;">${totalIssues} clean${totalIssues !== 1 ? 's' : ''} not marked off</h1>
       </div>
-      <div style="background:white;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;">
-
-        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:12px 16px;margin-bottom:20px;">
-          <p style="margin:0;font-size:14px;color:#991b1b;font-weight:600;">
-            ${totalIssues} incomplete job${totalIssues !== 1 ? 's' : ''} found this week
-          </p>
-          <p style="margin:4px 0 0;font-size:12px;color:#b91c1c;">
-            Review each one and mark as complete if the clean was done.
-          </p>
-        </div>
-
-        ${incompleteList.length > 0 ? `
-        <h3 style="font-size:13px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">
-          Job records not completed (${incompleteList.length})
-        </h3>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
-          <thead>
-            <tr style="background:#f9fafb;">
-              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;border-bottom:1px solid #e5e7eb;text-transform:uppercase;">Client</th>
-              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;border-bottom:1px solid #e5e7eb;text-transform:uppercase;">Date</th>
-              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;border-bottom:1px solid #e5e7eb;text-transform:uppercase;">Cleaner</th>
-              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;border-bottom:1px solid #e5e7eb;text-transform:uppercase;">Status</th>
-            </tr>
-          </thead>
-          <tbody>${incompleteRows}</tbody>
-        </table>
-        ` : ''}
-
-        ${missingRecords.length > 0 ? `
-        <h3 style="font-size:13px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">
-          Scheduled cleans with no job record (${missingRecords.length})
-        </h3>
-        <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">These dates appeared on the client's schedule but no job was ever created or assigned.</p>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
-          <thead>
-            <tr style="background:#f9fafb;">
-              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;border-bottom:1px solid #e5e7eb;text-transform:uppercase;">Client</th>
-              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;border-bottom:1px solid #e5e7eb;text-transform:uppercase;">Date</th>
-              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;border-bottom:1px solid #e5e7eb;text-transform:uppercase;">Assigned Cleaner</th>
-              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;border-bottom:1px solid #e5e7eb;text-transform:uppercase;">Status</th>
-            </tr>
-          </thead>
-          <tbody>${missingRows}</tbody>
-        </table>
-        ` : ''}
-
-        <a href="${appUrl}/dashboard"
-           style="display:inline-block;background:#1e3a5f;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
-          Go to Dashboard →
-        </a>
-
-        <p style="font-size:11px;color:#9ca3af;margin-top:20px;border-top:1px solid #f3f4f6;padding-top:16px;">
-          Sent every Monday morning · Delta Cleaning Operations Hub
-        </p>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:26px;">
+        <p style="font-size:13px;color:#64748b;margin:0 0 16px;">Mark each off if it was done — keeps billing and reports accurate.</p>
+        ${jobCards}
+        ${missingRecords.length ? `<p style="font-size:12px;color:#94a3b8;margin:14px 0 0;">+ ${missingRecords.length} scheduled clean${missingRecords.length !== 1 ? 's' : ''} with no job record.</p>` : ''}
+        <a href="${appUrl}/dashboard" style="display:inline-block;margin-top:18px;background:#0b1320;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Mark it off →</a>
+        <p style="font-size:11px;color:#94a3b8;margin:22px 0 0;border-top:1px solid #f1f5f9;padding-top:14px;">Sent Monday mornings · Delta Cleaning Operations Hub</p>
       </div>
     </div>
   `
 
-  // Push heads-up to managers + admins (the detailed email is kept below).
-  const pushNote = {
-    title: `📋 ${totalIssues} incomplete job${totalIssues !== 1 ? 's' : ''} this week`,
+  // Admin only — managers and cleaners are intentionally NOT notified about missed jobs.
+  sendPushToRole('admin', {
+    title: `${totalIssues} clean${totalIssues !== 1 ? 's' : ''} not marked off`,
     body: [
       incompleteList.length ? `${incompleteList.length} not completed` : '',
       missingRecords.length ? `${missingRecords.length} with no record` : '',
     ].filter(Boolean).join(' · ') || 'Review the weekly job report.',
     url: '/dashboard',
-  }
-  sendPushToRole('manager', pushNote).catch(() => {})
-  sendPushToRole('admin', pushNote).catch(() => {})
+  }).catch(() => {})
 
-  // Also nudge each assigned cleaner about their own missed clean. Cleaners are push-only
-  // (their .internal emails aren't real inboxes; the app already forces notifications on).
-  for (const j of incompleteList) {
-    const uid = j.profiles?.user_id
-    if (!uid) continue
-    const site  = j.client_sites?.site_name
-    const label = site ? `${j.clients?.business_name ?? 'a client'} — ${site}` : (j.clients?.business_name ?? 'a client')
-    sendPushToUser(uid, {
-      title: 'Please mark off your clean',
-      body:  `${label} (${formatDate(j.scheduled_date)}) is still open — mark it done, or flag it if it was missed.`,
-      url:   '/cleaner/dashboard',
-    }).catch(() => {})
-  }
-
-  const subject = `📋 Weekly Report: ${totalIssues} incomplete job${totalIssues !== 1 ? 's' : ''} (${periodLabel})`
+  const subject = `Missed cleans — ${totalIssues} to mark off (${periodLabel})`
   const result  = await sendEmail(REPORT_EMAIL, subject, html)
 
   return NextResponse.json({
