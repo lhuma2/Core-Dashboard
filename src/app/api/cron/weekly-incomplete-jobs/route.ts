@@ -126,34 +126,6 @@ export async function GET(request: Request) {
     new Date(new Date(today + 'T00:00:00').getTime() - 86_400_000).toISOString().split('T')[0]
   )}`
 
-  const incompleteRows = incompleteList.map((j: any) => {
-    const client  = j.clients?.business_name ?? 'Unknown'
-    const suburb  = j.clients?.suburb ? ` (${j.clients.suburb})` : ''
-    const cleaner = j.profiles?.full_name ?? 'No cleaner assigned'
-    const status  = j.status === 'not_started' ? 'Never started' : 'Started but not submitted'
-    return `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-weight:600;color:#111827;">${client}${suburb}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280;">${formatDate(j.scheduled_date)}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280;">${cleaner}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;">
-        <span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">${status}</span>
-      </td>
-    </tr>`
-  }).join('')
-
-  const missingRows = missingRecords.map((item) => {
-    const suburb  = item.suburb ? ` (${item.suburb})` : ''
-    const cleaner = item.cleanerName ?? 'No cleaner assigned'
-    return `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-weight:600;color:#111827;">${item.clientName}${suburb}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280;">${formatDate(item.date)}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280;">${cleaner}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;">
-        <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">No record created</span>
-      </td>
-    </tr>`
-  }).join('')
-
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.deltacleaning.com.au'
 
   const jobCards = incompleteList.map((j: any) => {

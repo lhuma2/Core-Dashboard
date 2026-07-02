@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getSettings } from '@/actions/settings'
 import { computeClientHealth } from '@/lib/health'
 import { ClientDocuments } from '@/components/clients/ClientDocuments'
@@ -27,6 +28,23 @@ import {
 } from 'lucide-react'
 import type { ServiceType, AdditionalService } from '@/types/app'
 import { ADDITIONAL_SERVICE_MULTIPLIERS as MULT, calcAdditionalMonthlyRevenue, calcAdditionalMonthlyLabour } from '@/types/app'
+
+// Derive an expiry = start date + initial term (e.g. "12 months" / "2 years").
+// Used as a fallback when no explicit contract_expiry_date is set on the client.
+function deriveExpiry(startDate: string | null, term: string | null): Date | null {
+  if (!startDate) return null
+  const d = new Date(startDate + 'T00:00:00')
+  if (isNaN(d.getTime())) return null
+  const m = (term ?? '').match(/(\d+)\s*(year|month|week)/i)
+  let months = 12
+  if (m) {
+    const n = parseInt(m[1], 10)
+    const u = m[2].toLowerCase()
+    months = u.startsWith('year') ? n * 12 : u.startsWith('week') ? Math.max(1, Math.round(n / 4.345)) : n
+  }
+  d.setMonth(d.getMonth() + months)
+  return d
+}
 
 export default async function ClientProfilePage({ params }: { params: { id: string } }) {
   const supabase = createClient()
@@ -68,6 +86,13 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
     .eq('client_id', params.id).eq('type', 'contract')
     .order('created_at', { ascending: false }).limit(1).maybeSingle()
 
+  // Signed service agreement (our own in-app signing flow) — the openable signed contract
+  const { data: signedAgreement } = await (createAdminClient() as any)
+    .from('proposal_documents')
+    .select('id, ref_number, signed_name, signed_at, data')
+    .eq('client_id', params.id).eq('kind', 'agreement').eq('status', 'signed')
+    .order('signed_at', { ascending: false }).limit(1).maybeSingle()
+
   if (!clientRes.data) notFound()
 
   const client     = clientRes.data       as any
@@ -95,7 +120,8 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
   const monthlyProfit   = client.monthly_profit       ?? null
   const marginPct       = client.margin_pct           ?? null
   const profileComplete = client.profile_complete     ?? false
-  const contractExpiry  = client.contract_expiry_date ?? null
+  const derivedExpiry   = deriveExpiry(client.start_date ?? null, signedAgreement?.data?.initialTerm ?? null)
+  const contractExpiry  = client.contract_expiry_date ?? (derivedExpiry ? derivedExpiry.toISOString().split('T')[0] : null)
 
   const daysToExpiry = contractExpiry
     ? Math.ceil((new Date(contractExpiry).getTime() - Date.now()) / 86_400_000)
@@ -309,10 +335,15 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">Contract</h3>
           <div className="space-y-2.5">
-            {/* Signed contract PDF — open on the profile */}
+            {/* Signed contract — open the signed service agreement (or an uploaded contract) */}
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-400">Signed contract</span>
-              {contractDoc ? (
+              {signedAgreement ? (
+                <a href={`/documents/${signedAgreement.id}/print`} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-[#1e3a5f] hover:underline">
+                  <FileText className="w-3.5 h-3.5" /> Open contract
+                </a>
+              ) : contractDoc ? (
                 <a href={`/api/file?url=${Buffer.from(contractDoc.file_url).toString('base64url')}`} target="_blank" rel="noreferrer"
                   className="inline-flex items-center gap-1 font-medium text-[#1e3a5f] hover:underline">
                   <FileText className="w-3.5 h-3.5" /> Open PDF
@@ -322,6 +353,8 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
               )}
             </div>
             {[
+              { label: 'Signed by',     value: signedAgreement?.signed_name ?? null },
+              { label: 'Signed on',     value: signedAgreement?.signed_at ? formatDate(signedAgreement.signed_at) : null },
               { label: 'Frequency',     value: client.frequency ? FREQUENCY_LABELS[client.frequency as keyof typeof FREQUENCY_LABELS] : null },
               { label: 'Days / week',   value: client.days_per_week != null ? `${client.days_per_week} ${client.days_per_week === 1 ? 'day' : 'days'}` : null },
               { label: 'Visits / month', value: client.visits_per_month != null ? Number(client.visits_per_month).toFixed(2) : null },

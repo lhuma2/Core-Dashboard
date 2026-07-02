@@ -7,6 +7,7 @@ const NAVY = '#0F172A'
 const SANS = "'Hanken Grotesk', system-ui, sans-serif"
 const DISPLAY = "'Schibsted Grotesk', system-ui, sans-serif"
 const MONO = "'Space Mono', monospace"
+const SCRIPT = "'Caveat', cursive"
 const WORDMARK_BLACK = '/proposal-assets/wordmark-black.png'
 const WORDMARK_WHITE = '/proposal-assets/wordmark-white.png'
 const MARK_WHITE = '/proposal-assets/mark-white.png'
@@ -15,11 +16,10 @@ const page: CSSProperties = { position: 'relative', width: 794, minHeight: 1123,
 const navyPage: CSSProperties = { position: 'relative', width: 794, minHeight: 1123, background: NAVY, color: '#fff', overflow: 'hidden', flexShrink: 0, boxShadow: '0 8px 40px rgba(15,23,42,.22)' }
 const monoEyebrow: CSSProperties = { fontFamily: MONO, fontSize: 11, letterSpacing: '.2em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 14 }
 
-// Invisible anchor token for DocuSign tab placement (white, tiny — in the PDF
-// text layer but not visible). DocuSign finds the string and anchors tabs to it.
-const Anchor = ({ t }: { t: string }) => (
-  <span style={{ color: '#ffffff', fontSize: 1, lineHeight: 0, userSelect: 'none' }}>{t}</span>
-)
+export interface SignatureFill {
+  name: string   // typed full name → rendered as a script signature
+  date: string   // auto-stamped when the client signs
+}
 
 function Header({ label }: { label: string }) {
   return (
@@ -66,7 +66,7 @@ function ScopeCol({ title, items }: { title: string; items: string[] }) {
   )
 }
 
-export function AgreementDocument({ data }: { data: AgreementData }) {
+export function AgreementDocument({ data, signature }: { data: AgreementData; signature?: SignatureFill | null }) {
   const c1to6 = AGREEMENT_CLAUSES.slice(0, 6)
   const c7to13 = AGREEMENT_CLAUSES.slice(6, 13)
   const c14to19 = AGREEMENT_CLAUSES.slice(13, 19)
@@ -175,28 +175,32 @@ export function AgreementDocument({ data }: { data: AgreementData }) {
           <p style={{ margin: '16px 0 0', fontSize: 13.5, lineHeight: 1.65, color: '#475569', maxWidth: 620 }}>By signing below, each party acknowledges it has read and agrees to be bound by this Agreement, including the Schedule of Particulars and Schedule 1, as at the date written below.</p>
         </div>
         <div style={{ marginTop: 46, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
-          {/* Provider block — anchor for DocuSign provider tabs */}
+          {/* Provider block — Delta counter-signs on issue */}
           <div data-sign-provider style={{ border: '1px solid #E2E8F0', borderRadius: 12, padding: 30 }}>
             <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 18 }}>Service Provider</div>
             <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 16 }}>{data.providerName}</div>
             <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 30 }}>ABN {data.providerABN}</div>
-            <div style={{ borderBottom: `1px solid ${NAVY}`, height: 38 }}><Anchor t="DSPROVIDERSIGN" /></div>
+            <div style={{ borderBottom: `1px solid ${NAVY}`, height: 38, display: 'flex', alignItems: 'flex-end' }}>
+              <span style={{ fontFamily: SCRIPT, fontSize: 30, lineHeight: 1, color: NAVY, paddingBottom: 2 }}>{data.contactName}</span>
+            </div>
             <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Signature</div>
-            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24 }} />
-            <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Name · {data.contactName}, {data.contactRole}</div>
-            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24 }}><Anchor t="DSPROVIDERDATE" /></div>
+            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24, display: 'flex', alignItems: 'flex-end', fontSize: 13.5 }}>{data.contactName}</div>
+            <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Name · {data.contactRole}</div>
+            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24, display: 'flex', alignItems: 'flex-end', fontSize: 13.5 }}>{signature?.date ?? data.agreementDate}</div>
             <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Date</div>
           </div>
-          {/* Client block — anchor for DocuSign client tabs */}
-          <div data-sign-client style={{ border: '1px solid #E2E8F0', borderRadius: 12, padding: 30 }}>
+          {/* Client block — filled in when the client signs via the secure link */}
+          <div data-sign-client style={{ border: `1px solid ${signature ? NAVY : '#E2E8F0'}`, borderRadius: 12, padding: 30, background: signature ? '#F8FAFC' : undefined }}>
             <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 18 }}>Client</div>
             <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 16 }}>{data.clientName}</div>
             <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 30 }}>ABN {data.clientABN}</div>
-            <div style={{ borderBottom: `1px solid ${NAVY}`, height: 38 }}><Anchor t="DSCLIENTSIGN" /></div>
+            <div style={{ borderBottom: `1px solid ${NAVY}`, height: 38, display: 'flex', alignItems: 'flex-end' }}>
+              {signature && <span style={{ fontFamily: SCRIPT, fontSize: 30, lineHeight: 1, color: NAVY, paddingBottom: 2 }}>{signature.name}</span>}
+            </div>
             <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Signature</div>
-            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24 }}><Anchor t="DSCLIENTNAME" /></div>
+            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24, display: 'flex', alignItems: 'flex-end', fontSize: 13.5 }}>{signature?.name ?? ''}</div>
             <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Name &amp; position</div>
-            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24 }}><Anchor t="DSCLIENTDATE" /></div>
+            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24, display: 'flex', alignItems: 'flex-end', fontSize: 13.5 }}>{signature?.date ?? ''}</div>
             <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Date</div>
           </div>
         </div>

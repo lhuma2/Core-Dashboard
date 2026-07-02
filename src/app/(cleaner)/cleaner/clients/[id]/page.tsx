@@ -35,7 +35,7 @@ function formatDate(d: Date): string {
   })
 }
 
-export default async function CleanerClientPage({ params }: { params: { id: string } }) {
+export default async function CleanerClientPage({ params, searchParams }: { params: { id: string }; searchParams: { site?: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -110,23 +110,44 @@ export default async function CleanerClientPage({ params }: { params: { id: stri
   const dayKey = (freq: string | null) => FREQ_LABELS[freq ?? ''] ?? freq ?? ''
   const fallbackDays = (svc: string[]) => svc.map((d) => d.slice(0, 3).replace(/^./, (c) => c.toUpperCase()))
 
-  // Which checklists to show: per-site for multi-site clients (only the cleaner's sites,
-  // or all sites when assigned at the client level), else a single client-level checklist.
-  const siteChecklists =
+  // Sites this cleaner is scoped to: their own assigned sites, or every site when they're
+  // assigned at the client level. A ?site= param (from the dashboard "My Sites" links)
+  // narrows the view to that one site.
+  const focusSiteId = typeof searchParams?.site === 'string' ? searchParams.site : null
+  let scopeSites = mySites.length ? mySites : (clientAssigned ? sites : [])
+  if (focusSiteId) {
+    const narrowed = scopeSites.filter((s) => s.id === focusSiteId)
+    if (narrowed.length) scopeSites = narrowed
+  }
+
+  // Per-site blocks: each carries its OWN address, access details and schedule — never the
+  // parent client's. A cleaner assigned to Bunya (a site of Chase Commercial) must see the
+  // Bunya address + lockbox, not Chase's head-office address.
+  const siteBlocks =
     sites.length > 0
-      ? (mySites.length ? mySites : (clientAssigned ? sites : []))
-          .filter((s) => Array.isArray(s.scope) && s.scope.length > 0)
-          .map((s) => ({
-            key: s.id,
-            siteId: s.id as string,
-            name: s.site_name as string,
-            short: [s.suburb, dayKey(s.frequency)].filter(Boolean).join(' · '),
-            scope: s.scope as ScopeTask[],
-            cleanDays: (s.clean_days?.length ? s.clean_days : fallbackDays(s.service_days ?? [])) as string[],
-            address: (s.address ?? null) as string | null,
-            suburb: (s.suburb ?? null) as string | null,
-            job: pickJob(jobs.filter((j: any) => j.site_id === s.id)),
-          }))
+      ? scopeSites.map((s) => ({
+          key: s.id as string,
+          siteId: s.id as string,
+          name: s.site_name as string,
+          short: [s.suburb, dayKey(s.frequency)].filter(Boolean).join(' · '),
+          scope: (Array.isArray(s.scope) ? s.scope : []) as ScopeTask[],
+          cleanDays: (s.clean_days?.length ? s.clean_days : fallbackDays(s.service_days ?? [])) as string[],
+          address: (s.address ?? null) as string | null,
+          suburb: (s.suburb ?? null) as string | null,
+          access: (s.access_details ?? null) as string | null,
+          frequency: (s.frequency ?? null) as string | null,
+          serviceDays: (s.service_days ?? []) as string[],
+          upcoming: getUpcomingDates({
+            id:            s.id,
+            business_name: s.site_name,
+            address:       s.address ?? null,
+            suburb:        s.suburb ?? null,
+            frequency:     s.frequency ?? client.frequency ?? null,
+            service_days:  s.service_days ?? [],
+            start_date:    client.start_date ?? null,
+          }, 60).slice(0, 5),
+          job: pickJob(jobs.filter((j: any) => j.site_id === s.id)),
+        }))
       : []
 
   const clientScope: ScopeTask[] = Array.isArray(client.scope) ? client.scope : []
@@ -187,116 +208,166 @@ export default async function CleanerClientPage({ params }: { params: { id: stri
         <h1 className="text-2xl font-bold text-black tracking-tight">{client.business_name}</h1>
       </div>
 
-      {/* Today's schedule checklist(s) */}
-      {siteChecklists.length > 0 ? (
-        <div className="space-y-6 mb-6">
-          {siteChecklists.map((s) => (
-            <div key={s.key}>
-              <CleanerSchedule
-                clientId={params.id}
-                clientName={s.name}
-                siteShort={s.short}
-                scope={s.scope}
-                cleanDays={s.cleanDays}
-                todayISO={today}
-                dateLabel={dateLabel}
-                initialCompleted={completedIds}
-              />
+      {siteBlocks.length > 0 ? (
+        /* ── Multi-site: one self-contained block per site — its own address, lockbox,
+              schedule, checklist and Start/Finish. Never the parent client's details. ── */
+        <div className="space-y-8 mb-6">
+          {siteBlocks.map((s) => (
+            <div key={s.key} className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Site</p>
+                <h2 className="text-lg font-bold text-black">{s.name}</h2>
+              </div>
+
+              {/* Address — the SITE's address */}
+              {(s.address || s.suburb) && (
+                <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
+                  <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">Address</p>
+                    <p className="text-sm font-semibold text-black">{[s.address, s.suburb].filter(Boolean).join(', ')}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Access details — site-specific (lockbox codes differ per site) */}
+              {s.access && (
+                <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
+                  <Key className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">Access Details</p>
+                    <p className="text-sm text-black whitespace-pre-wrap">{s.access}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Upcoming cleans for this site */}
+              {s.upcoming.length > 0 && (
+                <div className="bg-white rounded-2xl px-5 py-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Upcoming Cleans</p>
+                  <div className="space-y-2">
+                    {s.upcoming.map((d, i) => (
+                      <div key={d.toISOString()} className="flex items-center gap-2">
+                        {i === 0 && <span className="text-[10px] font-semibold bg-black text-white rounded-full px-2 py-0.5 flex-shrink-0">Next</span>}
+                        <p className={`text-sm ${i === 0 ? 'font-semibold text-black' : 'text-gray-500'}`}>{formatDate(d)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Scope checklist for this site */}
+              {s.scope.length > 0 && (
+                <CleanerSchedule
+                  clientId={params.id}
+                  clientName={s.name}
+                  siteShort={s.short}
+                  scope={s.scope}
+                  cleanDays={s.cleanDays}
+                  todayISO={today}
+                  dateLabel={dateLabel}
+                  initialCompleted={completedIds}
+                />
+              )}
+
               {jobControl({ job: s.job, siteId: s.siteId, address: s.address, suburb: s.suburb, checklist: s.job?.checklist ?? [] })}
             </div>
           ))}
         </div>
-      ) : clientScope.length > 0 ? (
-        <div className="mb-6">
-          <CleanerSchedule
-            clientId={params.id}
-            clientName={client.business_name}
-            siteShort={clientShort}
-            scope={clientScope}
-            cleanDays={clientCleanDays}
-            todayISO={today}
-            dateLabel={dateLabel}
-            initialCompleted={completedIds}
-          />
-        </div>
-      ) : null}
+      ) : (
+        <>
+          {/* ── Single-site: client-level checklist + details ── */}
+          {clientScope.length > 0 && (
+            <div className="mb-6">
+              <CleanerSchedule
+                clientId={params.id}
+                clientName={client.business_name}
+                siteShort={clientShort}
+                scope={clientScope}
+                cleanDays={clientCleanDays}
+                todayISO={today}
+                dateLabel={dateLabel}
+                initialCompleted={completedIds}
+              />
+            </div>
+          )}
 
-      {/* Client details */}
-      <div className="space-y-3 mb-6">
-        {/* Upcoming cleans */}
-        {upcomingDates.length > 0 && (
-          <div className="bg-white rounded-2xl px-5 py-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Upcoming Cleans</p>
-            <div className="space-y-2">
-              {upcomingDates.map((d, i) => (
-                <div key={d.toISOString()} className="flex items-center gap-2">
-                  {i === 0 && (
-                    <span className="text-[10px] font-semibold bg-black text-white rounded-full px-2 py-0.5 flex-shrink-0">Next</span>
-                  )}
-                  <p className={`text-sm ${i === 0 ? 'font-semibold text-black' : 'text-gray-500'}`}>
-                    {formatDate(d)}
+          {/* Client details */}
+          <div className="space-y-3 mb-6">
+            {/* Upcoming cleans */}
+            {upcomingDates.length > 0 && (
+              <div className="bg-white rounded-2xl px-5 py-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Upcoming Cleans</p>
+                <div className="space-y-2">
+                  {upcomingDates.map((d, i) => (
+                    <div key={d.toISOString()} className="flex items-center gap-2">
+                      {i === 0 && (
+                        <span className="text-[10px] font-semibold bg-black text-white rounded-full px-2 py-0.5 flex-shrink-0">Next</span>
+                      )}
+                      <p className={`text-sm ${i === 0 ? 'font-semibold text-black' : 'text-gray-500'}`}>
+                        {formatDate(d)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Address */}
+            {(client.address || client.suburb) && (
+              <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Address</p>
+                  <p className="text-sm font-semibold text-black">
+                    {[client.address, client.suburb].filter(Boolean).join(', ')}
                   </p>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
+            )}
 
-        {/* Address */}
-        {(client.address || client.suburb) && (
-          <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
-            <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Address</p>
-              <p className="text-sm font-semibold text-black">
-                {[client.address, client.suburb].filter(Boolean).join(', ')}
-              </p>
+            {/* Frequency + cleaning days */}
+            <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
+              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-gray-400 mb-0.5">Schedule</p>
+                <p className="text-sm font-semibold text-black">
+                  {FREQ_LABELS[client.frequency] ?? client.frequency ?? '—'}
+                </p>
+                {serviceDays.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    {serviceDays.map((d) => DAY_LABELS[d.toLowerCase()] ?? d).join(', ')}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Frequency + cleaning days */}
-        <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
-          <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-xs text-gray-400 mb-0.5">Schedule</p>
-            <p className="text-sm font-semibold text-black">
-              {FREQ_LABELS[client.frequency] ?? client.frequency ?? '—'}
-            </p>
-            {serviceDays.length > 0 && (
-              <p className="text-sm text-gray-600 mt-0.5">
-                {serviceDays.map((d) => DAY_LABELS[d.toLowerCase()] ?? d).join(', ')}
-              </p>
+            {/* Access details */}
+            {client.access_details && (
+              <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
+                <Key className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Access Details</p>
+                  <p className="text-sm text-black whitespace-pre-wrap">{client.access_details}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Scope of work */}
+            {client.scope_of_work && (
+              <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
+                <ClipboardList className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Scope of Work</p>
+                  <p className="text-sm text-black whitespace-pre-wrap">{client.scope_of_work}</p>
+                </div>
+              </div>
             )}
           </div>
-        </div>
 
-        {/* Access details */}
-        {client.access_details && (
-          <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
-            <Key className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Access Details</p>
-              <p className="text-sm text-black whitespace-pre-wrap">{client.access_details}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Scope of work */}
-        {client.scope_of_work && (
-          <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
-            <ClipboardList className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Scope of Work</p>
-              <p className="text-sm text-black whitespace-pre-wrap">{client.scope_of_work}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Job section — single-site clients only (multi-site shows Start/Finish per site above) ── */}
-      {siteChecklists.length === 0 &&
-        jobControl({ job: todayJob, siteId: null, address: client.address ?? null, suburb: client.suburb ?? null, checklist })}
+          {jobControl({ job: todayJob, siteId: null, address: client.address ?? null, suburb: client.suburb ?? null, checklist })}
+        </>
+      )}
     </PortalShell>
   )
 }

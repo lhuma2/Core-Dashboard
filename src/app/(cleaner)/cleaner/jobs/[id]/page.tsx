@@ -27,7 +27,7 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
 
   const { data: job } = await (supabase as any)
     .from('job_assignments')
-    .select('*, clients(id, business_name, address, suburb, state, postcode)')
+    .select('*, clients(id, business_name, address, suburb, state, postcode), client_sites(site_name, address, suburb, access_details)')
     .eq('id', params.id)
     .eq('cleaner_id', profile.id)
     .single()
@@ -41,8 +41,17 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
     .single()
 
   const client  = job.clients
+  const site    = job.client_sites
   const status  = statusLabel(job.status)
   const checklist: { id: string; label: string; required?: boolean }[] = job.checklist ?? []
+
+  // For a site-scoped job (multi-site client), everything the cleaner sees must be the SITE's
+  // — its name, address and lockbox — never the parent client's head-office details.
+  const displayName  = site?.site_name ? `${client?.business_name} — ${site.site_name}` : client?.business_name
+  const addrLine     = site?.address
+    ? [site.address, site.suburb].filter(Boolean).join(', ')
+    : (client?.address ? [client.address, client.suburb].filter(Boolean).join(', ') : null)
+  const accessNotes  = job.access_notes || site?.access_details || null
 
   const scheduledDate = new Date(job.scheduled_date + 'T00:00:00')
   const dateStr = scheduledDate.toLocaleDateString('en-AU', {
@@ -59,7 +68,7 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-black tracking-tight">{client?.business_name}</h1>
+            <h1 className="text-xl font-bold text-black tracking-tight">{displayName}</h1>
             <p className="text-sm text-gray-500 mt-0.5">{dateStr}</p>
           </div>
           <span className={`text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap ${status.cls}`}>
@@ -70,15 +79,12 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
 
       {/* Details card */}
       <div className="bg-white rounded-2xl divide-y divide-gray-100 mb-4">
-        {client?.address && (
+        {addrLine && (
           <div className="flex items-start gap-3 px-5 py-4">
             <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs text-gray-400 font-medium mb-0.5">Address</p>
-              <p className="text-sm font-medium text-black">
-                {client.address}
-                {client.suburb ? `, ${client.suburb}` : ''}
-              </p>
+              <p className="text-sm font-medium text-black">{addrLine}</p>
             </div>
           </div>
         )}
@@ -91,12 +97,12 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
             </div>
           </div>
         )}
-        {job.access_notes && (
+        {accessNotes && (
           <div className="flex items-start gap-3 px-5 py-4">
             <Key className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs text-gray-400 font-medium mb-0.5">Access & Codes</p>
-              <p className="text-sm font-medium text-black whitespace-pre-wrap">{job.access_notes}</p>
+              <p className="text-sm font-medium text-black whitespace-pre-wrap">{accessNotes}</p>
             </div>
           </div>
         )}

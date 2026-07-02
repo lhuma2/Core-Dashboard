@@ -1,11 +1,11 @@
 'use client'
 
 import { ProposalDocument } from '@/components/documents/render/ProposalDocument'
-import { AgreementDocument } from '@/components/documents/render/AgreementDocument'
+import { AgreementDocument, type SignatureFill } from '@/components/documents/render/AgreementDocument'
 
 // Print/PDF view for any document kind: A4 page rules + a screen-only download
-// button. Used for the staff "save as PDF" flow.
-export function PrintProposal({ kind = 'proposal', data }: { kind?: string; data: any }) {
+// button. Used for the staff "save as PDF" flow and the client's signed copy.
+export function PrintProposal({ kind = 'proposal', data, signature }: { kind?: string; data: any; signature?: SignatureFill | null }) {
   return (
     <>
       <style>{`
@@ -28,7 +28,7 @@ export function PrintProposal({ kind = 'proposal', data }: { kind?: string; data
           Download PDF
         </button>
       </div>
-      {kind === 'agreement' ? <AgreementDocument data={data} /> : <ProposalDocument data={data} />}
+      {kind === 'agreement' ? <AgreementDocument data={data} signature={signature} /> : <ProposalDocument data={data} />}
     </>
   )
 }

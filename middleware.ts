@@ -9,9 +9,8 @@ const PUBLIC_ROUTES = [
   '/cleaner/login',
   '/client/login',
   '/api/cleaner-calendar',
-  '/api/docusign/webhook',
-  '/api/docusign/test',
   '/survey',
+  '/sign',
 ]
 
 /** Where each role lands after login */
