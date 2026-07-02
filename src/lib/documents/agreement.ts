@@ -37,7 +37,7 @@ const AGREEMENT_SCOPE: ScopeGroup[] = [
 
 export const DEFAULT_AGREEMENT: AgreementData = {
   providerName: 'Delta Cleaning Pty Ltd',
-  providerABN: '00 000 000 000',
+  providerABN: '83 303 026 478',
   clientName: 'Northpoint Commercial',
   clientABN: '00 000 000 000',
   premises: '6–12 Bunya Park Drive, Eatons Hill QLD 4037',

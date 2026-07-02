@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Trash2, Check, Download, Loader2, PenLine, Link2 } from 'lucide-react'
-import { AgreementDocument } from '@/components/documents/render/AgreementDocument'
+import { AgreementDocument, type SignatureFill } from '@/components/documents/render/AgreementDocument'
 import { withAgreementDefaults, type AgreementData } from '@/lib/documents/agreement'
 import type { ScopeGroup } from '@/lib/documents/proposal'
-import { saveAgreementDocAction, setDocStatusAction, setDocClientAction } from '@/actions/proposal-docs'
+import { saveAgreementDocAction, setDocClientAction } from '@/actions/proposal-docs'
+import { stampIssueDateAction } from '@/actions/signing'
 import { SendAgreementModal } from '@/components/documents/SendAgreementModal'
 
 const inputCls = 'w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400'
@@ -19,7 +20,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return <div className="border-b border-gray-100 pb-5 mb-5"><p className="font-display text-sm font-bold text-gray-900 mb-3">{title}</p><div className="space-y-3">{children}</div></div>
 }
 
-export function AgreementEditor({ id, initialData, status, signCode, clients = [], clientId }: { id: string; initialData: AgreementData; status: string; signCode?: string | null; clients?: { id: string; business_name: string }[]; clientId?: string | null }) {
+export function AgreementEditor({ id, initialData, status, signCode, clients = [], clientId, signature }: { id: string; initialData: AgreementData; status: string; signCode?: string | null; clients?: { id: string; business_name: string }[]; clientId?: string | null; signature?: SignatureFill | null }) {
   const [data, setData] = useState<AgreementData>(withAgreementDefaults(initialData))
   const [linkedClient, setLinkedClient] = useState<string>(clientId ?? '')
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -36,8 +37,12 @@ export function AgreementEditor({ id, initialData, status, signCode, clients = [
     navigator.clipboard?.writeText(link).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2200)
-      // Grabbing the link to send it counts as issuing it — reflect that on the doc.
-      if (status === 'draft') setDocStatusAction(id, 'out_for_signature').catch(() => {})
+      // Grabbing the link to send it counts as issuing it — stamp today's date + status.
+      if (status !== 'signed') {
+        stampIssueDateAction(id).then((r) => {
+          if (r && 'date' in r) setData(prev => ({ ...prev, agreementDate: r.date }))
+        }).catch(() => {})
+      }
     }).catch(() => {})
   }
 
@@ -171,7 +176,7 @@ export function AgreementEditor({ id, initialData, status, signCode, clients = [
 
         <div ref={previewWrap} className={`flex-1 overflow-auto bg-[#E6E8EB] p-4 ${mobileView === 'preview' ? 'block' : 'hidden'} lg:block`}>
           <div style={{ transform: `scale(${scale})`, transformOrigin: 'top center', width: 794, margin: '0 auto' }}>
-            <AgreementDocument data={data} />
+            <AgreementDocument data={data} signature={signature} />
           </div>
         </div>
       </div>

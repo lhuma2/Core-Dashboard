@@ -65,6 +65,8 @@ export async function sendForSignatureAction(id: string, toEmail: string, messag
     signer_email: email,
     status:       'out_for_signature',
     sent_at:      new Date().toISOString(),
+    // The agreement is dated the day it's issued.
+    data:         { ...(doc.data ?? {}), agreementDate: auDate() },
   }).eq('id', id)
   if (error) return { error: error.message }
 
@@ -131,6 +133,19 @@ export async function ensureSignCode(id: string): Promise<string | null> {
   const code = await uniqueSignCode(db, agreement.clientName)
   await db.from('proposal_documents').update({ sign_code: code }).eq('id', id)
   return code
+}
+
+// Stamp the agreement with today's date when it's issued via the copy-link path.
+export async function stampIssueDateAction(id: string): Promise<{ date: string } | { error: string }> {
+  const db = createAdminClient() as any
+  const { data: doc } = await db.from('proposal_documents').select('data, status').eq('id', id).maybeSingle()
+  if (!doc) return { error: 'Document not found.' }
+  const date = auDate()
+  const patch: any = { data: { ...(doc.data ?? {}), agreementDate: date } }
+  if (doc.status === 'draft') patch.status = 'out_for_signature'
+  await db.from('proposal_documents').update(patch).eq('id', id)
+  revalidatePath('/documents'); revalidatePath(`/documents/${id}`)
+  return { date }
 }
 
 // ─── Email templates ───────────────────────────────────────────────────────────

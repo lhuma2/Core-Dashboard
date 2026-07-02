@@ -31,11 +31,16 @@ export async function POST(req: Request) {
   const data = isAgreement ? withAgreementDefaults(doc.data) : withProposalDefaults(doc.data)
   const clientName = (data as any).clientName
 
+  // A signed agreement's PDF must carry the client's signature.
+  const signature = isAgreement && doc.signed_at && doc.signed_name
+    ? { name: doc.signed_name, date: new Date(doc.signed_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Brisbane' }) }
+    : null
+
   let mainPdf: Buffer
   try {
     mainPdf = await renderDocumentPdf(
       isAgreement
-        ? React.createElement(AgreementDocument, { data: data as any })
+        ? React.createElement(AgreementDocument, { data: data as any, signature })
         : React.createElement(ProposalDocument, { data: data as any })
     )
   } catch (e: any) {

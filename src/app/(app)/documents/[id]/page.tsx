@@ -8,6 +8,13 @@ import { AgreementEditor } from '@/components/documents/AgreementEditor'
 import { withProposalDefaults } from '@/lib/documents/proposal'
 import { withAgreementDefaults } from '@/lib/documents/agreement'
 import { ensureSignCode } from '@/actions/signing'
+import type { SignatureFill } from '@/components/documents/render/AgreementDocument'
+
+function auDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-AU', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Brisbane',
+  })
+}
 
 export default async function DocumentEditorPage({ params }: { params: { id: string } }) {
   const db = createAdminClient() as any
@@ -18,6 +25,8 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
     const signCode = await ensureSignCode(doc.id)
     const { data: clients } = await db
       .from('clients').select('id, business_name').eq('active', true).order('business_name')
+    const signature: SignatureFill | null =
+      doc.signed_at && doc.signed_name ? { name: doc.signed_name, date: auDate(doc.signed_at) } : null
     return (
       <AgreementEditor
         id={doc.id}
@@ -26,6 +35,7 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
         signCode={signCode}
         clients={clients ?? []}
         clientId={doc.client_id}
+        signature={signature}
       />
     )
   }

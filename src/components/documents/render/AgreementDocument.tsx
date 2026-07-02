@@ -186,7 +186,7 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
             <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Signature</div>
             <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24, display: 'flex', alignItems: 'flex-end', fontSize: 13.5 }}>{data.contactName}</div>
             <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Name · {data.contactRole}</div>
-            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24, display: 'flex', alignItems: 'flex-end', fontSize: 13.5 }}>{signature?.date ?? data.agreementDate}</div>
+            <div style={{ marginTop: 22, borderBottom: '1px solid #CBD5E1', height: 24, display: 'flex', alignItems: 'flex-end', fontSize: 13.5 }}>{data.agreementDate}</div>
             <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>Date</div>
           </div>
           {/* Client block — filled in when the client signs via the secure link */}
