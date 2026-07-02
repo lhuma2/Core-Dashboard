@@ -7,8 +7,8 @@ import { Select } from '@/components/ui/Select'
 import { SERVICE_TYPE_LABELS } from '@/lib/constants'
 
 const STATUS_OPTIONS = [
-  { value: '',         label: 'All clients'   },
-  { value: 'active',   label: 'Active only'   },
+  { value: '',         label: 'Active only'   },
+  { value: 'all',      label: 'All clients'   },
   { value: 'inactive', label: 'Inactive only' },
 ]
 

@@ -4,6 +4,7 @@ export const revalidate = 0
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NewProposalButton } from '@/components/documents/NewProposalButton'
+import { DeleteDocButton } from '@/components/documents/DeleteDocButton'
 import { FileText, FilePen, ChevronRight } from 'lucide-react'
 
 const KIND_LABEL: Record<string, string> = {
@@ -52,19 +53,22 @@ export default async function DocumentsPage() {
           {list.map((d) => {
             const Icon = d.kind === 'proposal' ? FileText : FilePen
             return (
-              <Link key={d.id} href={`/documents/${d.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                <div className="w-9 h-9 rounded-lg bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-[#1e3a5f]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{d.client_name || 'Untitled'}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{KIND_LABEL[d.kind] ?? d.kind} · {d.ref_number}</p>
-                </div>
-                <span className={`text-[11px] font-semibold border rounded-full px-2.5 py-0.5 ${STATUS_STYLE[d.status] ?? STATUS_STYLE.draft}`}>
-                  {STATUS_LABEL[d.status] ?? d.status}
-                </span>
-                <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
-              </Link>
+              <div key={d.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+                <Link href={`/documents/${d.id}`} className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-lg bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4 text-[#1e3a5f]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{d.client_name || 'Untitled'}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{KIND_LABEL[d.kind] ?? d.kind} · {d.ref_number}</p>
+                  </div>
+                  <span className={`text-[11px] font-semibold border rounded-full px-2.5 py-0.5 ${STATUS_STYLE[d.status] ?? STATUS_STYLE.draft}`}>
+                    {STATUS_LABEL[d.status] ?? d.status}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                </Link>
+                <DeleteDocButton id={d.id} />
+              </div>
             )
           })}
         </div>

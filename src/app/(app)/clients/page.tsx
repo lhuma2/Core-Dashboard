@@ -66,8 +66,9 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
     )
   }
 
-  if (searchParams.status === 'active')   filtered = filtered.filter(c => c.active)
-  if (searchParams.status === 'inactive') filtered = filtered.filter(c => !c.active)
+  // Default view is active clients only; inactive are hidden unless explicitly requested.
+  if (searchParams.status === 'inactive')  filtered = filtered.filter(c => !c.active)
+  else if (searchParams.status !== 'all')  filtered = filtered.filter(c => c.active)
 
   if (searchParams.service) {
     filtered = filtered.filter(c =>

@@ -556,8 +556,8 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                   const margin = row.margin_pct
                   const isProjected = !row.invoice_id
                   const marginColor = margin == null ? 'text-gray-400'
-                    : margin >= 55 ? 'text-emerald-600'
-                    : margin >= 35 ? 'text-amber-600'
+                    : margin >= settings.margin_thresholds.yellow ? 'text-emerald-600'
+                    : margin >= settings.margin_thresholds.red ? 'text-amber-600'
                     : 'text-red-600'
                   const profitColor = (row.profit ?? 0) >= 0 ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold'
                   return (

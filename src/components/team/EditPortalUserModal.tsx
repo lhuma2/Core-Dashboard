@@ -83,8 +83,8 @@ export function EditPortalUserModal({ profileId, userId, fullName, email, role, 
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 p-6 my-6 sm:my-8 max-h-[calc(100dvh-3rem)] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-base font-semibold text-gray-900">Edit User</h2>
