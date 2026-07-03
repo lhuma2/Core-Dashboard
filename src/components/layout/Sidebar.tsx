@@ -16,6 +16,7 @@ import {
   FileText,
   BookOpen,
   Phone,
+  ShieldCheck,
   X,
 } from 'lucide-react'
 
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/team',      label: 'Team',      icon: UserCog },
   { href: '/sops',      label: 'SOPs',      icon: BookOpen },
+  { href: '/safety',    label: 'Safety',    icon: ShieldCheck },
 ]
 
 const BOTTOM_ITEMS = [
