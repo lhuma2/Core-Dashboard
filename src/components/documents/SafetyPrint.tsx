@@ -1,11 +1,11 @@
 'use client'
 
-import { SwmsDocument, ModernSlaveryDocument } from '@/components/documents/render/SwmsDocument'
+import { SwmsDocument, ModernSlaveryDocument, SdsRegisterDocument } from '@/components/documents/render/SwmsDocument'
 import type { Swms } from '@/lib/documents/safety'
 
-// Printable view for a SWMS or the Modern Slavery policy — A4 rules + a
-// screen-only "Download PDF" button (uses the browser's print-to-PDF).
-export function SafetyPrint({ swms }: { swms?: Swms }) {
+// Printable view for a SWMS, the Modern Slavery policy, or the SDS register —
+// A4 rules + a screen-only "Download PDF" button (browser's print-to-PDF).
+export function SafetyPrint({ swms, sds }: { swms?: Swms; sds?: boolean }) {
   return (
     <>
       <style>{`
@@ -26,7 +26,7 @@ export function SafetyPrint({ swms }: { swms?: Swms }) {
         </button>
       </div>
       <div style={{ background: '#E6E8EB', minHeight: '100vh', padding: '24px 0' }}>
-        {swms ? <SwmsDocument swms={swms} /> : <ModernSlaveryDocument />}
+        {swms ? <SwmsDocument swms={swms} /> : sds ? <SdsRegisterDocument /> : <ModernSlaveryDocument />}
       </div>
     </>
   )

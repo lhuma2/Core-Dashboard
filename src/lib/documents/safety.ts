@@ -16,7 +16,41 @@ export interface Swms {
   title: string
   scope: string
   rows: SwmsRow[]
+  chemicals?: string[]   // named products this SWMS applies to (e.g. Chemical Handling)
 }
+
+// ─── Document governance (applies to every SWMS + policy) ──────────────────────
+export const DOC_CONTROL = {
+  version: '1.0',
+  issueDate: '04/07/2026',
+  reviewDate: '04/07/2027',
+  approvedBy: 'Jackson Jaillet, Director',
+}
+
+export const COMPANY = {
+  name: 'Delta Cleaning Pty Ltd',
+  abn: '83 303 026 478',
+  location: 'Brisbane, QLD',
+  email: 'contact@deltacleaning.com.au',
+  web: 'www.deltacleaning.com.au',
+  phone: '0412 844 237',
+}
+
+export const LEGISLATION =
+  'This document has been prepared in accordance with the Work Health and Safety Act 2011 (Qld) and associated regulations.'
+
+export const REVIEW_TRIGGERS = [
+  'Every 12 months',
+  'Following an incident',
+  'Following a significant change in work methods',
+  'Following introduction of new equipment or chemicals',
+]
+
+export const EMERGENCY_CONTACTS = [
+  { label: 'Emergency', value: '000' },
+  { label: 'Poisons Information Centre', value: '13 11 26' },
+  { label: 'Delta Cleaning Management', value: COMPANY.phone },
+]
 
 export const SWMS_LIST: Swms[] = [
   {
@@ -72,6 +106,7 @@ export const SWMS_LIST: Swms[] = [
     code: 'SWMS 002',
     title: 'Chemical Handling & Storage',
     scope: 'Handling, mixing, transporting and storing cleaning chemicals.',
+    chemicals: ['Fast Glass', 'Shower Star', 'Kuranda Disinfectant', 'pH 7 Detergent', 'Sequal'],
     rows: [
       {
         hazard: 'Chemical splash to eyes or skin',
@@ -281,6 +316,19 @@ export const MODERN_SLAVERY = {
     'Delta Cleaning requires all subcontractors and suppliers to comply with applicable workplace, employment, and human rights laws.',
     'Delta Cleaning verifies contractor identity, ABN registration, and right-to-work status where applicable.',
     'Any suspected breach of this policy must be reported immediately to Delta Cleaning management.',
+  ],
+}
+
+export const SDS_REGISTER = {
+  code: 'SDS-REG',
+  title: 'Safety Data Sheet (SDS) Register',
+  intro: 'Current Safety Data Sheets for all chemicals in use are available to workers. Each SDS must be read before first use of a product and followed at all times.',
+  products: [
+    { product: 'Fast Glass', sds: 'Current', location: 'Cleaner Portal' },
+    { product: 'Shower Star', sds: 'Current', location: 'Cleaner Portal' },
+    { product: 'Kuranda Disinfectant', sds: 'Current', location: 'Cleaner Portal' },
+    { product: 'pH 7 Detergent', sds: 'Current', location: 'Cleaner Portal' },
+    { product: 'Sequal', sds: 'Current', location: 'Cleaner Portal' },
   ],
 }
 
