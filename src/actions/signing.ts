@@ -155,33 +155,46 @@ export async function stampIssueDateAction(id: string): Promise<{ date: string }
 
 function inviteEmail(a: AgreementData, link: string, message?: string): string {
   const note = (message ?? '').trim()
+  const first = a.clientName?.trim() || 'there'
+  const row = (label: string, value?: string) =>
+    value && value.trim()
+      ? `<tr>
+          <td style="padding:12px 0;color:#94a3b8;font-size:13px;border-top:1px solid #f1f5f9;">${label}</td>
+          <td style="padding:12px 0;text-align:right;font-weight:600;color:#0f172a;font-size:13px;border-top:1px solid #f1f5f9;">${value}</td>
+        </tr>`
+      : ''
+  const summary = [row('Site', a.premises), row('Frequency', a.frequency), row('Service fee', a.serviceFee)].join('')
   return `
-  <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px 18px;color:#0f172a;">
-    <div style="background:#0b1320;border-radius:14px 14px 0 0;padding:26px 30px;text-align:center;">
-      <img src="${WORDMARK}" alt="Delta Cleaning" style="height:26px;width:auto;" />
-    </div>
-    <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 14px 14px;padding:30px;">
-      <p style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#2563eb;margin:0 0 10px;">Service Agreement</p>
-      <h1 style="font-size:22px;line-height:1.25;margin:0 0 12px;color:#0f172a;">Hi ${a.clientName}, your agreement is ready to sign.</h1>
-      <p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 20px;">
-        ${note ? note.replace(/</g, '&lt;') + '<br/><br/>' : ''}
-        We've prepared your commercial cleaning service agreement. You can read it in full and sign it securely online — it only takes a minute, no account or app needed.
-      </p>
-      <div style="background:#f8fafc;border:1px solid #eef2f6;border-radius:12px;padding:16px 18px;margin:0 0 22px;">
-        <table style="width:100%;font-size:13px;color:#334155;border-collapse:collapse;">
-          <tr><td style="padding:4px 0;color:#94a3b8;">Site</td><td style="padding:4px 0;text-align:right;font-weight:600;">${a.premises}</td></tr>
-          <tr><td style="padding:4px 0;color:#94a3b8;">Frequency</td><td style="padding:4px 0;text-align:right;font-weight:600;">${a.frequency}</td></tr>
-          <tr><td style="padding:4px 0;color:#94a3b8;">Service fee</td><td style="padding:4px 0;text-align:right;font-weight:600;">${a.serviceFee}</td></tr>
-        </table>
+  <div style="background:#eef1f5;padding:32px 16px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(15,23,42,.10);">
+      <div style="background:#0b1320;padding:30px 30px 26px;text-align:center;">
+        <img src="${WORDMARK}" alt="Delta Cleaning" style="height:26px;width:auto;" />
       </div>
-      <a href="${link}" style="display:block;text-align:center;background:#0b1320;color:#fff;text-decoration:none;font-size:15px;font-weight:700;border-radius:12px;padding:15px 22px;">Review &amp; sign your agreement →</a>
-      <p style="font-size:12px;color:#94a3b8;margin:16px 0 0;text-align:center;">Or paste this link into your browser:<br/><span style="color:#64748b;word-break:break-all;">${link}</span></p>
-      <div style="border-top:1px solid #f1f5f9;margin-top:24px;padding-top:18px;">
-        <p style="font-size:13px;color:#475569;margin:0 0 4px;">Any questions before you sign? Just reply, or reach ${a.contactName} directly:</p>
-        <p style="font-size:13px;color:#0f172a;font-weight:600;margin:0;">${a.contactPhone} · ${a.contactEmail}</p>
+      <div style="height:4px;background:linear-gradient(90deg,#2563eb,#60a5fa);line-height:4px;font-size:0;">&nbsp;</div>
+      <div style="padding:34px 34px 30px;">
+        <p style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2563eb;margin:0 0 12px;">Service Agreement${a.agreementRef ? ` &middot; ${a.agreementRef}` : ''}</p>
+        <h1 style="font-size:25px;line-height:1.22;margin:0 0 12px;color:#0f172a;font-weight:800;letter-spacing:-.01em;">Hi ${first}, you&rsquo;re ready to sign.</h1>
+        <p style="font-size:14.5px;line-height:1.65;color:#475569;margin:0 0 ${note ? '18px' : '26px'};">
+          We&rsquo;ve prepared your commercial cleaning service agreement. Give it a read, and when you&rsquo;re happy, sign securely online &mdash; it takes about a minute, with no account or app to download.
+        </p>
+        ${note ? `<div style="background:#f8fafc;border-left:3px solid #2563eb;border-radius:8px;padding:13px 16px;margin:0 0 26px;font-size:14px;color:#334155;line-height:1.55;">${note.replace(/</g, '&lt;').replace(/\n/g, '<br/>')}</div>` : ''}
+        ${summary ? `<div style="border:1px solid #eef2f6;border-radius:14px;padding:2px 18px 10px;margin:0 0 28px;">
+          <p style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin:16px 0 2px;">Summary</p>
+          <table style="width:100%;border-collapse:collapse;">${summary}</table>
+        </div>` : ''}
+        <a href="${link}" style="display:block;text-align:center;background:#0b1320;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:12px;padding:18px 24px;">Review &amp; sign &rarr;</a>
+        <p style="text-align:center;font-size:12px;color:#94a3b8;margin:14px 0 0;">&#128274;&nbsp; Secure &middot; unique to you &middot; no account needed</p>
+        <p style="text-align:center;font-size:11.5px;color:#cbd5e1;margin:10px 0 0;">Button not working? Paste this: <span style="color:#94a3b8;word-break:break-all;">${link}</span></p>
+        <div style="border-top:1px solid #f1f5f9;margin-top:28px;padding-top:22px;">
+          <p style="font-size:13.5px;color:#475569;margin:0 0 6px;line-height:1.5;">Questions before you sign? Reply to this email, or reach ${a.contactName} directly:</p>
+          <p style="font-size:13.5px;color:#0f172a;font-weight:600;margin:0;">${a.contactPhone} &nbsp;&middot;&nbsp; ${a.contactEmail}</p>
+        </div>
       </div>
     </div>
-    <p style="font-size:11px;color:#94a3b8;margin:16px 0 0;text-align:center;">Sent by Delta Cleaning Pty Ltd · Brisbane, QLD · This link is unique to you.</p>
+    <p style="font-size:11px;color:#94a3b8;margin:18px auto 0;text-align:center;max-width:560px;line-height:1.7;">
+      Delta Cleaning Pty Ltd &middot; ABN 83 303 026 478 &middot; Brisbane QLD<br/>
+      This signing link is unique to you &mdash; please don&rsquo;t forward it.
+    </p>
   </div>`
 }
 
