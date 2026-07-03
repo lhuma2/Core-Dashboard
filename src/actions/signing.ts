@@ -205,6 +205,43 @@ export async function submitSignatureAction(code: string, typedName: string, det
   return { success: true, date: auDate(signedAt) }
 }
 
+// ─── Onboarding: the client submits a few details AFTER signing ────────────────
+// The ABN is stamped onto the (already-signed) contract, and all details fill the
+// linked client's empty fields (never clobbering what's already there).
+export async function submitOnboardingAction(code: string, details: SignerDetails) {
+  const db = createAdminClient() as any
+  const { data: doc } = await db.from('proposal_documents')
+    .select('id, data, client_id').eq('sign_code', code).maybeSingle()
+  if (!doc) return { error: 'This link is not valid.' }
+
+  const clean = (v?: string) => (v ?? '').trim() || null
+  const d = {
+    abn: clean(details.abn), billingEmail: clean(details.billingEmail), poNumber: clean(details.poNumber),
+    siteContactName: clean(details.siteContactName), siteContactPhone: clean(details.siteContactPhone), notes: clean(details.notes),
+  }
+  const newData = d.abn ? { ...(doc.data ?? {}), clientABN: d.abn } : doc.data
+  await db.from('proposal_documents').update({ onboarding: d, data: newData }).eq('id', doc.id)
+
+  if (doc.client_id) {
+    const { data: c } = await db.from('clients')
+      .select('abn, billing_email, po_number, site_contact_name, site_contact_phone, notes')
+      .eq('id', doc.client_id).maybeSingle()
+    if (c) {
+      await db.from('clients').update({
+        abn:                c.abn                ?? d.abn,
+        billing_email:      c.billing_email      ?? d.billingEmail,
+        po_number:          c.po_number          ?? d.poNumber,
+        site_contact_name:  c.site_contact_name  ?? d.siteContactName,
+        site_contact_phone: c.site_contact_phone ?? d.siteContactPhone,
+        notes:              c.notes              ?? d.notes,
+      }).eq('id', doc.client_id)
+    }
+    revalidatePath(`/clients/${doc.client_id}`)
+  }
+  revalidatePath('/documents'); revalidatePath(`/documents/${doc.id}`)
+  return { success: true }
+}
+
 // ─── Ensure a signing link exists (backs the editor's "Copy signing link") ─────
 // Idempotent: mints a sign_code once so the /sign/<code> link is ready to copy,
 // without emailing or changing the document's status.
