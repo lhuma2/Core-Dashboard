@@ -354,6 +354,7 @@ async function sendThreadedEmail(opts: {
   html: string
   messageId?: string
   inReplyTo?: string
+  attachments?: { filename: string; content: Buffer }[]
 }): Promise<{ success: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return { success: false, error: 'Email is not configured.' }
@@ -375,6 +376,7 @@ async function sendThreadedEmail(opts: {
       subject: opts.subject,
       html: opts.html,
       headers: Object.keys(headers).length ? headers : undefined,
+      attachments: opts.attachments,
     })
     if (res.error) return { success: false, error: res.error.message }
     return { success: true }
@@ -396,23 +398,32 @@ export async function sendIntroEmailAction(id: string) {
 
   // A Message-ID we own, so the follow-up can thread under this email
   const messageId = `<intro-${id}-${Date.now()}@deltacleaning.com.au>`
-  const subject = `Cleaning quote for ${lead.business_name}`
+  const subject = `Delta Cleaning — capability statement for ${lead.business_name}`
 
   const bodyText =
     `${greeting}\n\n` +
-    `Great to chat just now and thanks for taking my call. As promised, here is a quick note from Delta Cleaning.\n\n` +
-    `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces.\n\n` +
-    `Whenever suits, I would be glad to come past, walk through the site with you and put a fixed monthly price on it. The visit is free, takes about fifteen minutes, and there is no obligation.\n\n` +
-    `Just reply here and we will lock in a time that works for you.\n\nThanks,\nJackson\nDelta Cleaning`
+    `Thanks for taking my call earlier — great to chat. As promised, I've attached Delta Cleaning's capability statement so you can see exactly what we do.\n\n` +
+    `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
+    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0412 844 237, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nDelta Cleaning`
 
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
-  <p>Great to chat just now and thanks for taking my call. As promised, here is a quick note from Delta Cleaning.</p>
-  <p>We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces.</p>
-  <p>Whenever suits, I would be glad to come past, walk through the site with you and put a fixed monthly price on it. The visit is free, takes about fifteen minutes, and there is no obligation.</p>
-  <p>Just reply here and we will lock in a time that works for you.</p>`)
+  <p>Thanks for taking my call earlier — great to chat. As promised, I've attached Delta Cleaning's capability statement so you can see exactly what we do.</p>
+  <p>We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.</p>
+  <p>Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on <a href="tel:+61412844237">0412 844 237</a>, or just reply here and I'll set up a quick, free site visit.</p>`)
 
-  const result = await sendThreadedEmail({ to: lead.email, subject, html, messageId })
+  // Attach the capability statement (best-effort — still send if the PDF service is down)
+  let attachments: { filename: string; content: Buffer }[] | undefined
+  try {
+    const React = (await import('react')).default
+    const { renderDocumentPdf } = await import('@/lib/documents/pdf')
+    const { CapabilityDocument } = await import('@/components/documents/render/CapabilityDocument')
+    const { DEFAULT_CAPABILITY } = await import('@/lib/documents/capability')
+    const pdf = await renderDocumentPdf(React.createElement(CapabilityDocument, { data: DEFAULT_CAPABILITY as any }))
+    attachments = [{ filename: 'Delta Cleaning Capability Statement.pdf', content: pdf }]
+  } catch { /* no attachment if the PDF service is unavailable */ }
+
+  const result = await sendThreadedEmail({ to: lead.email, subject, html, messageId, attachments })
   if (!result.success) return { error: result.error || 'Email failed to send' }
 
   const now = new Date().toISOString()
@@ -483,13 +494,12 @@ export async function previewIntroEmailAction(id: string): Promise<{ to?: string
   const firstName = (lead.contact_name || '').split(' ')[0]
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
   const locality = localityPhrase(lead.suburb)
-  const subject = `Cleaning quote for ${lead.business_name}`
+  const subject = `Delta Cleaning — capability statement for ${lead.business_name}`
   const body =
     `${greeting}\n\n` +
-    `Great to chat just now and thanks for taking my call. As promised, here is a quick note from Delta Cleaning.\n\n` +
-    `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces.\n\n` +
-    `Whenever suits, I would be glad to come past, walk through the site with you and put a fixed monthly price on it. The visit is free, takes about fifteen minutes, and there is no obligation.\n\n` +
-    `Just reply here and we will lock in a time that works for you.\n\nThanks,\nJackson\nDelta Cleaning`
+    `Thanks for taking my call earlier — great to chat. As promised, I've attached Delta Cleaning's capability statement so you can see exactly what we do.\n\n` +
+    `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
+    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0412 844 237, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nDelta Cleaning\n\n📎 Capability statement (PDF) attached`
   return { to: lead.email, subject, body }
 }
 

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SessionKeepAlive } from '@/components/portal/SessionKeepAlive'
+import { RefreshOnFocus } from '@/components/RefreshOnFocus'
 
 export default async function ClientPortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -14,6 +15,7 @@ export default async function ClientPortalLayout({ children }: { children: React
   return (
     <>
       <SessionKeepAlive />
+      <RefreshOnFocus />
       {children}
     </>
   )

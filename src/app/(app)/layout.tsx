@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
+import { RefreshOnFocus } from '@/components/RefreshOnFocus'
 
 const ROLE_HOME: Record<string, string> = {
   cleaner: '/cleaner/dashboard',
@@ -28,5 +29,10 @@ export default async function AppLayout({
     redirect(ROLE_HOME[role])
   }
 
-  return <AppShell userEmail={user.email}>{children}</AppShell>
+  return (
+    <>
+      <RefreshOnFocus />
+      <AppShell userEmail={user.email}>{children}</AppShell>
+    </>
+  )
 }

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { RefreshOnFocus } from '@/components/RefreshOnFocus'
 
 export default async function ManagerLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -11,5 +12,5 @@ export default async function ManagerLayout({ children }: { children: React.Reac
   // Allow managers and admins (admins can view/manage all portals)
   if (role !== 'manager' && role !== 'admin') redirect('/manager/login')
 
-  return <>{children}</>
+  return <><RefreshOnFocus />{children}</>
 }
