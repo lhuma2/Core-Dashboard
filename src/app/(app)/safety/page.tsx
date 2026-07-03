@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { SWMS_LIST, MODERN_SLAVERY, SDS_REGISTER, POLICIES } from '@/lib/documents/safety'
-import { ShieldCheck, FileText, ChevronRight, HardHat, FlaskConical } from 'lucide-react'
+import { SUBCONTRACTOR_AGREEMENT, CONTRACTOR_INDUCTION } from '@/lib/documents/subcontractor'
+import { ShieldCheck, FileText, ChevronRight, HardHat, FlaskConical, UserCheck, FileSignature } from 'lucide-react'
 
 export default function SafetyPage() {
   return (
@@ -87,14 +88,38 @@ export default function SafetyPage() {
             <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
           </div>
         </Link>
-        <div className="bg-gray-50 rounded-2xl border border-dashed border-gray-200 px-5 py-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
-            <FileText className="w-4 h-4 text-gray-300" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-500">Contractor Induction</p>
-            <p className="text-xs text-gray-400">Signable — coming next: subbies sign it online before starting.</p>
-          </div>
+      </div>
+
+      {/* Contractor onboarding */}
+      <div className="flex items-center gap-2 mb-3 mt-8">
+        <UserCheck className="w-4 h-4 text-gray-400" />
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Contractor Onboarding</p>
+      </div>
+      <div className="space-y-2">
+        {[
+          { slug: SUBCONTRACTOR_AGREEMENT.slug, title: SUBCONTRACTOR_AGREEMENT.title, sub: `Binding contract · ${SUBCONTRACTOR_AGREEMENT.code}`, icon: FileSignature },
+          { slug: CONTRACTOR_INDUCTION.slug, title: CONTRACTOR_INDUCTION.title, sub: `Acknowledgment · ${CONTRACTOR_INDUCTION.code}`, icon: UserCheck },
+        ].map((d) => {
+          const Icon = d.icon
+          return (
+            <Link key={d.slug} href={`/safety/${d.slug}`} target="_blank" className="block">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 flex items-center justify-between gap-3 hover:border-gray-300 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4 text-[#1e3a5f]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{d.title}</p>
+                    <p className="text-xs text-gray-400">{d.sub}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+              </div>
+            </Link>
+          )
+        })}
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-4 text-xs text-gray-500">
+          <span className="font-semibold text-gray-600">Next:</span> a one-link onboarding pack — a subbie opens a single secure link, reviews all of the above, enters their company / ABN / insurance, and signs once to stamp and save everything to your hub.
         </div>
       </div>
     </div>

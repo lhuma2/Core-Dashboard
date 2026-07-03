@@ -1,11 +1,11 @@
 'use client'
 
-import { SwmsDocument, ModernSlaveryDocument, SdsRegisterDocument, PolicyDocument } from '@/components/documents/render/SwmsDocument'
+import { SwmsDocument, ModernSlaveryDocument, SdsRegisterDocument, PolicyDocument, SubcontractorAgreementDocument, InductionDocument } from '@/components/documents/render/SwmsDocument'
 import type { Swms, Policy } from '@/lib/documents/safety'
 
-// Printable view for a SWMS, a policy, the Modern Slavery declaration, or the SDS
-// register — A4 rules + a screen-only "Download PDF" button (browser print-to-PDF).
-export function SafetyPrint({ swms, policy, sds }: { swms?: Swms; policy?: Policy; sds?: boolean }) {
+// Printable view for any Safety & Compliance document — A4 rules + a screen-only
+// "Download PDF" button (browser print-to-PDF).
+export function SafetyPrint({ swms, policy, sds, agreement, induction }: { swms?: Swms; policy?: Policy; sds?: boolean; agreement?: boolean; induction?: boolean }) {
   return (
     <>
       <style>{`
@@ -26,7 +26,12 @@ export function SafetyPrint({ swms, policy, sds }: { swms?: Swms; policy?: Polic
         </button>
       </div>
       <div style={{ background: '#E6E8EB', minHeight: '100vh', padding: '24px 0' }}>
-        {swms ? <SwmsDocument swms={swms} /> : policy ? <PolicyDocument policy={policy} /> : sds ? <SdsRegisterDocument /> : <ModernSlaveryDocument />}
+        {swms ? <SwmsDocument swms={swms} />
+          : policy ? <PolicyDocument policy={policy} />
+          : agreement ? <SubcontractorAgreementDocument />
+          : induction ? <InductionDocument />
+          : sds ? <SdsRegisterDocument />
+          : <ModernSlaveryDocument />}
       </div>
     </>
   )

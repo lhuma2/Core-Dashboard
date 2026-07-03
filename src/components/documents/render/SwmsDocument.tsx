@@ -1,12 +1,17 @@
 import type { CSSProperties } from 'react'
 import type { Swms, Policy } from '@/lib/documents/safety'
 import { MODERN_SLAVERY, SDS_REGISTER, DOC_CONTROL, COMPANY, LEGISLATION, REVIEW_TRIGGERS, EMERGENCY_CONTACTS } from '@/lib/documents/safety'
+import { SUBCONTRACTOR_AGREEMENT, CONTRACTOR_INDUCTION } from '@/lib/documents/subcontractor'
+import type { SignatureFill } from '@/components/documents/render/AgreementDocument'
 
 const NAVY = '#0F172A'
 const SANS = "'Hanken Grotesk', system-ui, sans-serif"
 const DISPLAY = "'Schibsted Grotesk', system-ui, sans-serif"
 const MONO = "'Space Mono', monospace"
+const SCRIPT = "'Caveat', cursive"
 const WORDMARK_BLACK = '/proposal-assets/wordmark-black.png'
+
+export interface SubbieSignature { name: string; date: string; company?: string }
 
 const page: CSSProperties = { width: 794, minHeight: 1123, background: '#fff', color: NAVY, padding: '52px 60px 44px', fontFamily: SANS, boxShadow: '0 8px 40px rgba(15,23,42,.10)', margin: '0 auto', position: 'relative' }
 const eyebrow: CSSProperties = { fontFamily: MONO, fontSize: 11, letterSpacing: '.2em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 8 }
@@ -168,6 +173,86 @@ export function ModernSlaveryDocument() {
           <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Authorised · {DOC_CONTROL.approvedBy}</div></div>
           <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Date</div></div>
         </div>
+        <Footer />
+      </section>
+    </div>
+  )
+}
+
+// Sign-off that stamps a signature when provided, else shows blank lines.
+function StampedSignOff({ label, sig }: { label: string; sig?: SubbieSignature | null }) {
+  const Line = ({ t, value, script }: { t: string; value?: string; script?: boolean }) => (
+    <div>
+      <div style={{ borderBottom: '1px solid #CBD5E1', height: 30, display: 'flex', alignItems: 'flex-end', paddingBottom: 2 }}>
+        {value ? <span style={{ fontFamily: script ? SCRIPT : SANS, fontSize: script ? 26 : 13, lineHeight: 1, color: NAVY }}>{value}</span> : null}
+      </div>
+      <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>{t}</div>
+    </div>
+  )
+  return (
+    <div style={{ marginTop: 26, border: sig ? `1px solid ${NAVY}` : '1px solid #E2E8F0', borderRadius: 12, padding: 22, background: sig ? '#F8FAFC' : undefined }}>
+      <div style={sectionLabel}>{label}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 24px', marginTop: 4 }}>
+        <Line t="Name" value={sig?.name} />
+        <Line t="Company" value={sig?.company} />
+        <Line t="Signature" value={sig?.name} script />
+        <Line t="Date" value={sig?.date} />
+      </div>
+    </div>
+  )
+}
+
+export function SubcontractorAgreementDocument({ signature }: { signature?: SubbieSignature | null }) {
+  const a = SUBCONTRACTOR_AGREEMENT
+  return (
+    <div data-doc-root>
+      <section data-sheet style={page}>
+        <Header docNo={a.code} />
+        <DocControl docNo={a.code} />
+        <div style={eyebrow}>Agreement</div>
+        <h1 style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 30, lineHeight: 1.05, letterSpacing: '-.02em', margin: '0 0 12px' }}>{a.title}</h1>
+        <p style={{ fontSize: 13, lineHeight: 1.65, color: '#475569', margin: '0 0 22px', maxWidth: 640 }}>{a.intro}</p>
+        {a.clauses.map((c) => (
+          <div key={c.n} style={{ display: 'grid', gridTemplateColumns: '30px 1fr', gap: 12, marginBottom: 14 }}>
+            <div style={{ fontFamily: MONO, fontSize: 12, color: NAVY, paddingTop: 1 }}>{c.n}</div>
+            <div>
+              <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>{c.title}</div>
+              <p style={{ fontSize: 12.4, lineHeight: 1.55, color: '#475569', margin: 0 }}>{c.body}</p>
+            </div>
+          </div>
+        ))}
+        <Legislation />
+        <StampedSignOff label="Signed by the Subcontractor" sig={signature} />
+        <Footer />
+      </section>
+    </div>
+  )
+}
+
+export function InductionDocument({ signature }: { signature?: SubbieSignature | null }) {
+  const ind = CONTRACTOR_INDUCTION
+  return (
+    <div data-doc-root>
+      <section data-sheet style={page}>
+        <Header docNo={ind.code} />
+        <DocControl docNo={ind.code} />
+        <div style={eyebrow}>Induction</div>
+        <h1 style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 30, lineHeight: 1.05, letterSpacing: '-.02em', margin: '0 0 12px' }}>{ind.title}</h1>
+        <p style={{ fontSize: 13, lineHeight: 1.65, color: '#475569', margin: '0 0 20px', maxWidth: 640 }}>{ind.intro}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 32px' }}>
+          {ind.sections.map((s, i) => (
+            <div key={i} style={{ marginBottom: 14, breakInside: 'avoid' }}>
+              <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 13.5, marginBottom: 4 }}>{s.heading}</div>
+              <ul style={{ margin: 0, paddingLeft: 15, fontSize: 12, lineHeight: 1.5, color: '#475569' }}>
+                {s.bullets.map((b, j) => <li key={j} style={{ marginBottom: 2 }}>{b}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 12, background: '#F8FAFC', border: '1px solid #EEF2F6', borderRadius: 10, padding: '12px 16px', fontSize: 13, fontWeight: 600, color: NAVY }}>
+          {ind.acknowledgment}
+        </div>
+        <StampedSignOff label="Acknowledged by" sig={signature} />
         <Footer />
       </section>
     </div>
