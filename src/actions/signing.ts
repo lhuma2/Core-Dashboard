@@ -7,7 +7,10 @@ import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { withAgreementDefaults, type AgreementData } from '@/lib/documents/agreement'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.deltacleaning.com.au'
+// The client-facing signing link MUST use the branded public domain — never a
+// bare *.vercel.app alias (which may 404 or sit behind Vercel auth). Pinned so a
+// misconfigured NEXT_PUBLIC_APP_URL can't break every client's link.
+const APP_URL = 'https://portal.deltacleaning.com.au'
 const OWNER_EMAIL = 'hello@deltacleaning.com.au'
 const WORDMARK = `${APP_URL}/proposal-assets/wordmark-white.png`
 

@@ -266,6 +266,21 @@ export function ClientForm({ defaultValues, defaultSites, action, submitLabel = 
         </div>
       </div>
 
+      {/* Services we provide — applies to both single- and multi-site; shown as tags on the profile */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-gray-700 mb-1">Services</h3>
+        <p className="text-xs text-gray-400 mb-3">{isMultiSite ? 'What you do across all sites — shown as tags on the profile.' : 'What you do for this client.'}</p>
+        {errors.service_type && <p className="text-xs text-red-600 mb-2">{errors.service_type[0]}</p>}
+        <div className="flex flex-wrap gap-2">
+          {SERVICE_TYPES.map((type) => (
+            <button key={type} type="button" onClick={() => toggleService(type)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${selectedServices.includes(type) ? 'bg-brand-navy text-white border-brand-navy' : 'bg-white text-gray-600 border-gray-300 hover:border-brand-navy'}`}>
+              {SERVICE_TYPE_LABELS[type]}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Multi-Site Builder */}
       {isMultiSite && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
@@ -285,20 +300,6 @@ export function ClientForm({ defaultValues, defaultSites, action, submitLabel = 
       {!isMultiSite && (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
         <h3 className="text-sm font-semibold text-gray-700">Service Configuration</h3>
-
-        {/* Service Types */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Service Types *</label>
-          {errors.service_type && <p className="text-xs text-red-600 mb-2">{errors.service_type[0]}</p>}
-          <div className="flex flex-wrap gap-2">
-            {SERVICE_TYPES.map((type) => (
-              <button key={type} type="button" onClick={() => toggleService(type)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${selectedServices.includes(type) ? 'bg-brand-navy text-white border-brand-navy' : 'bg-white text-gray-600 border-gray-300 hover:border-brand-navy'}`}>
-                {SERVICE_TYPE_LABELS[type]}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Scope of Work */}
         <Textarea

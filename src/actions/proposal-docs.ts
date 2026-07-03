@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DEFAULT_PROPOSAL, withProposalDefaults, type ProposalData } from '@/lib/documents/proposal'
-import { mapProposalToAgreement } from '@/lib/documents/agreement'
+import { mapProposalToAgreement, withAgreementDefaults } from '@/lib/documents/agreement'
 
 export type DocKind = 'proposal' | 'agreement' | 'one_off' | 'capability'
 
@@ -101,6 +101,44 @@ export async function convertToAgreementAction(proposalId: string) {
 
   // Mark the proposal accepted now that it's progressing to contract
   await db.from('proposal_documents').update({ status: 'accepted' }).eq('id', proposalId)
+
+  revalidatePath('/documents')
+  redirect(`/documents/${row.id}`)
+}
+
+// Create an agreement already linked to a client, prefilled with the client's
+// name + details — so a signed contract lands on their profile and never carries
+// the "Northpoint Commercial" placeholder title.
+export async function createAgreementForClientAction(clientId: string) {
+  const db = createAdminClient() as any
+  const { data: client } = await db.from('clients').select('*').eq('id', clientId).single()
+  if (!client) return { error: 'Client not found' }
+
+  const ref = nextRef('DCA')
+  const monthly = client.monthly_value ? `$${Number(client.monthly_value).toLocaleString('en-AU')} / month` : ''
+  const premises = client.address
+    ? [client.address, client.suburb, client.state, client.postcode].filter(Boolean).join(', ')
+    : 'Multiple sites — see Schedule 1'
+  const commencement = client.start_date
+    ? new Date(String(client.start_date) + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+    : ''
+
+  const data = withAgreementDefaults({
+    clientName: client.business_name,
+    premises,
+    serviceFee: monthly,
+    commencementDate: commencement,
+    agreementRef: ref,
+    contactName: client.contact_name || undefined,
+    contactEmail: client.contact_email || undefined,
+    contactPhone: client.contact_phone || undefined,
+  })
+
+  const { data: row, error } = await db.from('proposal_documents').insert({
+    kind: 'agreement', status: 'draft', ref_number: ref,
+    client_name: client.business_name, client_id: clientId, data,
+  }).select('id').single()
+  if (error) return { error: error.message }
 
   revalidatePath('/documents')
   redirect(`/documents/${row.id}`)

@@ -10,6 +10,7 @@ import { ScopeEditor } from '@/components/clients/ScopeEditor'
 import { SiteCleanerSelect } from '@/components/clients/SiteCleanerSelect'
 import { SendSurveyButton } from '@/components/clients/SendSurveyButton'
 import { ImportToPortalButton } from '@/components/clients/ImportToPortalButton'
+import { NewAgreementButton } from '@/components/clients/NewAgreementButton'
 import { Button } from '@/components/ui/Button'
 import { ActiveBadge, ServiceTypeBadge } from '@/components/ui/Badge'
 import { formatAUD, formatDate, formatTenure } from '@/lib/formatters'
@@ -147,6 +148,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
         <div className="flex flex-wrap gap-2 justify-end">
           <SendSurveyButton clientId={params.id} clientEmail={client.contact_email} contactName={client.contact_name} />
           <ImportToPortalButton clientId={params.id} clientName={client.business_name} contactEmail={client.contact_email} />
+          <NewAgreementButton clientId={params.id} />
           <Link href={`/clients/${params.id}/edit`}>
             <Button variant="secondary" size="sm">
               <Edit className="w-3.5 h-3.5" />
@@ -354,7 +356,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
             </div>
             {[
               { label: 'Signed by',     value: signedAgreement?.signed_name ?? null },
-              { label: 'Signed on',     value: signedAgreement?.signed_at ? formatDate(signedAgreement.signed_at) : null },
+              { label: 'Signed on',     value: signedAgreement?.signed_at ? new Date(signedAgreement.signed_at).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Australia/Brisbane' }) : null },
               { label: 'Frequency',     value: client.frequency ? FREQUENCY_LABELS[client.frequency as keyof typeof FREQUENCY_LABELS] : null },
               { label: 'Days / week',   value: client.days_per_week != null ? `${client.days_per_week} ${client.days_per_week === 1 ? 'day' : 'days'}` : null },
               { label: 'Visits / month', value: client.visits_per_month != null ? Number(client.visits_per_month).toFixed(2) : null },
