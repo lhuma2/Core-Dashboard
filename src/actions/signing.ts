@@ -107,10 +107,26 @@ function parseAddress(premises?: string): { address: string | null; suburb: stri
   return { address: p, suburb: null, state: null, postcode: null }
 }
 
-// ─── Client submits their signature from the public /sign/<token> page ─────────
-export async function submitSignatureAction(code: string, typedName: string) {
+// ─── Client submits their signature (+ optional onboarding details) ────────────
+export interface SignerDetails {
+  abn?: string
+  billingEmail?: string
+  poNumber?: string
+  siteContactName?: string
+  siteContactPhone?: string
+  notes?: string
+}
+
+export async function submitSignatureAction(code: string, typedName: string, details?: SignerDetails) {
   const name = (typedName ?? '').trim().replace(/\s+/g, ' ')
   if (name.length < 2) return { error: 'Please type your full name to sign.' }
+
+  const clean = (v?: string) => (v ?? '').trim() || null
+  const d = {
+    abn: clean(details?.abn), billingEmail: clean(details?.billingEmail), poNumber: clean(details?.poNumber),
+    siteContactName: clean(details?.siteContactName), siteContactPhone: clean(details?.siteContactPhone),
+    notes: clean(details?.notes),
+  }
 
   const db = createAdminClient() as any
   const { data: doc } = await db
@@ -124,12 +140,16 @@ export async function submitSignatureAction(code: string, typedName: string) {
   const ip = (h.get('x-forwarded-for') ?? '').split(',')[0].trim() || null
   const signedAt = new Date().toISOString()
 
+  // The ABN the client typed goes onto the contract itself.
+  const newData = d.abn ? { ...(doc.data ?? {}), clientABN: d.abn } : doc.data
+
   const { error } = await db.from('proposal_documents').update({
     signed_name: name, signed_at: signedAt, signed_ip: ip, status: 'signed',
+    onboarding: d, data: newData,
   }).eq('id', doc.id)
   if (error) return { error: error.message }
 
-  const agreement = withAgreementDefaults(doc.data)
+  const agreement = withAgreementDefaults(newData)
 
   // Onboarding-on-sign: if the agreement isn't linked to a client yet, create the
   // client profile from the agreement (or link to an existing client of the same
@@ -137,9 +157,19 @@ export async function submitSignatureAction(code: string, typedName: string) {
   let clientId: string | null = doc.client_id
   let createdNewClient = false
   if (!clientId) {
-    const { data: existing } = await db.from('clients').select('id').ilike('business_name', agreement.clientName).limit(1).maybeSingle()
+    const { data: existing } = await db.from('clients')
+      .select('id, abn, billing_email, po_number, site_contact_name, site_contact_phone')
+      .ilike('business_name', agreement.clientName).limit(1).maybeSingle()
     if (existing?.id) {
       clientId = existing.id
+      // Fill only the fields the existing client is missing — never clobber.
+      await db.from('clients').update({
+        abn:                existing.abn                ?? d.abn,
+        billing_email:      existing.billing_email      ?? d.billingEmail,
+        po_number:          existing.po_number          ?? d.poNumber,
+        site_contact_name:  existing.site_contact_name  ?? d.siteContactName,
+        site_contact_phone: existing.site_contact_phone ?? d.siteContactPhone,
+      }).eq('id', clientId)
     } else {
       const addr = parseAddress(agreement.premises)
       const monthly = parseMoney(agreement.serviceFee)
@@ -150,6 +180,9 @@ export async function submitSignatureAction(code: string, typedName: string) {
         monthly_value: monthly,
         annual_value: monthly != null ? Math.round(monthly * 12 * 100) / 100 : null,
         start_date: parseDateLoose(agreement.commencementDate),
+        abn: d.abn, billing_email: d.billingEmail, po_number: d.poNumber,
+        site_contact_name: d.siteContactName, site_contact_phone: d.siteContactPhone,
+        notes: d.notes,
         active: true, is_multi_site: false, service_type: [],
       }).select('id').single()
       clientId = newClient?.id ?? null

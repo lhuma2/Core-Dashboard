@@ -330,6 +330,30 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                 <span>{[client.address, client.suburb, client.state, client.postcode].filter(Boolean).join(', ')}</span>
               </div>
             )}
+            {client.abn && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Building2 className="w-4 h-4 text-gray-400" />
+                ABN {client.abn}
+              </div>
+            )}
+            {client.billing_email && (
+              <a href={`mailto:${client.billing_email}`} className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors">
+                <Mail className="w-4 h-4 text-gray-400" />
+                <span>{client.billing_email} <span className="text-[11px] text-gray-400">· billing</span></span>
+              </a>
+            )}
+            {client.po_number && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <FileText className="w-4 h-4 text-gray-400" />
+                PO {client.po_number}
+              </div>
+            )}
+            {(client.site_contact_name || client.site_contact_phone) && (
+              <div className="flex items-start gap-2 text-sm text-gray-500">
+                <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <span>Site · {[client.site_contact_name, client.site_contact_phone].filter(Boolean).join(' · ')}</span>
+              </div>
+            )}
           </div>
         </div>
 
