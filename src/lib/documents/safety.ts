@@ -319,6 +319,49 @@ export const MODERN_SLAVERY = {
   ],
 }
 
+export interface Policy {
+  code: string
+  slug: string
+  title: string
+  intro?: string
+  sections: { heading?: string; body?: string; bullets?: string[] }[]
+}
+
+export const POLICIES: Policy[] = [
+  {
+    code: 'POL-002',
+    slug: 'environmental-policy',
+    title: 'Environmental Policy',
+    intro: 'Delta Cleaning is committed to minimising the environmental impact of its operations and to continual improvement in its environmental performance.',
+    sections: [
+      { heading: 'Waste reduction', body: 'We minimise waste by using the correct amount of product, reusing durable equipment, and disposing of waste responsibly and in line with site requirements.' },
+      { heading: 'Responsible chemical use', body: 'Chemicals are used strictly in accordance with their Safety Data Sheets and at the correct dilution. We avoid over-use and select lower-toxicity, environmentally responsible products where practical.' },
+      { heading: 'Recycling', body: 'We separate and recycle materials where site facilities allow, and encourage clients to support recycling on their premises.' },
+      { heading: 'Water & energy conservation', body: 'We use water efficiently, avoid unnecessary running of taps and equipment, and switch off lights and equipment that are not in use.' },
+      { heading: 'Compliance', body: 'Delta Cleaning complies with all applicable environmental laws and regulations, and reviews this policy at least annually.' },
+    ],
+  },
+  {
+    code: 'POL-003',
+    slug: 'business-continuity',
+    title: 'Business Continuity Plan',
+    intro: 'This plan sets out how Delta Cleaning maintains service to clients during a disruption. It is reviewed annually and after any activation.',
+    sections: [
+      { heading: 'Cleaner unavailable or resigns', bullets: ['A backup cleaner or subcontractor from our bench is deployed', 'Site Packs (site details, access, scope) let a replacement step in and perform correctly', 'The client is notified if any change to timing is expected'] },
+      { heading: 'Flood, fire or site incident', bullets: ['The client and management are notified immediately', 'Affected cleans are rescheduled once the site is safe', 'Alternative arrangements are made where access is lost'] },
+      { heading: 'Vehicle breakdown', bullets: ['Backup or hired transport is arranged', 'Affected sites are re-sequenced or rescheduled the same day where possible'] },
+      { heading: 'Equipment failure', bullets: ['Spare or hired equipment is sourced', 'Supplier contacts are maintained for rapid replacement'] },
+      { heading: 'Pandemic or widespread illness', bullets: ['Enhanced hygiene protocols are followed', 'Essential/priority sites are maintained first', 'Coordination continues remotely via Delta Hub'] },
+      { heading: 'Key person unavailable', bullets: ['Operations are documented in Delta Hub so the business runs without a single point of failure', 'A delegated contact manages client communication'] },
+      { heading: 'Communication', body: 'Clients are kept informed promptly during any disruption. Delta Cleaning management can be reached on ' + COMPANY.phone + '.' },
+    ],
+  },
+]
+
+export function findPolicy(slug: string): Policy | undefined {
+  return POLICIES.find((p) => p.slug === slug)
+}
+
 export const SDS_REGISTER = {
   code: 'SDS-REG',
   title: 'Safety Data Sheet (SDS) Register',

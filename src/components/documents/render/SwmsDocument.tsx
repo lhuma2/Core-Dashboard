@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { Swms } from '@/lib/documents/safety'
+import type { Swms, Policy } from '@/lib/documents/safety'
 import { MODERN_SLAVERY, SDS_REGISTER, DOC_CONTROL, COMPANY, LEGISLATION, REVIEW_TRIGGERS, EMERGENCY_CONTACTS } from '@/lib/documents/safety'
 
 const NAVY = '#0F172A'
@@ -165,6 +165,36 @@ export function ModernSlaveryDocument() {
           <p key={i} style={{ fontSize: 14, lineHeight: 1.7, color: '#334155', margin: '0 0 16px' }}>{p}</p>
         ))}
         <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Authorised · {DOC_CONTROL.approvedBy}</div></div>
+          <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Date</div></div>
+        </div>
+        <Footer />
+      </section>
+    </div>
+  )
+}
+
+export function PolicyDocument({ policy }: { policy: Policy }) {
+  return (
+    <div data-doc-root>
+      <section data-sheet style={page}>
+        <Header docNo={policy.code} />
+        <DocControl docNo={policy.code} />
+        <div style={eyebrow}>Policy Statement</div>
+        <h1 style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 31, lineHeight: 1.05, letterSpacing: '-.02em', margin: '0 0 14px' }}>{policy.title}</h1>
+        {policy.intro && <p style={{ fontSize: 14, lineHeight: 1.7, color: '#334155', margin: '0 0 20px', maxWidth: 640 }}>{policy.intro}</p>}
+        {policy.sections.map((s, i) => (
+          <div key={i} style={{ marginBottom: 16 }}>
+            {s.heading && <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 15, marginBottom: 5 }}>{s.heading}</div>}
+            {s.body && <p style={{ fontSize: 13, lineHeight: 1.65, color: '#475569', margin: 0 }}>{s.body}</p>}
+            {s.bullets && (
+              <ul style={{ margin: '4px 0 0', paddingLeft: 16, fontSize: 13, lineHeight: 1.6, color: '#475569' }}>
+                {s.bullets.map((b, j) => <li key={j} style={{ marginBottom: 2 }}>{b}</li>)}
+              </ul>
+            )}
+          </div>
+        ))}
+        <div style={{ marginTop: 26, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Authorised · {DOC_CONTROL.approvedBy}</div></div>
           <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Date</div></div>
         </div>
