@@ -11,6 +11,7 @@ const PUBLIC_ROUTES = [
   '/api/cleaner-calendar',
   '/survey',
   '/sign',
+  '/onboard',
 ]
 
 /** Where each role lands after login */

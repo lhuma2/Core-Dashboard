@@ -1,15 +1,27 @@
 import Link from 'next/link'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { SWMS_LIST, MODERN_SLAVERY, SDS_REGISTER, POLICIES } from '@/lib/documents/safety'
 import { SUBCONTRACTOR_AGREEMENT, CONTRACTOR_INDUCTION } from '@/lib/documents/subcontractor'
+import { SubcontractorPanel } from '@/components/clients/SubcontractorPanel'
 import { ShieldCheck, FileText, ChevronRight, HardHat, FlaskConical, UserCheck, FileSignature } from 'lucide-react'
 
-export default function SafetyPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function SafetyPage() {
+  const db = createAdminClient() as any
+  const { data: sub } = await db
+    .from('subcontractors')
+    .select('company_name, abn, contact_name, contact_email, insurance_expiry, sign_code, signed_at, signed_name')
+    .order('created_at', { ascending: false }).limit(1).maybeSingle()
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="font-display text-2xl font-extrabold tracking-tight text-gray-900">Safety &amp; Compliance</h1>
         <p className="text-sm text-gray-400 mt-0.5">Safe Work Method Statements and policies — view, print, or share with clients and auditors.</p>
       </div>
+
+      <SubcontractorPanel sub={sub ?? null} />
 
       {/* SWMS */}
       <div className="flex items-center gap-2 mb-3">
