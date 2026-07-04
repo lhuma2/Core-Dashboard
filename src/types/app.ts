@@ -63,6 +63,11 @@ export interface Lead {
   contract_expiry: string | null
   converted_client_id: string | null
   timeline: TimelineEvent[]
+  intro_email_sent_at?: string | null
+  intro_email_message_id?: string | null
+  intro_email_subject?: string | null
+  follow_up_email_sent_at?: string | null
+  follow_up_opt_in?: boolean
   created_at: string
   updated_at: string
 }

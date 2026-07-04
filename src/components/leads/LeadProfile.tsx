@@ -20,6 +20,10 @@ import {
   convertToClientAction,
   addTimelineNoteAction,
 } from '@/actions/leads'
+import {
+  previewLeadIntroEmailAction, sendLeadIntroEmailAction,
+  previewLeadFollowUpEmailAction, sendLeadFollowUpEmailAction,
+} from '@/actions/lead-emails'
 import type { Lead, TimelineEvent } from '@/types/app'
 
 const PIPELINE_STAGES = [
@@ -42,6 +46,34 @@ export function LeadProfile({ lead: initialLead }: { lead: Lead }) {
   const [noteText, setNoteText] = useState('')
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [emailPreview, setEmailPreview] = useState<{ kind: 'intro' | 'follow_up'; to: string; subject: string; body: string } | null>(null)
+  const [includeFollowUp, setIncludeFollowUp] = useState(true)
+  const [emailBusy, setEmailBusy] = useState(false)
+  const [emailFlash, setEmailFlash] = useState<string | null>(null)
+
+  async function openLeadEmail(kind: 'intro' | 'follow_up') {
+    setEmailBusy(true); setEmailFlash(null)
+    const res = kind === 'intro' ? await previewLeadIntroEmailAction(lead.id) : await previewLeadFollowUpEmailAction(lead.id)
+    setEmailBusy(false)
+    if (res.error || !res.to) { setEmailFlash(res.error || 'Could not prepare the email'); return }
+    setEmailPreview({ kind, to: res.to, subject: res.subject ?? '', body: res.body ?? '' })
+  }
+  async function confirmLeadEmail() {
+    if (!emailPreview) return
+    const kind = emailPreview.kind
+    setEmailBusy(true)
+    const res = kind === 'intro' ? await sendLeadIntroEmailAction(lead.id, includeFollowUp) : await sendLeadFollowUpEmailAction(lead.id)
+    setEmailBusy(false); setEmailPreview(null)
+    if (res.error) { setEmailFlash(res.error); return }
+    const now = new Date().toISOString()
+    setLead(prev => kind === 'intro'
+      ? { ...prev, intro_email_sent_at: now, follow_up_opt_in: includeFollowUp }
+      : { ...prev, follow_up_email_sent_at: now })
+    setEmailFlash(kind === 'intro'
+      ? (includeFollowUp ? 'Capability email sent · 5-day follow-up scheduled' : 'Capability email sent')
+      : 'Follow-up sent in the same thread')
+    router.refresh()
+  }
 
   const isWon  = lead.status === 'won'
   const isLost = lead.status === 'lost'
@@ -305,8 +337,65 @@ export function LeadProfile({ lead: initialLead }: { lead: Lead }) {
           </div>
         </div>
 
-        {/* Right column: documents + timeline */}
+        {/* Right column: email + documents + timeline */}
         <div className="lg:col-span-2 space-y-5">
+          {/* Email */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+              <p className="text-sm font-semibold text-gray-800">Email</p>
+              {lead.intro_email_sent_at && <span className="text-xs text-gray-400">Capability sent {formatDate(lead.intro_email_sent_at)}</span>}
+            </div>
+            <div className="p-5">
+              {!lead.contact_email ? (
+                <p className="text-sm text-gray-400">Add an email address on this lead to send the capability statement.</p>
+              ) : !emailPreview ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {!lead.intro_email_sent_at ? (
+                    <Button size="sm" onClick={() => openLeadEmail('intro')} disabled={emailBusy}>
+                      <Mail className="w-3.5 h-3.5" /> {emailBusy ? 'Preparing…' : 'Send capability statement'}
+                    </Button>
+                  ) : (
+                    <>
+                      {!lead.follow_up_email_sent_at ? (
+                        <Button size="sm" variant="secondary" onClick={() => openLeadEmail('follow_up')} disabled={emailBusy}>
+                          <Mail className="w-3.5 h-3.5" /> {emailBusy ? 'Preparing…' : 'Send follow-up'}
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-gray-400">Followed up {formatDate(lead.follow_up_email_sent_at)}</span>
+                      )}
+                      {lead.follow_up_opt_in && !lead.follow_up_email_sent_at && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-2 py-1">5-day follow-up scheduled</span>
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                    <div className="px-3 py-2 border-b border-gray-100 text-[12px]">
+                      <p className="text-gray-500"><span className="font-semibold text-gray-700">To:</span> {emailPreview.to}</p>
+                      <p className="text-gray-500 mt-0.5"><span className="font-semibold text-gray-700">Subject:</span> {emailPreview.subject}</p>
+                    </div>
+                    <p className="px-3 py-3 text-[13px] text-gray-700 whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">{emailPreview.body}</p>
+                  </div>
+                  {emailPreview.kind === 'intro' && (
+                    <label className="flex items-start gap-2 mt-2 px-1 cursor-pointer select-none">
+                      <input type="checkbox" checked={includeFollowUp} onChange={e => setIncludeFollowUp(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#1e3a5f] flex-shrink-0" />
+                      <span className="text-[13px] text-gray-600">Also send a 5-day follow-up if they don’t reply <span className="text-gray-400">(automatic, skips weekends)</span></span>
+                    </label>
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <Button size="sm" onClick={confirmLeadEmail} disabled={emailBusy}>
+                      <Mail className="w-3.5 h-3.5" /> {emailBusy ? 'Sending…' : 'Send email'}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEmailPreview(null)} disabled={emailBusy}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+              {emailFlash && <p className="text-xs font-medium text-emerald-600 mt-3">{emailFlash}</p>}
+            </div>
+          </div>
+
           {/* Documents */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200">
