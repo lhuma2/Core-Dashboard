@@ -4,7 +4,18 @@ export const revalidate = 0
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ClientShell } from '@/components/portal/ClientShell'
-import { FileText, Download, Shield, ClipboardCheck, Phone, Mail, User, Globe } from 'lucide-react'
+import { SWMS_LIST, POLICIES, MODERN_SLAVERY } from '@/lib/documents/safety'
+import { FileText, Download, Shield, ClipboardCheck, Phone, Mail, User, Globe, HardHat, ChevronRight } from 'lucide-react'
+
+// Delta's client-facing compliance library — the unsigned SWMS + policies, shown
+// in every client portal (and auto-included for new clients) so clients can see
+// our compliance. Rendered from code, always current; each links to the public
+// /compliance/<slug> print view. Internal signed docs are never listed here.
+const SAFETY_DOCS = [
+  ...SWMS_LIST.map((s) => ({ slug: s.code.replace(/\s+/g, '-').toLowerCase(), title: s.title, sub: `Safe Work Method Statement · ${s.code}` })),
+  ...POLICIES.map((p) => ({ slug: p.slug, title: p.title, sub: `Policy · ${p.code}` })),
+  { slug: 'modern-slavery', title: MODERN_SLAVERY.title, sub: 'Policy statement' },
+]
 
 const TYPE_LABELS: Record<string, string> = {
   sds:       'Safety Data Sheet',
@@ -73,7 +84,7 @@ export default async function ClientCompliancePage() {
   ].filter((s) => s.docs.length > 0)
 
   const hasAnything =
-    sections.length > 0 || (signedContracts && signedContracts.length > 0)
+    SAFETY_DOCS.length > 0 || sections.length > 0 || (signedContracts && signedContracts.length > 0)
 
   return (
     <ClientShell
@@ -95,6 +106,39 @@ export default async function ClientCompliancePage() {
           <p className="text-sm text-gray-700 leading-relaxed">
             All of our cleaners are fully checked, trained, and approved before working on any site.
           </p>
+        </div>
+      </section>
+
+      {/* Safety & Method Statements — Delta's compliance library (client-facing) */}
+      <section className="mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <HardHat className="w-4 h-4 text-gray-400" />
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Safety &amp; Method Statements</p>
+        </div>
+        <p className="text-sm text-gray-500 mb-3">
+          Our current Safe Work Method Statements and policies — the same procedures our cleaners follow on your site. View or download any of them for your records or an audit.
+        </p>
+        <div className="space-y-2">
+          {SAFETY_DOCS.map((d) => (
+            <a
+              key={d.slug}
+              href={`/compliance/${d.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between bg-white rounded-2xl px-6 py-5 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] hover:border-gray-300 transition-colors"
+            >
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-5 h-5 text-gray-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-black truncate">{d.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{d.sub}</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 ml-4" />
+            </a>
+          ))}
         </div>
       </section>
 

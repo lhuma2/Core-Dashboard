@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = [
   '/survey',
   '/sign',
   '/onboard',
+  '/compliance',
 ]
 
 /** Where each role lands after login */

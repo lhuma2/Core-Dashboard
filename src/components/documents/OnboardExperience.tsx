@@ -78,7 +78,7 @@ export function OnboardExperience({ code, alreadySigned }: { code: string; alrea
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Also included in this pack</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {INCLUDED.map((d) => (
-                <a key={d.slug} href={`/safety/${d.slug}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[13px] text-gray-600 hover:text-[#1e3a5f]">
+                <a key={d.slug} href={`/compliance/${d.slug}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[13px] text-gray-600 hover:text-[#1e3a5f]">
                   <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" /> <span className="truncate">{d.title}</span>
                 </a>
               ))}
