@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
+import { SectionNav } from './SectionNav'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -24,7 +25,10 @@ export function AppShell({ children, userEmail }: AppShellProps) {
           onMenuClick={() => setMobileOpen(true)}
         />
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          <div className="max-w-[1400px] mx-auto">{children}</div>
+          <div className="max-w-[1400px] mx-auto">
+            <SectionNav />
+            {children}
+          </div>
         </main>
       </div>
     </div>

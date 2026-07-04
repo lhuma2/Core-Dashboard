@@ -9,29 +9,21 @@ import {
   Users,
   TrendingUp,
   DollarSign,
-  BarChart3,
   Settings,
   UserCog,
   ClipboardCheck,
-  ClipboardList,
   FileText,
-  BookOpen,
-  Phone,
   X,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/calls',     label: 'Cold Calls', icon: Phone },
-  { href: '/leads',     label: 'Leads',     icon: TrendingUp },
-  { href: '/clients',   label: 'Clients',   icon: Users },
-  { href: '/documents', label: 'Documents', icon: FileText, aliases: ['/safety'] },
-  { href: '/surveys',   label: 'Surveys',   icon: ClipboardCheck },
-  { href: '/inspections', label: 'Inspections', icon: ClipboardList },
-  { href: '/financial', label: 'Financials', icon: DollarSign },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/team',      label: 'Team',      icon: UserCog },
-  { href: '/sops',      label: 'SOPs',      icon: BookOpen },
+  { href: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/calls',     label: 'Sales',      icon: TrendingUp, aliases: ['/leads'] },
+  { href: '/clients',   label: 'Clients',    icon: Users },
+  { href: '/documents', label: 'Documents',  icon: FileText, aliases: ['/safety', '/sops'] },
+  { href: '/inspections', label: 'Quality',  icon: ClipboardCheck, aliases: ['/surveys'] },
+  { href: '/financial', label: 'Financials', icon: DollarSign, aliases: ['/analytics'] },
+  { href: '/team',      label: 'Team',       icon: UserCog },
 ]
 
 const BOTTOM_ITEMS = [

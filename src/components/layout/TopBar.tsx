@@ -7,19 +7,19 @@ import { useState } from 'react'
 import { EnablePushButton } from '@/components/portal/EnablePushButton'
 
 const ROUTE_LABELS: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/calls':     'Cold Calls',
-  '/clients':   'Clients',
-  '/leads':     'Leads',
-  '/documents': 'Documents',
-  '/safety':    'Documents',
-  '/surveys':   'Surveys',
-  '/inspections': 'Inspections',
-  '/financial': 'Financials',
-  '/analytics': 'Analytics',
-  '/team':      'Team',
-  '/sops':      'SOPs',
-  '/settings':  'Settings',
+  '/dashboard':   'Dashboard',
+  '/calls':       'Sales',
+  '/leads':       'Sales',
+  '/clients':     'Clients',
+  '/documents':   'Documents',
+  '/safety':      'Documents',
+  '/sops':        'Documents',
+  '/inspections': 'Quality',
+  '/surveys':     'Quality',
+  '/financial':   'Financials',
+  '/analytics':   'Financials',
+  '/team':        'Team',
+  '/settings':    'Settings',
 }
 
 function getModuleLabel(pathname: string): string {
