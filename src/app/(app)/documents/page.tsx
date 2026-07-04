@@ -33,6 +33,19 @@ export default async function DocumentsPage() {
 
   const list: any[] = docs ?? []
 
+  // All saved contract PDFs across clients (stored per client, surfaced here too).
+  const { data: contractRows } = await db
+    .from('compliance_documents')
+    .select('id, name, file_url, client_id, created_at')
+    .eq('type', 'contract')
+    .order('created_at', { ascending: false })
+  const contracts: any[] = contractRows ?? []
+  const contractClientIds = Array.from(new Set(contracts.map((c) => c.client_id).filter(Boolean)))
+  const { data: contractClients } = contractClientIds.length
+    ? await db.from('clients').select('id, business_name, ref_number').in('id', contractClientIds)
+    : { data: [] }
+  const clientMap = new Map((contractClients ?? []).map((c: any) => [c.id, c]))
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
@@ -76,6 +89,34 @@ export default async function DocumentsPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {contracts.length > 0 && (
+        <div className="pt-2">
+          <p className="text-sm text-gray-500 mb-3">Signed contracts on file · {contracts.length}</p>
+          <div className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden divide-y divide-gray-100">
+            {contracts.map((c) => {
+              const client = clientMap.get(c.client_id) as any
+              return (
+                <div key={c.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="w-9 h-9 rounded-lg bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
+                    <FilePen className="w-4 h-4 text-[#1e3a5f]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{client?.business_name ?? 'Unknown client'}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{c.name}{client?.ref_number ? ` · ${client.ref_number}` : ''}</p>
+                  </div>
+                  {c.file_url && (
+                    <a href={`/api/file?url=${Buffer.from(c.file_url).toString('base64url')}`} target="_blank" rel="noreferrer"
+                      className="text-[11px] font-semibold text-[#1e3a5f] border border-[#1e3a5f]/20 rounded-full px-4 py-1.5 hover:bg-[#1e3a5f] hover:text-white transition-colors flex-shrink-0">
+                      View
+                    </a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
