@@ -116,7 +116,7 @@ export default async function ClientCompliancePage() {
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Safety &amp; Method Statements</p>
         </div>
         <p className="text-sm text-gray-500 mb-3">
-          Our current Safe Work Method Statements and policies — the same procedures our cleaners follow on your site. View or download any of them for your records or an audit.
+          Our current Safe Work Method Statements and policies — the same procedures our cleaners follow on your site. Tap any document to view it.
         </p>
         <div className="space-y-2">
           {SAFETY_DOCS.map((d) => (

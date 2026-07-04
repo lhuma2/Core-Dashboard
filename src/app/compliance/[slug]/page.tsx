@@ -11,11 +11,11 @@ export const dynamic = 'force-dynamic'
 // exposed here — those are handled by the private onboarding flow.
 export default function PublicComplianceDocPage({ params }: { params: { slug: string } }) {
   const { slug } = params
-  if (slug === 'modern-slavery') return <SafetyPrint />
-  if (slug === 'sds-register') return <SafetyPrint sds />
+  if (slug === 'modern-slavery') return <SafetyPrint viewOnly />
+  if (slug === 'sds-register') return <SafetyPrint sds viewOnly />
   const policy = findPolicy(slug)
-  if (policy) return <SafetyPrint policy={policy} />
+  if (policy) return <SafetyPrint policy={policy} viewOnly />
   const swms = findSwms(slug)
   if (!swms) notFound()
-  return <SafetyPrint swms={swms} />
+  return <SafetyPrint swms={swms} viewOnly />
 }
