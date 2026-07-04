@@ -22,7 +22,7 @@ export function SectionNav() {
   if (!group) return null
 
   return (
-    <div className="flex items-center gap-1 border-b border-gray-200 mb-6 overflow-x-auto">
+    <div className="flex items-center gap-1 border-b border-gray-200 mb-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {group.tabs.map((t) => {
         const active = matches(t.href, pathname)
         return (
