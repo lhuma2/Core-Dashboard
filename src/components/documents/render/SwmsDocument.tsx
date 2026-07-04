@@ -94,6 +94,28 @@ function SignOff({ label }: { label: string }) {
   )
 }
 
+// Director authorisation — stamps the approver's signature (script) + issue date.
+// These are Delta's own company documents, authorised by the Director.
+const DIRECTOR_NAME = DOC_CONTROL.approvedBy.split(',')[0].trim()
+function AuthorisedBy() {
+  return (
+    <div style={{ marginTop: 26, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      <div>
+        <div style={{ borderBottom: '1px solid #CBD5E1', height: 34, display: 'flex', alignItems: 'flex-end', paddingBottom: 2 }}>
+          <span style={{ fontFamily: SCRIPT, fontSize: 28, lineHeight: 1, color: NAVY }}>{DIRECTOR_NAME}</span>
+        </div>
+        <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Authorised · {DOC_CONTROL.approvedBy}</div>
+      </div>
+      <div>
+        <div style={{ borderBottom: '1px solid #CBD5E1', height: 34, display: 'flex', alignItems: 'flex-end', paddingBottom: 2 }}>
+          <span style={{ fontSize: 13, lineHeight: 1, color: NAVY }}>{DOC_CONTROL.issueDate}</span>
+        </div>
+        <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Date</div>
+      </div>
+    </div>
+  )
+}
+
 function Footer() {
   return (
     <div style={{ marginTop: 26, paddingTop: 14, borderTop: '1px solid #EEF2F6', textAlign: 'center', fontSize: 10.5, color: '#94A3B8', lineHeight: 1.7 }}>
@@ -151,6 +173,7 @@ export function SwmsDocument({ swms }: { swms: Swms }) {
         <EmergencyBox />
         <ReviewTriggers />
         <Legislation />
+        <AuthorisedBy />
         <SignOff label="Received & understood by" />
         <Footer />
       </section>
@@ -169,10 +192,7 @@ export function ModernSlaveryDocument() {
         {MODERN_SLAVERY.paragraphs.map((p, i) => (
           <p key={i} style={{ fontSize: 14, lineHeight: 1.7, color: '#334155', margin: '0 0 16px' }}>{p}</p>
         ))}
-        <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Authorised · {DOC_CONTROL.approvedBy}</div></div>
-          <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Date</div></div>
-        </div>
+        <AuthorisedBy />
         <Footer />
       </section>
     </div>
@@ -279,10 +299,7 @@ export function PolicyDocument({ policy }: { policy: Policy }) {
             )}
           </div>
         ))}
-        <div style={{ marginTop: 26, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Authorised · {DOC_CONTROL.approvedBy}</div></div>
-          <div><div style={{ borderBottom: '1px solid #CBD5E1', height: 30 }} /><div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 5 }}>Date</div></div>
-        </div>
+        <AuthorisedBy />
         <Footer />
       </section>
     </div>
