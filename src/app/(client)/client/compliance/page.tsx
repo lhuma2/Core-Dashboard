@@ -3,6 +3,7 @@ export const revalidate = 0
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { ClientShell } from '@/components/portal/ClientShell'
 import { SWMS_LIST, POLICIES, MODERN_SLAVERY } from '@/lib/documents/safety'
 import { FileText, Download, Shield, ClipboardCheck, Phone, Mail, User, Globe, HardHat, ChevronRight } from 'lucide-react'
@@ -52,12 +53,15 @@ export default async function ClientCompliancePage() {
   const abn = '83 303 026 478'
   const insurancePolicyNumber = 'SPD015763734'
 
-  // Fetch signed contracts (from documents builder)
+  // The client's own signed agreements (from the in-app signing flow). These live
+  // in proposal_documents, which the client can't read under RLS, so fetch via an
+  // admin client scoped strictly to their own linked client id.
   const { data: signedContracts } = clientId
-    ? await (supabase as any)
-        .from('documents')
-        .select('id, ref_number, document_type, title, signed_at, created_at')
+    ? await (createAdminClient() as any)
+        .from('proposal_documents')
+        .select('id, ref_number, kind, data, sign_code, signed_at')
         .eq('client_id', clientId)
+        .eq('status', 'signed')
         .not('signed_at', 'is', null)
         .order('signed_at', { ascending: false })
     : { data: [] }
@@ -158,15 +162,25 @@ export default async function ClientCompliancePage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-black">
-                      {doc.title ?? DOC_TYPE_LABELS[doc.document_type] ?? doc.document_type}
+                      {doc.data?.documentTitle ?? DOC_TYPE_LABELS[doc.kind] ?? 'Service Agreement'}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {doc.ref_number} · Signed {new Date(doc.signed_at).toLocaleDateString('en-AU', {
+                      {doc.ref_number ? `${doc.ref_number} · ` : ''}Signed {new Date(doc.signed_at).toLocaleDateString('en-AU', {
                         day: 'numeric', month: 'short', year: 'numeric',
                       })}
                     </p>
                   </div>
                 </div>
+                {doc.sign_code && (
+                  <a
+                    href={`/sign/${doc.sign_code}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-black border border-black px-4 py-2 rounded-full hover:bg-black hover:text-white transition-all flex-shrink-0 ml-4"
+                  >
+                    View
+                  </a>
+                )}
               </div>
             ))}
           </div>
