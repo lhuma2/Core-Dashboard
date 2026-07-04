@@ -13,6 +13,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/leads':     'Leads',
   '/documents': 'Documents',
   '/surveys':   'Surveys',
+  '/inspections': 'Inspections',
   '/financial': 'Financials',
   '/analytics': 'Analytics',
   '/team':      'Team',

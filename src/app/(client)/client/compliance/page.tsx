@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ClientShell } from '@/components/portal/ClientShell'
 import { SWMS_LIST, POLICIES, MODERN_SLAVERY } from '@/lib/documents/safety'
+import { scoreBand } from '@/lib/inspections/template'
 import { FileText, Download, Shield, ClipboardCheck, Phone, Mail, User, Globe, HardHat, ChevronRight } from 'lucide-react'
 
 // Delta's client-facing compliance library — the unsigned SWMS + policies, shown
@@ -66,6 +67,17 @@ export default async function ClientCompliancePage() {
         .order('signed_at', { ascending: false })
     : { data: [] }
 
+  // Quality inspections this client is allowed to see (admin-scoped to their own id).
+  const { data: sharedInspections } = clientId
+    ? await (createAdminClient() as any)
+        .from('inspections')
+        .select('id, score, inspected_at, areas')
+        .eq('client_id', clientId)
+        .eq('shared_with_client', true)
+        .order('inspected_at', { ascending: false })
+        .limit(12)
+    : { data: [] }
+
   // Fetch global + client-specific compliance docs
   const { data: docs } = await (supabase as any)
     .from('compliance_documents')
@@ -112,6 +124,44 @@ export default async function ClientCompliancePage() {
           </p>
         </div>
       </section>
+
+      {/* Quality inspections — score only, shared at Delta's discretion */}
+      {sharedInspections && sharedInspections.length > 0 && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardCheck className="w-4 h-4 text-gray-400" />
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Quality Inspections</p>
+          </div>
+          <p className="text-sm text-gray-500 mb-3">Independent quality inspections we carry out on your site.</p>
+          <div className="space-y-2">
+            {(sharedInspections as any[]).map((ins) => {
+              const band = scoreBand(ins.score)
+              const cls = band === 'pass' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : band === 'watch' ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : band === 'fail' ? 'bg-red-50 text-red-700 border-red-200'
+                : 'bg-gray-50 text-gray-500 border-gray-200'
+              const areaCount = Array.isArray(ins.areas) ? ins.areas.length : 0
+              return (
+                <div key={ins.id} className="flex items-center justify-between bg-white rounded-2xl px-6 py-5 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                      <ClipboardCheck className="w-5 h-5 text-gray-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-black">Site quality inspection</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {new Date(ins.inspected_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {areaCount ? ` · ${areaCount} areas checked` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-bold border rounded-full px-3 py-1 ${cls}`}>{ins.score != null ? `${ins.score}%` : '—'}</span>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Safety & Method Statements — Delta's compliance library (client-facing) */}
       <section className="mb-8">
