@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { scoreBand } from '@/lib/inspections/template'
-import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, Share2 } from 'lucide-react'
+import { ClipboardCheck, Plus, AlertTriangle, Share2 } from 'lucide-react'
+import { DeleteInspectionButton } from '@/components/inspections/DeleteInspectionButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,8 +72,8 @@ export default async function InspectionsPage() {
             const band = scoreBand(i.score)
             const fixes = i.rectifications?.length ?? 0
             return (
-              <Link key={i.id} href={`/inspections/${i.id}`} className="block">
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 flex items-center justify-between gap-3 hover:border-gray-300 transition-colors">
+              <div key={i.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm flex items-center hover:border-gray-300 transition-colors">
+                <Link href={`/inspections/${i.id}`} className="flex-1 min-w-0 flex items-center justify-between gap-3 px-5 py-4">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{i.site_label}</p>
                     <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
@@ -82,12 +83,12 @@ export default async function InspectionsPage() {
                       {i.shared_with_client && <span className="inline-flex items-center gap-1 text-[#1e3a5f]"><Share2 className="w-3 h-3" />Shared</span>}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className={`text-xs font-bold border rounded-full px-2.5 py-1 ${BAND_PILL[band]}`}>{i.score != null ? `${i.score}%` : 'Draft'}</span>
-                    <ChevronRight className="w-4 h-4 text-gray-300" />
-                  </div>
+                  <span className={`text-xs font-bold border rounded-full px-2.5 py-1 flex-shrink-0 ${BAND_PILL[band]}`}>{i.score != null ? `${i.score}%` : 'Draft'}</span>
+                </Link>
+                <div className="pr-3 pl-1 flex-shrink-0">
+                  <DeleteInspectionButton id={i.id} />
                 </div>
-              </Link>
+              </div>
             )
           })}
         </div>
