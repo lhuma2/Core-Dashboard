@@ -125,7 +125,10 @@ function Footer() {
   )
 }
 
-export function SwmsDocument({ swms }: { swms: Swms }) {
+// hideSignoff: client-facing copy — shows the method-statement content only, with
+// no authorisation signature or worker sign-off. The signed version (with sign-off)
+// stays on the internal /safety view for records.
+export function SwmsDocument({ swms, hideSignoff }: { swms: Swms; hideSignoff?: boolean }) {
   return (
     <div data-doc-root>
       <section data-sheet style={page}>
@@ -173,15 +176,15 @@ export function SwmsDocument({ swms }: { swms: Swms }) {
         <EmergencyBox />
         <ReviewTriggers />
         <Legislation />
-        <AuthorisedBy />
-        <SignOff label="Received & understood by" />
+        {!hideSignoff && <AuthorisedBy />}
+        {!hideSignoff && <SignOff label="Received & understood by" />}
         <Footer />
       </section>
     </div>
   )
 }
 
-export function ModernSlaveryDocument() {
+export function ModernSlaveryDocument({ hideSignoff }: { hideSignoff?: boolean }) {
   return (
     <div data-doc-root>
       <section data-sheet style={page}>
@@ -192,7 +195,7 @@ export function ModernSlaveryDocument() {
         {MODERN_SLAVERY.paragraphs.map((p, i) => (
           <p key={i} style={{ fontSize: 14, lineHeight: 1.7, color: '#334155', margin: '0 0 16px' }}>{p}</p>
         ))}
-        <AuthorisedBy />
+        {!hideSignoff && <AuthorisedBy />}
         <Footer />
       </section>
     </div>
@@ -279,7 +282,7 @@ export function InductionDocument({ signature }: { signature?: SubbieSignature |
   )
 }
 
-export function PolicyDocument({ policy }: { policy: Policy }) {
+export function PolicyDocument({ policy, hideSignoff }: { policy: Policy; hideSignoff?: boolean }) {
   return (
     <div data-doc-root>
       <section data-sheet style={page}>
@@ -299,7 +302,7 @@ export function PolicyDocument({ policy }: { policy: Policy }) {
             )}
           </div>
         ))}
-        <AuthorisedBy />
+        {!hideSignoff && <AuthorisedBy />}
         <Footer />
       </section>
     </div>

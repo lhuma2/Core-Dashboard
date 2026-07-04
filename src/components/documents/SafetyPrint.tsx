@@ -31,12 +31,12 @@ export function SafetyPrint({ swms, policy, sds, agreement, induction, viewOnly 
         </div>
       )}
       <div style={{ background: '#E6E8EB', minHeight: '100vh', padding: '24px 0' }}>
-        {swms ? <SwmsDocument swms={swms} />
-          : policy ? <PolicyDocument policy={policy} />
+        {swms ? <SwmsDocument swms={swms} hideSignoff={viewOnly} />
+          : policy ? <PolicyDocument policy={policy} hideSignoff={viewOnly} />
           : agreement ? <SubcontractorAgreementDocument />
           : induction ? <InductionDocument />
           : sds ? <SdsRegisterDocument />
-          : <ModernSlaveryDocument />}
+          : <ModernSlaveryDocument hideSignoff={viewOnly} />}
       </div>
     </>
   )
