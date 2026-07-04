@@ -57,10 +57,14 @@ export default async function InspectionReportPage({ params }: { params: { id: s
           {perArea.map((a) => (
             <div key={a.key} className="flex items-center gap-3">
               <span className="w-40 text-[13px] text-gray-600 truncate">{a.name}</span>
-              <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                {a.score != null && <div className={`h-full rounded-full ${BAND_BAR[scoreBand(a.score)]}`} style={{ width: `${a.score}%` }} />}
-              </div>
-              <span className="w-10 text-right text-xs text-gray-400">{a.score != null ? a.score : '–'}</span>
+              {a.na ? (
+                <span className="flex-1 text-xs text-gray-400">Not applicable</span>
+              ) : (
+                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  {a.score != null && <div className={`h-full rounded-full ${BAND_BAR[scoreBand(a.score)]}`} style={{ width: `${a.score}%` }} />}
+                </div>
+              )}
+              <span className="w-10 text-right text-xs text-gray-400">{a.na ? 'N/A' : (a.score != null ? a.score : '–')}</span>
             </div>
           ))}
         </div>

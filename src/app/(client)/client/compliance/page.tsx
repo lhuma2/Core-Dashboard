@@ -140,7 +140,7 @@ export default async function ClientCompliancePage() {
                 : band === 'watch' ? 'bg-amber-50 text-amber-700 border-amber-200'
                 : band === 'fail' ? 'bg-red-50 text-red-700 border-red-200'
                 : 'bg-gray-50 text-gray-500 border-gray-200'
-              const areaCount = Array.isArray(ins.areas) ? ins.areas.length : 0
+              const areaCount = Array.isArray(ins.areas) ? ins.areas.filter((a: any) => !a?.na).length : 0
               return (
                 <div key={ins.id} className="flex items-center justify-between bg-white rounded-2xl px-6 py-5 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
                   <div className="flex items-center gap-4 min-w-0">

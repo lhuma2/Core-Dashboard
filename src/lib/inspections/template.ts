@@ -86,16 +86,16 @@ export const INSPECTION_TEMPLATE: TemplateArea[] = [
 
 // ── Runtime shapes (what a saved inspection stores) ──────────────────────────
 export interface InspItem { key: string; label: string; rating: Rating | null }
-export interface InspArea { key: string; name: string; items: InspItem[]; note?: string | null; photos?: string[] }
+export interface InspArea { key: string; name: string; items: InspItem[]; note?: string | null; photos?: string[]; na?: boolean }
 export interface Rectification { area: string; label: string; rating: Rating; note?: string | null }
 
-export interface AreaScore { key: string; name: string; score: number | null; rated: number }
+export interface AreaScore { key: string; name: string; score: number | null; rated: number; na: boolean }
 export interface InspectionScore { overall: number | null; perArea: AreaScore[]; rectifications: Rectification[] }
 
 /** Build a blank inspection (all items unrated) from the template. */
 export function blankAreas(): InspArea[] {
   return INSPECTION_TEMPLATE.map((a) => ({
-    key: a.key, name: a.name, note: '', photos: [],
+    key: a.key, name: a.name, note: '', photos: [], na: false,
     items: a.items.map((it) => ({ key: it.key, label: it.label, rating: null as Rating | null })),
   }))
 }
@@ -105,6 +105,7 @@ export function scoreInspection(areas: InspArea[]): InspectionScore {
   let pts = 0
   let max = 0
   const perArea: AreaScore[] = areas.map((a) => {
+    if (a.na) return { key: a.key, name: a.name, score: null, rated: 0, na: true }
     let ap = 0
     let am = 0
     a.items.forEach((it) => {
@@ -112,14 +113,16 @@ export function scoreInspection(areas: InspArea[]): InspectionScore {
     })
     pts += ap
     max += am
-    return { key: a.key, name: a.name, score: am ? Math.round((100 * ap) / am) : null, rated: am / 2 }
+    return { key: a.key, name: a.name, score: am ? Math.round((100 * ap) / am) : null, rated: am / 2, na: false }
   })
   const overall = max ? Math.round((100 * pts) / max) : null
-  const rectifications: Rectification[] = areas.flatMap((a) =>
-    a.items
-      .filter((it) => it.rating === 'minor' || it.rating === 'fail')
-      .map((it) => ({ area: a.name, label: it.label, rating: it.rating as Rating, note: a.note || null }))
-  )
+  const rectifications: Rectification[] = areas
+    .filter((a) => !a.na)
+    .flatMap((a) =>
+      a.items
+        .filter((it) => it.rating === 'minor' || it.rating === 'fail')
+        .map((it) => ({ area: a.name, label: it.label, rating: it.rating as Rating, note: a.note || null }))
+    )
   return { overall, perArea, rectifications }
 }
 
