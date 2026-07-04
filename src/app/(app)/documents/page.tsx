@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NewProposalButton } from '@/components/documents/NewProposalButton'
 import { DeleteDocButton } from '@/components/documents/DeleteDocButton'
+import { DocsTabs } from '@/components/documents/DocsTabs'
 import { FileText, FilePen, ChevronRight } from 'lucide-react'
 
 const KIND_LABEL: Record<string, string> = {
@@ -34,11 +35,15 @@ export default async function DocumentsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight text-gray-900">Documents</h2>
-          <p className="text-sm text-gray-400 mt-0.5">Proposals and service agreements · {list.length}</p>
-        </div>
+      <div>
+        <h2 className="font-display text-2xl font-extrabold tracking-tight text-gray-900">Documents</h2>
+        <p className="text-sm text-gray-400 mt-0.5">Proposals, agreements, and safety — all in one place.</p>
+      </div>
+
+      <DocsTabs />
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">Proposals and service agreements · {list.length}</p>
         <NewProposalButton />
       </div>
 

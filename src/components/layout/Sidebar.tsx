@@ -17,7 +17,6 @@ import {
   FileText,
   BookOpen,
   Phone,
-  ShieldCheck,
   X,
 } from 'lucide-react'
 
@@ -26,14 +25,13 @@ const NAV_ITEMS = [
   { href: '/calls',     label: 'Cold Calls', icon: Phone },
   { href: '/leads',     label: 'Leads',     icon: TrendingUp },
   { href: '/clients',   label: 'Clients',   icon: Users },
-  { href: '/documents', label: 'Documents', icon: FileText },
+  { href: '/documents', label: 'Documents', icon: FileText, aliases: ['/safety'] },
   { href: '/surveys',   label: 'Surveys',   icon: ClipboardCheck },
   { href: '/inspections', label: 'Inspections', icon: ClipboardList },
   { href: '/financial', label: 'Financials', icon: DollarSign },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/team',      label: 'Team',      icon: UserCog },
   { href: '/sops',      label: 'SOPs',      icon: BookOpen },
-  { href: '/safety',    label: 'Safety',    icon: ShieldCheck },
 ]
 
 const BOTTOM_ITEMS = [
@@ -51,9 +49,9 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/')
 
-  const navLink = (item: { href: string; label: string; icon: React.ElementType }) => {
+  const navLink = (item: { href: string; label: string; icon: React.ElementType; aliases?: string[] }) => {
     const Icon = item.icon
-    const active = isActive(item.href)
+    const active = isActive(item.href) || (item.aliases ?? []).some(isActive)
     return (
       <Link
         key={item.href}
