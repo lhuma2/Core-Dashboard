@@ -30,6 +30,7 @@ export interface ColdLead {
   intro_email_message_id: string | null
   intro_email_subject: string | null
   follow_up_email_sent_at: string | null
+  follow_up_opt_in: boolean
   intro_sms_sent_at: string | null
   comms: CommsEntry[]
   call_log: CallLogEntry[]
@@ -385,7 +386,7 @@ async function sendThreadedEmail(opts: {
   }
 }
 
-export async function sendIntroEmailAction(id: string) {
+export async function sendIntroEmailAction(id: string, scheduleFollowUp = false) {
   const db = createAdminClient() as any
   const { data: lead } = await db.from('cold_leads').select('*').eq('id', id).single()
   if (!lead) return { error: 'Lead not found' }
@@ -432,6 +433,7 @@ export async function sendIntroEmailAction(id: string) {
     intro_email_sent_at: now,
     intro_email_message_id: messageId,
     intro_email_subject: subject,
+    follow_up_opt_in: !!scheduleFollowUp,
     comms,
   }).eq('id', id)
   revalidatePath('/calls')

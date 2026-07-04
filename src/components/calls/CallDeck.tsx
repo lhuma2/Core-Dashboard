@@ -166,6 +166,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
   const [editNotes, setEditNotes] = useState(false)
   const [notesText, setNotesText] = useState(lead.notes ?? '')
   const [emailPreview, setEmailPreview] = useState<{ kind: 'intro' | 'follow_up'; to: string; subject: string; body: string } | null>(null)
+  const [includeFollowUp, setIncludeFollowUp] = useState(true)
 
   const followUpDue = Boolean(lead.next_follow_up && lead.next_follow_up <= today && ACTIVE(lead))
   const retryDue    = Boolean(lead.next_attempt && lead.next_attempt <= today && ACTIVE(lead))
@@ -192,9 +193,9 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
     if (!emailPreview) return
     const kind = emailPreview.kind
     setBusy('email')
-    const res = kind === 'intro' ? await sendIntroEmailAction(lead.id) : await sendFollowUpEmailAction(lead.id)
+    const res = kind === 'intro' ? await sendIntroEmailAction(lead.id, includeFollowUp) : await sendFollowUpEmailAction(lead.id)
     setBusy(null); setEmailPreview(null)
-    setFlash(res.error ? res.error : (kind === 'intro' ? 'Intro email sent' : 'Follow-up sent in the same thread'))
+    setFlash(res.error ? res.error : (kind === 'intro' ? (includeFollowUp ? 'Intro email sent · 5-day follow-up scheduled' : 'Intro email sent') : 'Follow-up sent in the same thread'))
     setTimeout(() => setFlash(null), 3000); onChanged()
   }
   function openSms() {
@@ -278,6 +279,11 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
             {lead.intro_email_sent_at && (
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-1.5 py-0.5">
                 <MailCheck className="w-3 h-3" /> Emailed {relativeDay(lead.intro_email_sent_at)}
+              </span>
+            )}
+            {lead.follow_up_opt_in && lead.intro_email_sent_at && !lead.follow_up_email_sent_at && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-1.5 py-0.5">
+                <CalendarClock className="w-3 h-3" /> Follow-up scheduled
               </span>
             )}
             {lead.follow_up_email_sent_at && (
@@ -447,6 +453,12 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
               </div>
               <p className="px-3 py-3 text-[13px] text-gray-700 whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">{emailPreview.body}</p>
             </div>
+            {emailPreview.kind === 'intro' && (
+              <label className="flex items-start gap-2 mt-2 px-1 cursor-pointer select-none">
+                <input type="checkbox" checked={includeFollowUp} onChange={(e) => setIncludeFollowUp(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#1e3a5f] flex-shrink-0" />
+                <span className="text-[13px] text-gray-600">Also send a 5-day follow-up if they don’t reply <span className="text-gray-400">(automatic, skips weekends)</span></span>
+              </label>
+            )}
             <div className="flex gap-2 mt-2">
               <button onClick={confirmSendEmail} disabled={busy === 'email'}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl py-3 disabled:opacity-50 active:scale-[0.98] transition-all">

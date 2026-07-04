@@ -16,12 +16,21 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Never follow up on a weekend (Brisbane). The schedule is weekdays-only, but
+  // guard here too so a schedule/timezone change can't leak a weekend send.
+  const brisDay = new Date().toLocaleDateString('en-US', { timeZone: 'Australia/Brisbane', weekday: 'short' })
+  if (brisDay === 'Sat' || brisDay === 'Sun') {
+    return NextResponse.json({ skipped: 'weekend', day: brisDay })
+  }
+
   const db = createAdminClient() as any
   const cutoff = new Date(Date.now() - 5 * 86_400_000).toISOString()
 
+  // Only leads you opted into a follow-up for when you sent the intro email.
   const { data: leads, error } = await db
     .from('cold_leads')
     .select('id, status, intro_email_sent_at, follow_up_email_sent_at, intro_email_message_id')
+    .eq('follow_up_opt_in', true)
     .not('intro_email_sent_at', 'is', null)
     .is('follow_up_email_sent_at', null)
     .lte('intro_email_sent_at', cutoff)
