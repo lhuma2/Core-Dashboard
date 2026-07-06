@@ -5,7 +5,16 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NewProposalButton } from '@/components/documents/NewProposalButton'
 import { DeleteDocButton } from '@/components/documents/DeleteDocButton'
-import { FileText, FilePen, ChevronRight } from 'lucide-react'
+import { FileText, FilePen, ChevronRight, FileDown } from 'lucide-react'
+
+// The company's own reviewed/branded PDFs, bundled in /public/documents.
+const COMPANY_DOCS = [
+  { name: 'Capability Statement',          file: '/documents/capability-statement.pdf' },
+  { name: 'Bond Cleaning Service Proposal', file: '/documents/bond-cleaning-service-proposal.pdf' },
+  { name: 'Bond Cleaning Service Agreement', file: '/documents/bond-cleaning-service-agreement.pdf' },
+  { name: 'Residential Service Agreement',  file: '/documents/residential-service-agreement.pdf' },
+  { name: 'Subcontractor Agreement',        file: '/documents/subcontractor-agreement.pdf' },
+]
 
 const KIND_LABEL: Record<string, string> = {
   proposal: 'Proposal', agreement: 'Service Agreement', one_off: 'One-Off Agreement', capability: 'Capability Statement',
@@ -86,6 +95,27 @@ export default async function DocumentsPage() {
           })}
         </div>
       )}
+
+      <div className="pt-2">
+        <p className="text-sm text-gray-500 mb-3">Company documents · {COMPANY_DOCS.length}</p>
+        <div className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden divide-y divide-gray-100">
+          {COMPANY_DOCS.map((d) => (
+            <div key={d.file} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+              <div className="w-9 h-9 rounded-lg bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-[#1e3a5f]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">PDF · standard document</p>
+              </div>
+              <a href={d.file} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1e3a5f] border border-[#1e3a5f]/20 rounded-full px-4 py-1.5 hover:bg-[#1e3a5f] hover:text-white transition-colors flex-shrink-0">
+                <FileDown className="w-3.5 h-3.5" /> View
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {contracts.length > 0 && (
         <div className="pt-2">
