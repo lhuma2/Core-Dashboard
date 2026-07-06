@@ -69,7 +69,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   }
 
   const content = (
-    <div className="flex flex-col h-full bg-[#00250e] border-r border-white/5">
+    <div className="flex flex-col h-full bg-[#00250e] border-r border-white/5 pt-[env(safe-area-inset-top)]">
       {/* Logo */}
       <div className="relative flex items-center justify-center px-5 h-16 border-b border-white/5 flex-shrink-0">
         <Image
