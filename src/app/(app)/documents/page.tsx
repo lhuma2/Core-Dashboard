@@ -9,15 +9,6 @@ import { UploadCompanyDocButton } from '@/components/documents/UploadCompanyDocB
 import { DeleteCompanyDocButton } from '@/components/documents/DeleteCompanyDocButton'
 import { FileText, FilePen, ChevronRight, FileDown } from 'lucide-react'
 
-// The company's own reviewed/branded PDFs, bundled in /public/documents.
-const COMPANY_DOCS = [
-  { name: 'Capability Statement',          file: '/documents/capability-statement.pdf' },
-  { name: 'Bond Cleaning Service Proposal', file: '/documents/bond-cleaning-service-proposal.pdf' },
-  { name: 'Bond Cleaning Service Agreement', file: '/documents/bond-cleaning-service-agreement.pdf' },
-  { name: 'Residential Service Agreement',  file: '/documents/residential-service-agreement.pdf' },
-  { name: 'Subcontractor Agreement',        file: '/documents/subcontractor-agreement.pdf' },
-]
-
 const KIND_LABEL: Record<string, string> = {
   proposal: 'Proposal', agreement: 'Service Agreement', one_off: 'One-Off Agreement', capability: 'Capability Statement',
 }
@@ -63,11 +54,8 @@ export default async function DocumentsPage() {
     .order('created_at', { ascending: false })
   const uploadedDocs: any[] = uploadedRows ?? []
 
-  // Options for the "New proposal" picker: bundled + uploaded company documents.
-  const proposalDocOptions = [
-    ...COMPANY_DOCS.map((d) => ({ name: d.name, url: d.file })),
-    ...uploadedDocs.map((d) => ({ name: d.name, url: d.file_url })),
-  ]
+  // Options for the "New proposal" picker: all company documents.
+  const proposalDocOptions = uploadedDocs.map((d) => ({ name: d.name, url: d.file_url }))
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -113,25 +101,13 @@ export default async function DocumentsPage() {
 
       <div className="pt-2">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm text-gray-500">Company documents · {COMPANY_DOCS.length + uploadedDocs.length}</p>
+          <p className="text-sm text-gray-500">Company documents · {uploadedDocs.length}</p>
           <UploadCompanyDocButton />
         </div>
         <div className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden divide-y divide-gray-100">
-          {COMPANY_DOCS.map((d) => (
-            <div key={d.file} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-              <div className="w-9 h-9 rounded-lg bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-[#00250e]" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">PDF · standard document</p>
-              </div>
-              <a href={d.file} target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-4 py-1.5 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">
-                <FileDown className="w-3.5 h-3.5" /> View
-              </a>
-            </div>
-          ))}
+          {uploadedDocs.length === 0 && (
+            <p className="px-5 py-6 text-sm text-gray-400 text-center">No company documents. Use the + button to upload one.</p>
+          )}
           {uploadedDocs.map((d) => (
             <div key={d.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
               <div className="w-9 h-9 rounded-lg bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
@@ -139,7 +115,7 @@ export default async function DocumentsPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Uploaded document</p>
+                <p className="text-xs text-gray-400 mt-0.5">Company document</p>
               </div>
               <a href={d.file_url} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-4 py-1.5 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">
