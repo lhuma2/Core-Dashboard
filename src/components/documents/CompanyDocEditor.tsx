@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Palette, PenLine, Send, Plus } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Palette, PenLine, Send, Plus, Calendar } from 'lucide-react'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
 
 const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
 
-type FieldType = 'clientName' | 'quotedPrice' | 'text' | 'signature'
+type FieldType = 'clientName' | 'quotedPrice' | 'date' | 'text' | 'signature'
 type BgStyle = 'white' | 'dark' | 'none'
 type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number; w?: number; h?: number } // x,y,w,h = % of page
 
@@ -23,12 +23,13 @@ function boxStyle(bg: BgStyle, size: number, font: string): React.CSSProperties 
   if (bg === 'dark')  return { ...base, background: '#00250e', color: '#ffffff' }
   return { ...base, background: 'transparent', color: '#111827', textShadow: '0 1px 4px rgba(255,255,255,0.9)' }
 }
-type FieldValues = { clientName: string; quotedPrice: string }
+type FieldValues = { clientName: string; quotedPrice: string; date: string }
 type PageImg = { src: string; aspect: number } // aspect = height / width
 
 const FIELD_META: Record<FieldType, { label: string; icon: any; placeholder: string }> = {
   clientName:  { label: 'Client Name',  icon: User,       placeholder: 'e.g. Northpoint Commercial' },
   quotedPrice: { label: 'Quoted Price', icon: DollarSign, placeholder: 'e.g. $5,400 / month' },
+  date:        { label: 'Date',         icon: Calendar,   placeholder: 'e.g. 14 May 2026' },
   text:        { label: 'Text box',     icon: Type,       placeholder: '' },
   signature:   { label: 'Signature',    icon: PenLine,    placeholder: '' },
 }
@@ -39,6 +40,7 @@ export function CompanyDocEditor({
   const [values, setValues] = useState<FieldValues>({
     clientName:  initialData?.fieldValues?.clientName ?? initialData?.clientName ?? '',
     quotedPrice: initialData?.fieldValues?.quotedPrice ?? '',
+    date:        initialData?.fieldValues?.date ?? new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }),
   })
   const [placements, setPlacements] = useState<Placement[]>(initialData?.placements ?? [])
   const [pages, setPages] = useState<PageImg[]>([])
@@ -285,7 +287,7 @@ export function CompanyDocEditor({
                   <p className="text-[11px] text-gray-400 px-0.5">Drag on, then type directly on the document.</p>
                 ) : (
                   <input
-                    value={values[type as 'clientName' | 'quotedPrice']}
+                    value={values[type as keyof FieldValues]}
                     onChange={(e) => setValues((v) => ({ ...v, [type]: e.target.value }))}
                     placeholder={meta.placeholder}
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00250e]/25 focus:border-[#00250e]"
@@ -360,7 +362,7 @@ export function CompanyDocEditor({
                               className="bg-transparent outline-none min-w-[2rem]"
                             />
                           ) : (
-                            values[pl.type as 'clientName' | 'quotedPrice'] || FIELD_META[pl.type].label
+                            values[pl.type as keyof FieldValues] || FIELD_META[pl.type].label
                           )}
                           {selected && [
                             '-top-1 -left-1 cursor-nwse-resize',

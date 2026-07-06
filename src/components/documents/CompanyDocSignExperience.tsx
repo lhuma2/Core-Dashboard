@@ -8,7 +8,7 @@ const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.
 const DOC_FONT = 'Arial, "Helvetica Neue", Helvetica, "Liberation Sans", Arimo, sans-serif'
 const SIGN_FONT = '"Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive'
 
-type FieldType = 'clientName' | 'quotedPrice' | 'text' | 'signature'
+type FieldType = 'clientName' | 'quotedPrice' | 'date' | 'text' | 'signature'
 type BgStyle = 'white' | 'dark' | 'none'
 type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number; w?: number; h?: number }
 type PageImg = { src: string; aspect: number }
@@ -104,6 +104,7 @@ export function CompanyDocSignExperience({
   const valueFor = (pl: Placement) =>
     pl.type === 'clientName' ? (values.clientName ?? '')
     : pl.type === 'quotedPrice' ? (values.quotedPrice ?? '')
+    : pl.type === 'date' ? (values.date ?? '')
     : (pl.text ?? '')
 
   let sigIndex = 0
