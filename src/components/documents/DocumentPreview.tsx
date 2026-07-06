@@ -217,8 +217,8 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
           <div style={{ padding: '36px 40px' }}>
             <SectionLabel>Submitted by</SectionLabel>
             <p style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 2 }}>Laith Humadi</p>
-            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>Founder & Director, Core Cleaning</p>
-            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>+61 412 844 237</p>
+            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>Director, Core Cleaning</p>
+            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>+61 407 026 360</p>
             <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 28 }}>admin@corecleaning.services</p>
 
             <div style={{ borderTop: `1px solid ${RULE_LIGHT}`, paddingTop: 16, marginBottom: 20 }}>
@@ -246,7 +246,7 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
         <PageHeader company={c.companyName} dateDisplay={c.proposalDateDisplay} />
 
         <SectionLabel>Introduction</SectionLabel>
-        <SectionHeading>From Laith Humadi, Founder & Director</SectionHeading>
+        <SectionHeading>From Laith Humadi, Director</SectionHeading>
 
         {/* Letter */}
         <div style={{ border: `1px solid ${RULE}`, borderRadius: 4, padding: '24px 28px', marginBottom: 32 }}>

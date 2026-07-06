@@ -265,7 +265,7 @@ function ProposalBuilder({ clients, preselectedClientId, onBack }: { clients: Cl
   const [refNumber]                     = useState(generateRef)
 
   // Step 2
-  const [openingParagraph, setOpeningParagraph] = useState('Thank you for the opportunity to visit your site and put this proposal together. Following our walkthrough, I have a clear picture of your requirements and am confident we can deliver a service that meets the standard your facility deserves.\n\nWe look forward to the opportunity to support your business and to maintain a consistently high standard across your facility. Please do not hesitate to reach out with any questions before making a decision.\n\nWarm regards,\nLaith Humadi\nFounder & Director, Core Cleaning')
+  const [openingParagraph, setOpeningParagraph] = useState('Thank you for the opportunity to visit your site and put this proposal together. Following our walkthrough, I have a clear picture of your requirements and am confident we can deliver a service that meets the standard your facility deserves.\n\nWe look forward to the opportunity to support your business and to maintain a consistently high standard across your facility. Please do not hesitate to reach out with any questions before making a decision.\n\nWarm regards,\nLaith Humadi\nDirector, Core Cleaning')
   const [additionalNote, setAdditionalNote] = useState('')
   const hasEditedOpening = useRef(false)
 
@@ -293,7 +293,7 @@ function ProposalBuilder({ clients, preselectedClientId, onBack }: { clients: Cl
       setContactEmail(selectedClient.contact_email || '')
       setSiteAddress([selectedClient.address, selectedClient.suburb, selectedClient.state, selectedClient.postcode].filter(Boolean).join(', '))
       if (!hasEditedOpening.current) {
-        setOpeningParagraph(`Thank you for the opportunity to put this proposal together. Following our walkthrough, I have a clear picture of your requirements and am confident we can deliver a service that meets the standard your facility deserves.\n\nWe look forward to the opportunity to support ${selectedClient.business_name} and to maintain a consistently high standard across your facility. Please do not hesitate to reach out with any questions before making a decision.\n\nWarm regards,\nLaith Humadi\nFounder & Director, Core Cleaning`)
+        setOpeningParagraph(`Thank you for the opportunity to put this proposal together. Following our walkthrough, I have a clear picture of your requirements and am confident we can deliver a service that meets the standard your facility deserves.\n\nWe look forward to the opportunity to support ${selectedClient.business_name} and to maintain a consistently high standard across your facility. Please do not hesitate to reach out with any questions before making a decision.\n\nWarm regards,\nLaith Humadi\nDirector, Core Cleaning`)
       }
     }
   }, [selectedClient?.id])

@@ -190,8 +190,8 @@ const CoverPage = ({ c }: { c: ProposalData }) => (
       <View style={{ flex: 1, padding: '28 32' }}>
         <Label>Submitted by</Label>
         <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold', color: INK, marginBottom: 2 }}>Laith Humadi</Text>
-        <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 2 }}>Founder & Director, Core Cleaning</Text>
-        <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 2 }}>+61 412 844 237</Text>
+        <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 2 }}>Director, Core Cleaning</Text>
+        <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 2 }}>+61 407 026 360</Text>
         <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 18 }}>admin@corecleaning.services</Text>
         <Divider />
         <View style={{ marginTop: 12, marginBottom: 14 }}>
@@ -222,7 +222,7 @@ const IntroPage = ({ c }: { c: ProposalData }) => (
 
     <Label>Introduction</Label>
     <Text style={{ fontSize: 22, fontFamily: 'Times-Roman', color: INK, marginBottom: 18, lineHeight: 1.2 }}>
-      From Laith Humadi, Founder & Director
+      From Laith Humadi, Director
     </Text>
 
     {/* Letter */}
@@ -466,7 +466,7 @@ const TermsPage = ({ c }: { c: ProposalData }) => (
     <View style={{ borderWidth: 0.5, borderColor: RULE, borderRadius: 3, backgroundColor: BG }}>
       <View style={{ padding: '14 18', borderBottomWidth: 0.5, borderBottomColor: RULE }}>
         <Text style={{ fontSize: 9, color: INK_SOFT }}>
-          To accept this proposal, please reply via email confirming your acceptance or contact Laith Humadi directly on <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>+61 412 844 237</Text> or <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>admin@corecleaning.services</Text>.
+          To accept this proposal, please reply via email confirming your acceptance or contact Laith Humadi directly on <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>+61 407 026 360</Text> or <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>admin@corecleaning.services</Text>.
         </Text>
       </View>
       <View style={{ flexDirection: 'row' }}>
@@ -486,7 +486,7 @@ const TermsPage = ({ c }: { c: ProposalData }) => (
     {/* Footer */}
     <View style={{ marginTop: 20, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: RULE }}>
       <Text style={{ fontSize: 8, color: INK_FAINT, textAlign: 'center' }}>
-        Core Cleaning · Brisbane, QLD · admin@corecleaning.services · +61 412 844 237 · corecleaning.services
+        Core Cleaning · Brisbane, QLD · admin@corecleaning.services · +61 407 026 360 · corecleaning.services
       </Text>
     </View>
   </Page>

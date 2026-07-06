@@ -26,8 +26,8 @@ export const DEFAULT_CAPABILITY: CapabilityData = {
   testimonial2: 'They understand the hygiene standards a medical environment needs and consistently deliver. Communication is clear and quality is always high.',
   testimonial2Author: 'Keziah W. · Medical Clinic Manager',
   contactName: 'Laith Humadi',
-  contactRole: 'Founder & Director',
-  contactPhone: '+61 412 844 237',
+  contactRole: 'Director',
+  contactPhone: '+61 407 026 360',
   contactEmail: 'admin@corecleaning.services',
   website: 'corecleaning.services',
 }

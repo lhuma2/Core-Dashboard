@@ -49,8 +49,8 @@ export const DEFAULT_PROPOSAL: ProposalData = {
   monthlyInvestment: '$5,400 / month',
   validity: '30 days from the date of issue',
   contactName: 'Laith Humadi',
-  contactRole: 'Founder & Director',
-  contactPhone: '+61 412 844 237',
+  contactRole: 'Director',
+  contactPhone: '+61 407 026 360',
   contactEmail: 'admin@corecleaning.services',
   scopeGroups: [
     {
