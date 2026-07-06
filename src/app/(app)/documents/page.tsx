@@ -49,6 +49,11 @@ export default async function DocumentsPage() {
     .select('id, name')
     .order('name')
   const folders: any[] = folderRows ?? []
+  const { data: folderFileRows } = await db
+    .from('folder_files')
+    .select('id, folder_id, name, file_url, created_at')
+    .order('created_at', { ascending: false })
+  const folderFiles: any[] = folderFileRows ?? []
 
   // All saved contract PDFs across clients (stored per client, surfaced here too).
   const { data: contractRows } = await db
@@ -115,7 +120,7 @@ export default async function DocumentsPage() {
         </div>
       )}
 
-      <SignedDocsFolders folders={folders} signed={signedDocs} />
+      <SignedDocsFolders folders={folders} signed={signedDocs} files={folderFiles} />
 
       <div className="pt-2">
         <div className="flex items-center justify-between mb-3">

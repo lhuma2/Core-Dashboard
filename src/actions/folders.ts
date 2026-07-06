@@ -39,3 +39,21 @@ export async function moveDocToFolderAction(docId: string, folderId: string | nu
   revalidatePath('/documents')
   return { success: true }
 }
+
+// A file dropped in from the user's computer, already uploaded to storage.
+export async function addFolderFileAction(folderId: string, name: string, fileUrl: string) {
+  if (!folderId || !fileUrl) return { error: 'Missing file details.' }
+  const db = createAdminClient() as any
+  const { error } = await db.from('folder_files').insert({ folder_id: folderId, name: name || 'Document', file_url: fileUrl })
+  if (error) return { error: error.message }
+  revalidatePath('/documents')
+  return { success: true }
+}
+
+export async function deleteFolderFileAction(id: string) {
+  const db = createAdminClient() as any
+  const { error } = await db.from('folder_files').delete().eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/documents')
+  return { success: true }
+}
