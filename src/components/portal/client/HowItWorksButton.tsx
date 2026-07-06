@@ -2,7 +2,7 @@
 
 export function HowItWorksButton() {
   function open() {
-    window.dispatchEvent(new Event('delta:openOnboarding'))
+    window.dispatchEvent(new Event('core:openOnboarding'))
   }
 
   return (

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { AlertCircle, AlertTriangle, X } from 'lucide-react'
 import type { DashboardAlert } from '@/types/app'
 
-const STORAGE_KEY = 'delta-dismissed-alerts'
+const STORAGE_KEY = 'core-dismissed-alerts'
 
 interface AlertPanelProps {
   alerts: DashboardAlert[]

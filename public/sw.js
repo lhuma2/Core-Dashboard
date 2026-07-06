@@ -1,4 +1,4 @@
-const CACHE = 'delta-v5'
+const CACHE = 'core-v5'
 
 // ── Install: skip waiting immediately ────────────────────────────────────
 self.addEventListener('install', (e) => {
@@ -43,7 +43,7 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('push', (e) => {
   const data = e.data?.json() ?? {}
   e.waitUntil(
-    self.registration.showNotification(data.title ?? 'Delta Cleaning', {
+    self.registration.showNotification(data.title ?? 'Core Cleaning', {
       body: data.body ?? '',
       icon: '/logo-icon-black.png',
       badge: '/logo-icon-black.png',

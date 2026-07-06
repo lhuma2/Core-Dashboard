@@ -7,8 +7,8 @@ npm-debug.log*
 .DS_Store
 
 # Local business files (not for version control)
-Delta-Ops-Dashboard.xlsx
-Delta-Security-Audit-2026-06.docx
+Core-Ops-Dashboard.xlsx
+Core-Security-Audit-2026-06.docx
 *.xlsx
 *.docx
 

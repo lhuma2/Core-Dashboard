@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
-const DISMISSED_KEY = 'delta_portal_onboarding_v1'   // localStorage — permanent
-const SESSION_KEY   = 'delta_portal_onboarding_seen'  // sessionStorage — per login
+const DISMISSED_KEY = 'core_portal_onboarding_v1'   // localStorage — permanent
+const SESSION_KEY   = 'core_portal_onboarding_seen'  // sessionStorage — per login
 
 const SCREENS = [
   {
@@ -60,8 +60,8 @@ export function ClientOnboardingModal() {
       setStep(0)
       setOpen(true)
     }
-    window.addEventListener('delta:openOnboarding', handleOpen)
-    return () => window.removeEventListener('delta:openOnboarding', handleOpen)
+    window.addEventListener('core:openOnboarding', handleOpen)
+    return () => window.removeEventListener('core:openOnboarding', handleOpen)
   }, [])
 
   if (!mounted || !open) return null

@@ -1,7 +1,7 @@
 {
-  "name": "Delta Cleaning",
-  "short_name": "Delta",
-  "description": "Delta Cleaning Operations Portal",
+  "name": "Core Cleaning",
+  "short_name": "Core Cleaning",
+  "description": "Core Cleaning Operations Portal",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

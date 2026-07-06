@@ -1,8 +1,8 @@
-# Delta Hub — Security Baseline
+# Core Cleaning Hub — Security Baseline
 
 Canonical list of **intentional / accepted** security posture. A health check or
 review should treat everything here as expected and **NOT report it as an issue**.
-Only flag genuine *deviations* from this baseline. Reports are branded **Delta Hub**,
+Only flag genuine *deviations* from this baseline. Reports are branded **Core Cleaning Hub**,
 never "Claude".
 
 _Last reviewed: 2026-07-03._
@@ -36,7 +36,7 @@ _Last reviewed: 2026-07-03._
 ## Known follow-ups (real, low priority — report only if unchanged for a long time)
 
 - **Leaked-password protection is OFF** (Supabase Auth). Deliberately deferred: clients
-  currently share the weak password `deltacleaning`, which is in breach lists — enabling
+  currently share the weak password `corecleaning`, which is in breach lists — enabling
   the check must wait until clients move to stronger/individual logins.
 - **`compute_client_profit` (single-site trigger) ignores days-per-week** — margins are
   correct, dollar amounts undercount for multi-day single-site clients. Cosmetic.
