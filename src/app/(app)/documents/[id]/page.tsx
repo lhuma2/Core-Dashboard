@@ -4,6 +4,7 @@ export const revalidate = 0
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ProposalEditor } from '@/components/documents/ProposalEditor'
+import { CompanyDocEditor } from '@/components/documents/CompanyDocEditor'
 import { AgreementEditor } from '@/components/documents/AgreementEditor'
 import { withProposalDefaults } from '@/lib/documents/proposal'
 import { withAgreementDefaults } from '@/lib/documents/agreement'
@@ -36,6 +37,17 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
         clients={clients ?? []}
         clientId={doc.client_id}
         signature={signature}
+      />
+    )
+  }
+  // Company-document proposals (a PDF is attached) use the overlay editor.
+  if (doc.pdf_url) {
+    return (
+      <CompanyDocEditor
+        id={doc.id}
+        initialData={doc.data ?? {}}
+        pdfUrl={doc.pdf_url}
+        docTitle={doc.client_name || 'Company document'}
       />
     )
   }
