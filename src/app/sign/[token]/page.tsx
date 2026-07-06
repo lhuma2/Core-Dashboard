@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { withAgreementDefaults } from '@/lib/documents/agreement'
 import { SignExperience } from '@/components/documents/SignExperience'
+import { CompanyDocSignExperience } from '@/components/documents/CompanyDocSignExperience'
 import type { SignatureFill } from '@/components/documents/render/AgreementDocument'
 
 function auDate(iso: string): string {
@@ -15,9 +16,22 @@ export default async function SignPage({ params }: { params: { token: string } }
   const db = createAdminClient() as any
   const { data: doc } = await db
     .from('proposal_documents')
-    .select('id, kind, data, signed_name, signed_at')
+    .select('id, kind, data, signed_name, signed_at, pdf_url, client_name')
     .eq('sign_code', params.token)
     .maybeSingle()
+
+  // Company-document proposals (an attached PDF with placed fields) sign via the PDF overlay.
+  if (doc && doc.pdf_url) {
+    return (
+      <CompanyDocSignExperience
+        code={params.token}
+        pdfUrl={doc.pdf_url}
+        data={doc.data ?? {}}
+        docTitle={doc.client_name || 'Document'}
+        alreadySigned={!!doc.signed_at}
+      />
+    )
+  }
 
   if (!doc || doc.kind !== 'agreement') {
     return (

@@ -85,6 +85,79 @@ export async function sendForSignatureAction(id: string, toEmail: string, messag
   return { success: true, link }
 }
 
+// ─── Company-document proposals: send the PDF (with placed fields) for signing ─
+export async function sendCompanyDocForSignatureAction(id: string, toEmail: string, message?: string) {
+  const email = (toEmail ?? '').trim()
+  if (!EMAIL_RE.test(email)) return { error: 'Enter a valid email address.' }
+
+  const db = createAdminClient() as any
+  const { data: doc } = await db
+    .from('proposal_documents')
+    .select('id, sign_code, data, client_name, pdf_url')
+    .eq('id', id).single()
+  if (!doc) return { error: 'Document not found.' }
+  if (!doc.pdf_url) return { error: 'Only company documents can be sent this way.' }
+
+  const name = doc.data?.fieldValues?.clientName || doc.client_name || 'Client'
+  const code: string = doc.sign_code ?? await uniqueSignCode(db, name)
+
+  const { error } = await db.from('proposal_documents').update({
+    sign_code: code, signer_email: email, status: 'out_for_signature', sent_at: new Date().toISOString(),
+  }).eq('id', id)
+  if (error) return { error: error.message }
+
+  const link = `${APP_URL}/sign/${code}`
+  const res = await sendEmail(email, 'Please review & sign — Core Cleaning', companyDocInviteEmail(doc.client_name || 'your document', link, message))
+  if (!res.success) return { error: res.error ?? 'Could not send the email. Please try again.' }
+
+  revalidatePath('/documents'); revalidatePath(`/documents/${id}`)
+  return { success: true, link }
+}
+
+// Recipient completes & signs the company document (fills signature field(s)).
+export async function submitCompanyDocSignatureAction(code: string, placements: any[]) {
+  const db = createAdminClient() as any
+  const { data: doc } = await db
+    .from('proposal_documents')
+    .select('id, data, pdf_url, signed_at')
+    .eq('sign_code', code).maybeSingle()
+  if (!doc || !doc.pdf_url) return { error: "This signing link isn't valid." }
+  if (doc.signed_at) return { error: 'This document has already been signed.' }
+
+  const sig = (placements || []).find((p: any) => p.type === 'signature' && String(p.text ?? '').trim())
+  if (!sig) return { error: 'Please add your signature before submitting.' }
+
+  const ip = headers().get('x-forwarded-for')?.split(',')[0]?.trim() || null
+  const { error } = await db.from('proposal_documents').update({
+    data: { ...(doc.data ?? {}), placements },
+    signed_name: String(sig.text).trim(),
+    signed_at: new Date().toISOString(),
+    signed_ip: ip,
+    status: 'signed',
+  }).eq('id', doc.id)
+  if (error) return { error: error.message }
+
+  // Notify the owner by push.
+  try { await sendPushToRole('admin', { title: '✍️ A document was signed', body: `Signed by ${String(sig.text).trim()}`, url: '/documents' }) } catch {}
+  return { success: true }
+}
+
+function companyDocInviteEmail(title: string, link: string, message?: string): string {
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#0f172a">
+    <div style="background:#00250e;padding:26px 30px;text-align:center;border-radius:12px 12px 0 0">
+      <img src="${WORDMARK}" alt="Core Cleaning" style="height:34px" />
+    </div>
+    <div style="border:1px solid #e5e7eb;border-top:0;border-radius:0 0 12px 12px;padding:28px 30px">
+      <p style="font-size:15px;margin:0 0 14px">Hi,</p>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 16px">You've been sent a document from Core Cleaning to review and sign.</p>
+      ${message ? `<p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 16px">${message}</p>` : ''}
+      <a href="${link}" style="display:block;text-align:center;background:#00250e;color:#fff;text-decoration:none;font-size:16px;font-weight:700;border-radius:12px;padding:16px 24px;margin:6px 0 18px">Review &amp; sign &rarr;</a>
+      <p style="font-size:12px;color:#94a3b8;margin:0">If the button doesn't work, copy this link: ${link}</p>
+    </div>
+    <p style="text-align:center;font-size:12px;color:#94a3b8;margin:16px 0">Core Cleaning · Brisbane, QLD · admin@corecleaning.services</p>
+  </div>`
+}
+
 // Best-effort parsers for turning agreement particulars into client fields on sign.
 function parseMoney(s?: string): number | null {
   if (!s) return null

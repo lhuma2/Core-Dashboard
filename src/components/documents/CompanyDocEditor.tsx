@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Minus, Plus, Palette, PenLine } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Minus, Plus, Palette, PenLine, Send } from 'lucide-react'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
+import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
 
 const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
 
@@ -44,6 +45,7 @@ export function CompanyDocEditor({
   const [loadingMsg, setLoadingMsg] = useState('Loading document…')
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('saved')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [showSend, setShowSend] = useState(false)
 
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
   const dragging = useRef<null | { id: string }>(null)
@@ -166,8 +168,13 @@ export function CompanyDocEditor({
             className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:border-gray-300 rounded-lg px-3 py-2 transition-colors">
             <Download className="w-3.5 h-3.5" /> Open PDF
           </a>
+          <button onClick={() => setShowSend(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#003314] hover:bg-[#00250e] text-white rounded-lg px-3 py-2 transition-colors">
+            <Send className="w-3.5 h-3.5" /> Send
+          </button>
         </div>
       </div>
+      {showSend && <SendCompanyDocModal id={id} onClose={() => setShowSend(false)} />}
 
       <div className="flex-1 flex min-h-0">
         {/* Left: field boxes to drag onto the document */}
