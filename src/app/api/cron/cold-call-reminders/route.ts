@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 
-// Vercel cron: every weekday morning (Brisbane). Emails Jackson the day's
+// Vercel cron: every weekday morning (Brisbane). Emails Laith the day's
 // due follow-ups and booked walk-throughs from the cold-call deck.
 
-const REPORT_EMAIL = 'hello@deltacleaning.com.au'
+const REPORT_EMAIL = 'admin@corecleaning.services'
 
 function brisbaneToday(): string {
   return new Date().toLocaleString('en-AU', {
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   ${followUps.length > 0 ? `<h3 style="font-size:14px;margin:18px 0 6px;">Follow-ups due (${followUps.length})</h3>${table(followUps)}` : ''}
   ${retries.length > 0 ? `<h3 style="font-size:14px;margin:18px 0 6px;">Try again today (${retries.length})</h3>${table(retries)}` : ''}
   <p style="margin-top:20px;font-size:14px;">
-    <a href="https://portal.deltacleaning.com.au/calls" style="color:#1e3a5f;font-weight:600;">Open the call deck →</a>
+    <a href="https://portal.corecleaning.services/calls" style="color:#1e3a5f;font-weight:600;">Open the call deck →</a>
   </p>
 </div>`
 

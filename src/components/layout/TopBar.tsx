@@ -28,7 +28,7 @@ function getModuleLabel(pathname: string): string {
       return label
     }
   }
-  return 'Delta Operations Hub'
+  return 'Core Cleaning Operations Hub'
 }
 
 interface TopBarProps {

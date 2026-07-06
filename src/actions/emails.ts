@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -45,10 +45,10 @@ export async function sendEmailAction(data: {
     <!-- Signature -->
     <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;">
       <p style="margin:0 0 2px;font-size:14px;color:#1a1a1a;font-family:Arial,sans-serif;">Best regards,</p>
-      <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#1a1a1a;font-family:Arial,sans-serif;">Jackson Jaillet</p>
-      <p style="margin:0 0 1px;font-size:13px;color:#555555;font-family:Arial,sans-serif;">Founder &amp; Director, Delta Cleaning</p>
-      <p style="margin:0 0 1px;font-size:13px;color:#555555;font-family:Arial,sans-serif;">0412 844 237</p>
-      <a href="https://www.deltacleaning.com.au" style="font-size:13px;color:#1a56db;text-decoration:none;font-family:Arial,sans-serif;">deltacleaning.com.au</a>
+      <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#1a1a1a;font-family:Arial,sans-serif;">Laith Humadi</p>
+      <p style="margin:0 0 1px;font-size:13px;color:#555555;font-family:Arial,sans-serif;">Founder &amp; Director, Core Cleaning</p>
+      <p style="margin:0 0 1px;font-size:13px;color:#555555;font-family:Arial,sans-serif;">0407 026 360</p>
+      <a href="https://www.corecleaning.services" style="font-size:13px;color:#1a56db;text-decoration:none;font-family:Arial,sans-serif;">corecleaning.services</a>
     </div>
 
   </div>
@@ -73,7 +73,7 @@ export async function sendEmailAction(data: {
         const pdfBuffer = await generateProposalPDF(docData.content as ProposalData)
         const refNum = (docData.content as ProposalData).refNumber || docData.ref_number || 'proposal'
         attachments = [{
-          filename: `Delta-Cleaning-Proposal-${refNum}.pdf`,
+          filename: `Core Cleaning-Cleaning-Proposal-${refNum}.pdf`,
           content: pdfBuffer.toString('base64'),
         }]
       } catch (err: any) {
@@ -83,10 +83,10 @@ export async function sendEmailAction(data: {
   }
 
   const sendParams: any = {
-    from: 'Jackson Jaillet <hello@deltacleaning.com.au>',
+    from: 'Laith Humadi <admin@corecleaning.services>',
     to: data.to_email,
-    reply_to: 'hello@deltacleaning.com.au',
-    bcc: 'hello@deltacleaning.com.au',
+    reply_to: 'admin@corecleaning.services',
+    bcc: 'admin@corecleaning.services',
     subject: data.subject,
     html: htmlBody,
   }

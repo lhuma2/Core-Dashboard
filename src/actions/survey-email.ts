@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -31,7 +31,7 @@ export async function sendSurveyEmailAction(clientId: string): Promise<{ success
   if (tokenError) return { error: `Failed to create survey token: ${tokenError.message}` }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://delta-operations-hub.vercel.app')
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://portal.corecleaning.services')
   const surveyUrl = `${baseUrl}/survey/${tokenRow.token}`
   const contactName = (client.contact_name || '').split(' ')[0] || 'there'
 
@@ -43,19 +43,19 @@ export async function sendSurveyEmailAction(clientId: string): Promise<{ success
 <p>I put together a short 1-minute survey — your honest feedback really means a lot and helps us keep improving.</p>
 <p><a href="${surveyUrl}" style="color:#1a1a1a;">Click here to complete the survey</a></p>
 <p>Thanks so much for your time.</p>
-<p style="margin-top:24px;">Jackson Jaillet<br>
-<span style="color:#555;font-size:14px;">Founder &amp; Director, Delta Cleaning</span><br>
-<span style="color:#555;font-size:14px;">0412 844 237</span><br>
-<a href="https://www.deltacleaning.com.au" style="color:#555;font-size:14px;text-decoration:none;">deltacleaning.com.au</a></p>
+<p style="margin-top:24px;">Laith Humadi<br>
+<span style="color:#555;font-size:14px;">Founder &amp; Director, Core Cleaning</span><br>
+<span style="color:#555;font-size:14px;">0407 026 360</span><br>
+<a href="https://www.corecleaning.services" style="color:#555;font-size:14px;text-decoration:none;">corecleaning.services</a></p>
 </div>
 </body></html>`
 
   const resend = new Resend(apiKey)
   const { error: sendError } = await resend.emails.send({
-    from: 'Jackson Jaillet <hello@deltacleaning.com.au>',
+    from: 'Laith Humadi <admin@corecleaning.services>',
     to: client.contact_email,
-    reply_to: 'hello@deltacleaning.com.au',
-    bcc: 'hello@deltacleaning.com.au',
+    reply_to: 'admin@corecleaning.services',
+    bcc: 'admin@corecleaning.services',
     subject: `How are we going at ${client.business_name}?`,
     html: htmlBody,
   })
@@ -100,7 +100,7 @@ export async function submitSurveyAction(data: {
   if (rpcError) return { error: `Failed to save survey: ${rpcError.message}` }
   if (result?.error) return { error: result.error }
 
-  // Send notification email to Delta Cleaning with results
+  // Send notification email to Core Cleaning with results
   const scoreLabel = (n: number) => n >= 8 ? '🟢' : n >= 6 ? '🟡' : '🔴'
 
   try {
@@ -127,8 +127,8 @@ export async function submitSurveyAction(data: {
       const { Resend } = await import('resend')
       const resend = new Resend(apiKey)
       await resend.emails.send({
-        from: 'Delta Hub <hello@deltacleaning.com.au>',
-        to: 'hello@deltacleaning.com.au',
+        from: 'Core Cleaning Hub <admin@corecleaning.services>',
+        to: 'admin@corecleaning.services',
         subject: `New survey from ${businessName} — ${avg}/10 avg`,
         text: [
           `Survey submitted by ${contactName || businessName}`,
@@ -144,7 +144,7 @@ export async function submitSurveyAction(data: {
           ``,
           data.comments ? `Comments:\n${data.comments}` : 'No comments left.',
           ``,
-          `View in Delta Hub: https://portal.deltacleaning.com.au/surveys`,
+          `View in Core Cleaning Hub: https://portal.corecleaning.services/surveys`,
         ].join('\n'),
       })
     }
@@ -174,7 +174,7 @@ export async function sendSurveyReminderAction(tokenId: string): Promise<{ succe
   const client = tokenRow.clients
   if (!client?.contact_email) return { error: 'Client has no email address' }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.deltacleaning.com.au'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services'
   const surveyUrl = `${baseUrl}/survey/${tokenRow.token}`
   const contactName = (client.contact_name || '').split(' ')[0] || 'there'
 
@@ -186,19 +186,19 @@ export async function sendSurveyReminderAction(tokenId: string): Promise<{ succe
 <p>It only takes about a minute and your feedback really helps us keep improving.</p>
 <p><a href="${surveyUrl}" style="color:#1a1a1a;">Click here to complete the survey</a></p>
 <p>Thanks so much — really appreciate it.</p>
-<p style="margin-top:24px;">Jackson Jaillet<br>
-<span style="color:#555;font-size:14px;">Founder &amp; Director, Delta Cleaning</span><br>
-<span style="color:#555;font-size:14px;">0412 844 237</span><br>
-<a href="https://www.deltacleaning.com.au" style="color:#555;font-size:14px;text-decoration:none;">deltacleaning.com.au</a></p>
+<p style="margin-top:24px;">Laith Humadi<br>
+<span style="color:#555;font-size:14px;">Founder &amp; Director, Core Cleaning</span><br>
+<span style="color:#555;font-size:14px;">0407 026 360</span><br>
+<a href="https://www.corecleaning.services" style="color:#555;font-size:14px;text-decoration:none;">corecleaning.services</a></p>
 </div>
 </body></html>`
 
   const resend = new Resend(apiKey)
   const { error: sendError } = await resend.emails.send({
-    from: 'Jackson Jaillet <hello@deltacleaning.com.au>',
+    from: 'Laith Humadi <admin@corecleaning.services>',
     to: client.contact_email,
-    reply_to: 'hello@deltacleaning.com.au',
-    bcc: 'hello@deltacleaning.com.au',
+    reply_to: 'admin@corecleaning.services',
+    bcc: 'admin@corecleaning.services',
     subject: `Following up — survey for ${client.business_name}`,
     html: htmlBody,
   })

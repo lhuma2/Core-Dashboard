@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
@@ -14,7 +14,7 @@ import type { AppSettings, SurveyQuestion } from '@/types/app'
 import { Settings, Building2, Percent, MessageSquare, Bell, Plus, Trash2, ShieldCheck } from 'lucide-react'
 
 const DEFAULT: AppSettings = {
-  business: { name: 'Delta Cleaning', email: 'hello@deltacleaning.com.au', phone: '0412 844 237', website: 'https://www.deltacleaning.com.au', address: 'Brisbane, QLD' },
+  business: { name: 'Core Cleaning', email: 'admin@corecleaning.services', phone: '0407 026 360', website: 'https://www.corecleaning.services', address: 'Brisbane, QLD' },
   margin_thresholds: { red: 24, yellow: 40 },
   valuation_multiple: 2.5,
   survey_frequency_days: 90,
@@ -78,7 +78,7 @@ export default function SettingsPage() {
           className="space-y-4"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Business Name" name="name"    defaultValue={settings.business.name}    placeholder="Delta Cleaning" />
+            <Input label="Business Name" name="name"    defaultValue={settings.business.name}    placeholder="Core Cleaning" />
             <Input label="Email"         name="email"   defaultValue={settings.business.email}   placeholder="hello@example.com" />
             <Input label="Phone"         name="phone"   defaultValue={settings.business.phone}   placeholder="0400 000 000" />
             <Input label="Website"       name="website" defaultValue={settings.business.website} placeholder="https://..." />

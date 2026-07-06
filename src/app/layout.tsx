@@ -1,10 +1,10 @@
-import type { Metadata, Viewport } from 'next'
+﻿import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Delta Cleaning',
-  description: 'Delta Cleaning Operations',
+  title: 'Core Cleaning',
+  description: 'Core Cleaning Operations',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Delta',
+    title: 'Core Cleaning',
   },
 }
 
@@ -40,10 +40,10 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Delta" />
+        <meta name="apple-mobile-web-app-title" content="Core Cleaning" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="icon" href="/favicon.png" type="image/png" sizes="64x64" />
-        {/* iOS PWA launch splash screens (navy + Delta logo) — generated per device */}
+        {/* iOS PWA launch splash screens (navy + Core Cleaning logo) — generated per device */}
         <link rel="apple-touch-startup-image" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/apple-splash-1320-2868.png" />
         <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/apple-splash-1290-2796.png" />
         <link rel="apple-touch-startup-image" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/apple-splash-1206-2622.png" />

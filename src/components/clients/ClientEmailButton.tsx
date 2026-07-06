@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -85,7 +85,7 @@ export function ClientEmailButton({ client }: { client: Client }) {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h3 className="font-semibold text-gray-900">Send Email</h3>
-                <p className="text-xs text-gray-400 mt-0.5">From hello@deltacleaning.com.au → {client.business_name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">From admin@corecleaning.services → {client.business_name}</p>
               </div>
               <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>

@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -6,8 +6,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 
-const APP_URL = 'https://portal.deltacleaning.com.au'
-const OWNER_EMAIL = 'hello@deltacleaning.com.au'
+const APP_URL = 'https://portal.corecleaning.services'
+const OWNER_EMAIL = 'admin@corecleaning.services'
 const CODE_ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
 export interface SubbieDetails {

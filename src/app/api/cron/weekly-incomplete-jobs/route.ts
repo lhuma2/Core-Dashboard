@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
@@ -10,7 +10,7 @@ import { getUpcomingDates } from '@/lib/schedule'
 //   1. job_assignment exists but was never marked complete (not_started / in_progress)
 //   2. A job was scheduled per the client's recurring schedule but no record was ever created
 
-const REPORT_EMAIL = 'hello@deltacleaning.com.au'
+const REPORT_EMAIL = 'admin@corecleaning.services'
 
 function brisbaneDate(offsetDays = 0): string {
   const d = new Date(Date.now() + offsetDays * 86_400_000)
@@ -126,7 +126,7 @@ export async function GET(request: Request) {
     new Date(new Date(today + 'T00:00:00').getTime() - 86_400_000).toISOString().split('T')[0]
   )}`
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.deltacleaning.com.au'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.corecleaning.services'
 
   const jobCards = incompleteList.map((j: any) => {
     const site    = j.client_sites?.site_name
@@ -142,7 +142,7 @@ export async function GET(request: Request) {
   const html = `
     <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px 18px;color:#0f172a;">
       <div style="background:#0b1320;border-radius:12px 12px 0 0;padding:22px 26px;">
-        <p style="margin:0;color:#93c5fd;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;">Delta Cleaning · Alert</p>
+        <p style="margin:0;color:#93c5fd;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;">Core Cleaning · Alert</p>
         <h1 style="margin:6px 0 0;color:#fff;font-size:20px;">${totalIssues} clean${totalIssues !== 1 ? 's' : ''} not marked off</h1>
       </div>
       <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:26px;">
@@ -150,7 +150,7 @@ export async function GET(request: Request) {
         ${jobCards}
         ${missingRecords.length ? `<p style="font-size:12px;color:#94a3b8;margin:14px 0 0;">+ ${missingRecords.length} scheduled clean${missingRecords.length !== 1 ? 's' : ''} with no job record.</p>` : ''}
         <a href="${appUrl}/dashboard" style="display:inline-block;margin-top:18px;background:#0b1320;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Mark it off →</a>
-        <p style="font-size:11px;color:#94a3b8;margin:22px 0 0;border-top:1px solid #f1f5f9;padding-top:14px;">Sent Monday mornings · Delta Cleaning Operations Hub</p>
+        <p style="font-size:11px;color:#94a3b8;margin:22px 0 0;border-top:1px solid #f1f5f9;padding-top:14px;">Sent Monday mornings · Core Cleaning Operations Hub</p>
       </div>
     </div>
   `

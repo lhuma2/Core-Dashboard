@@ -12,7 +12,7 @@
 --
 -- NOTE: the client-feedback action also reads manager emails (profiles where role=manager)
 -- to CC them; under these policies that read returns empty, so managers lose the CC — the
--- feedback still saves and hello@deltacleaning.com.au is still notified. Proper fix later:
+-- feedback still saves and admin@corecleaning.services is still notified. Proper fix later:
 -- move that read to the service-role client.
 
 -- ── Identity helpers (SECURITY DEFINER → bypass RLS, no recursion) ──

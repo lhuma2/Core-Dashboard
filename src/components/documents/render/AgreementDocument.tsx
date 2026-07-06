@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+﻿import type { CSSProperties } from 'react'
 import { AGREEMENT_CLAUSES, type AgreementData } from '@/lib/documents/agreement'
 
 // Faithful recreation of the Service Agreement (7 × A4 pages).
@@ -24,13 +24,13 @@ export interface SignatureFill {
 function Header({ label }: { label: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 18, borderBottom: '1px solid #E2E8F0' }}>
-      <img src={WORDMARK_BLACK} alt="Delta Cleaning" style={{ height: 20, width: 'auto' }} />
+      <img src={WORDMARK_BLACK} alt="Core Cleaning" style={{ height: 20, width: 'auto' }} />
       <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.14em', color: '#94A3B8', textTransform: 'uppercase' }}>{label}</div>
     </div>
   )
 }
 function Foot({ n }: { n: string }) {
-  return <div style={{ position: 'absolute', left: 72, right: 72, bottom: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: MONO, fontSize: 10, letterSpacing: '.1em', color: '#CBD5E1', textTransform: 'uppercase', borderTop: '1px solid #EEF2F6', paddingTop: 14 }}><span>Delta Cleaning · Service Agreement</span><span>{n}</span></div>
+  return <div style={{ position: 'absolute', left: 72, right: 72, bottom: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: MONO, fontSize: 10, letterSpacing: '.1em', color: '#CBD5E1', textTransform: 'uppercase', borderTop: '1px solid #EEF2F6', paddingTop: 14 }}><span>Core Cleaning · Service Agreement</span><span>{n}</span></div>
 }
 function Clause({ n, title, body }: { n: number; title: string; body: string }) {
   return (
@@ -80,14 +80,14 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
         <img src={MARK_WHITE} alt="" style={{ position: 'absolute', left: -180, bottom: -200, width: 560, opacity: 0.04 }} />
         <div style={{ position: 'relative', padding: '64px 72px', display: 'flex', flexDirection: 'column', minHeight: 1123 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <img src={WORDMARK_WHITE} alt="Delta Cleaning" style={{ height: 30, width: 'auto' }} />
+            <img src={WORDMARK_WHITE} alt="Core Cleaning" style={{ height: 30, width: 'auto' }} />
             <div style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11, letterSpacing: '.16em', color: '#64748B', lineHeight: 1.8 }}><div>AGREEMENT</div><div style={{ color: '#E2E8F0' }}>{data.agreementRef}</div></div>
           </div>
           <div style={{ marginTop: 'auto' }}>
             <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: '.28em', textTransform: 'uppercase', color: '#7C8BA1', marginBottom: 26 }}>Commercial Cleaning</div>
             <h1 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 74, lineHeight: 0.98, letterSpacing: '-.03em', margin: 0, color: '#fff' }}>Service<br />Agreement</h1>
             <div style={{ width: 64, height: 3, background: '#fff', margin: '36px 0 26px' }} />
-            <p style={{ fontSize: 15.5, lineHeight: 1.7, color: '#94A3B8', maxWidth: 480, margin: 0 }}>This Agreement sets out the terms on which Delta Cleaning will provide commercial cleaning services to the Client identified below.</p>
+            <p style={{ fontSize: 15.5, lineHeight: 1.7, color: '#94A3B8', maxWidth: 480, margin: 0 }}>This Agreement sets out the terms on which Core Cleaning will provide commercial cleaning services to the Client identified below.</p>
           </div>
           <div style={{ marginTop: 60, paddingTop: 30, borderTop: '1px solid rgba(255,255,255,.12)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             <div><div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: '#64748B', marginBottom: 8 }}>Between</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{data.providerName}</div><div style={{ fontSize: 13, color: '#94A3B8' }}>ABN {data.providerABN}</div></div>
@@ -175,7 +175,7 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
           <p style={{ margin: '16px 0 0', fontSize: 13.5, lineHeight: 1.65, color: '#475569', maxWidth: 620 }}>By signing below, each party acknowledges it has read and agrees to be bound by this Agreement, including the Schedule of Particulars and Schedule 1, as at the date written below.</p>
         </div>
         <div style={{ marginTop: 46, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
-          {/* Provider block — Delta counter-signs on issue */}
+          {/* Provider block — Core Cleaning counter-signs on issue */}
           <div data-sign-provider style={{ border: '1px solid #E2E8F0', borderRadius: 12, padding: 30 }}>
             <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 18 }}>Service Provider</div>
             <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 16 }}>{data.providerName}</div>
@@ -209,7 +209,7 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
             <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 16, marginBottom: 4 }}>Questions before signing?</div>
             <div style={{ fontSize: 13, color: '#94A3B8' }}>{data.contactName} · {data.contactPhone} · {data.contactEmail}</div>
           </div>
-          <img src={WORDMARK_WHITE} alt="Delta Cleaning" style={{ height: 22, width: 'auto', opacity: 0.9 }} />
+          <img src={WORDMARK_WHITE} alt="Core Cleaning" style={{ height: 22, width: 'auto', opacity: 0.9 }} />
         </div>
         <div style={{ marginTop: 22, border: '1px dashed #CBD5E1', borderRadius: 10, padding: '14px 18px', fontSize: 11.5, lineHeight: 1.55, color: '#94A3B8' }}>
           This document is a template provided for convenience. We recommend it is reviewed by your legal adviser before use to ensure it suits your circumstances.

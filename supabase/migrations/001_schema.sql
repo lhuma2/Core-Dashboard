@@ -1,4 +1,4 @@
--- Delta Operations Hub — Initial Schema
+-- Core Cleaning Operations Hub — Initial Schema
 -- Run this migration against your Supabase project
 
 -- Enums
@@ -24,7 +24,7 @@ create sequence ref_number_seq start 1000;
 -- Clients
 create table clients (
   id uuid primary key default gen_random_uuid(),
-  ref_number text unique default 'DC-' || nextval('ref_number_seq'),
+  ref_number text unique default 'CC-' || nextval('ref_number_seq'),
   business_name text not null,
   contact_name text,
   contact_email text,

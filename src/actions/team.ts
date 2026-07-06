@@ -276,8 +276,8 @@ export async function addCleanerAction(input: {
   const last  = input.lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')  || 'user'
   const fullName = `${input.firstName.trim()} ${input.lastName.trim()}`.trim()
 
-  // Try john.smith@delta-cleaner.internal, then john.smith2, john.smith3 ...
-  let email = `${first}.${last}@delta-cleaner.internal`
+  // Try john.smith@core-cleaner.internal, then john.smith2, john.smith3 ...
+  let email = `${first}.${last}@core-cleaner.internal`
   let attempt = 1
   while (attempt < 20) {
     const { data: existing } = await (adminClient as any)
@@ -288,7 +288,7 @@ export async function addCleanerAction(input: {
 
     if (!existing) break
     attempt++
-    email = `${first}.${last}${attempt}@delta-cleaner.internal`
+    email = `${first}.${last}${attempt}@core-cleaner.internal`
   }
 
   return createPortalUserAction({

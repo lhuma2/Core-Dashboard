@@ -1,4 +1,4 @@
-import type { ScopeGroup } from '@/lib/documents/proposal'
+﻿import type { ScopeGroup } from '@/lib/documents/proposal'
 import type { ProposalData } from '@/lib/documents/proposal'
 
 // ─── Service Agreement — data model + defaults ───────────────────────────────
@@ -36,8 +36,8 @@ const AGREEMENT_SCOPE: ScopeGroup[] = [
 ]
 
 export const DEFAULT_AGREEMENT: AgreementData = {
-  providerName: 'Delta Cleaning Pty Ltd',
-  providerABN: '83 303 026 478',
+  providerName: 'Core Cleaning',
+  providerABN: '',
   clientName: 'Northpoint Commercial',
   clientABN: '00 000 000 000',
   premises: '6–12 Bunya Park Drive, Eatons Hill QLD 4037',
@@ -50,10 +50,10 @@ export const DEFAULT_AGREEMENT: AgreementData = {
   agreementRef: '',
   agreementDate: '____ / ____ / 2026',
   specialConditions: 'Nil',
-  contactName: 'Jackson Jaillet',
+  contactName: 'Laith Humadi',
   contactRole: 'Founder & Director',
   contactPhone: '+61 412 844 237',
-  contactEmail: 'hello@deltacleaning.com.au',
+  contactEmail: 'admin@corecleaning.services',
   scopeGroups: AGREEMENT_SCOPE,
   additionalServices: ['Carpet steam cleaning', 'Hard-floor strip & seal', 'Pressure washing', 'Window cleaning', 'High dusting'],
 }

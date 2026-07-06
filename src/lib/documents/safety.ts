@@ -1,5 +1,5 @@
-// Delta Cleaning — Safe Work Method Statements (SWMS) + compliance policies.
-// Standard, Australian-WHS-aligned content baked in as Delta's safety library.
+﻿// Core Cleaning — Safe Work Method Statements (SWMS) + compliance policies.
+// Standard, Australian-WHS-aligned content baked in as Core Cleaning's safety library.
 // These are templates: review and tailor to actual site conditions, chemicals
 // and equipment before relying on them (see the note rendered on each document).
 
@@ -24,16 +24,16 @@ export const DOC_CONTROL = {
   version: '1.0',
   issueDate: '04/07/2026',
   reviewDate: '04/07/2027',
-  approvedBy: 'Jackson Jaillet, Director',
+  approvedBy: 'Laith Humadi, Director',
 }
 
 export const COMPANY = {
-  name: 'Delta Cleaning Pty Ltd',
-  abn: '83 303 026 478',
+  name: 'Core Cleaning',
+  abn: '',
   location: 'Brisbane, QLD',
-  email: 'contact@deltacleaning.com.au',
-  web: 'www.deltacleaning.com.au',
-  phone: '0412 844 237',
+  email: 'contact@corecleaning.services',
+  web: 'www.corecleaning.services',
+  phone: '0407 026 360',
 }
 
 export const LEGISLATION =
@@ -49,7 +49,7 @@ export const REVIEW_TRIGGERS = [
 export const EMERGENCY_CONTACTS = [
   { label: 'Emergency', value: '000' },
   { label: 'Poisons Information Centre', value: '13 11 26' },
-  { label: 'Delta Cleaning Management', value: COMPANY.phone },
+  { label: 'Core Cleaning Management', value: COMPANY.phone },
 ]
 
 export const SWMS_LIST: Swms[] = [
@@ -98,7 +98,7 @@ export const SWMS_LIST: Swms[] = [
         risk: 'Delayed help if injured, personal security',
         controls: ['Keep a charged phone on you at all times', 'Advise a contact of start/finish times', 'Lock the site behind you; be aware of surroundings', 'Follow the site access and alarm procedure'],
         ppe: ['Hi-vis where required on site'],
-        emergency: 'Call 000 in an emergency; then notify Delta Cleaning on 0412 844 237.',
+        emergency: 'Call 000 in an emergency; then notify Core Cleaning on 0407 026 360.',
       },
     ],
   },
@@ -188,7 +188,7 @@ export const SWMS_LIST: Swms[] = [
       {
         hazard: 'Clutter, uneven surfaces, poor lighting',
         risk: 'Trips and falls',
-        controls: ['Keep work areas tidy; clear obstacles before cleaning', 'Turn on lighting; report faulty lighting', 'Report damaged flooring to the client and Delta', 'Take extra care on stairs and ramps'],
+        controls: ['Keep work areas tidy; clear obstacles before cleaning', 'Turn on lighting; report faulty lighting', 'Report damaged flooring to the client and Core Cleaning', 'Take extra care on stairs and ramps'],
         ppe: ['Enclosed footwear'],
         emergency: 'Apply first aid; report the hazard so it can be fixed.',
       },
@@ -286,7 +286,7 @@ export const SWMS_LIST: Swms[] = [
       {
         hazard: 'Glass breakage',
         risk: 'Lacerations',
-        controls: ['Inspect glass for cracks before applying pressure', 'Use correct tools; do not force scrapers', 'Clean up broken glass with a dustpan, never bare hands', 'Report damaged glass to the client and Delta'],
+        controls: ['Inspect glass for cracks before applying pressure', 'Use correct tools; do not force scrapers', 'Clean up broken glass with a dustpan, never bare hands', 'Report damaged glass to the client and Core Cleaning'],
         ppe: ['Cut-resistant gloves'],
         emergency: 'Apply pressure to bleeding cuts; seek medical help for deep wounds.',
       },
@@ -312,10 +312,10 @@ export const MODERN_SLAVERY = {
   code: 'POLICY',
   title: 'Modern Slavery Declaration',
   paragraphs: [
-    'Delta Cleaning is committed to ethical business practices and does not tolerate any form of modern slavery, forced labour, child labour, human trafficking, or exploitation within its operations or supply chain.',
-    'Delta Cleaning requires all subcontractors and suppliers to comply with applicable workplace, employment, and human rights laws.',
-    'Delta Cleaning verifies contractor identity, ABN registration, and right-to-work status where applicable.',
-    'Any suspected breach of this policy must be reported immediately to Delta Cleaning management.',
+    'Core Cleaning is committed to ethical business practices and does not tolerate any form of modern slavery, forced labour, child labour, human trafficking, or exploitation within its operations or supply chain.',
+    'Core Cleaning requires all subcontractors and suppliers to comply with applicable workplace, employment, and human rights laws.',
+    'Core Cleaning verifies contractor identity, ABN registration, and right-to-work status where applicable.',
+    'Any suspected breach of this policy must be reported immediately to Core Cleaning management.',
   ],
 }
 
@@ -332,28 +332,28 @@ export const POLICIES: Policy[] = [
     code: 'POL-002',
     slug: 'environmental-policy',
     title: 'Environmental Policy',
-    intro: 'Delta Cleaning is committed to minimising the environmental impact of its operations and to continual improvement in its environmental performance.',
+    intro: 'Core Cleaning is committed to minimising the environmental impact of its operations and to continual improvement in its environmental performance.',
     sections: [
       { heading: 'Waste reduction', body: 'We minimise waste by using the correct amount of product, reusing durable equipment, and disposing of waste responsibly and in line with site requirements.' },
       { heading: 'Responsible chemical use', body: 'Chemicals are used strictly in accordance with their Safety Data Sheets and at the correct dilution. We avoid over-use and select lower-toxicity, environmentally responsible products where practical.' },
       { heading: 'Recycling', body: 'We separate and recycle materials where site facilities allow, and encourage clients to support recycling on their premises.' },
       { heading: 'Water & energy conservation', body: 'We use water efficiently, avoid unnecessary running of taps and equipment, and switch off lights and equipment that are not in use.' },
-      { heading: 'Compliance', body: 'Delta Cleaning complies with all applicable environmental laws and regulations, and reviews this policy at least annually.' },
+      { heading: 'Compliance', body: 'Core Cleaning complies with all applicable environmental laws and regulations, and reviews this policy at least annually.' },
     ],
   },
   {
     code: 'POL-003',
     slug: 'business-continuity',
     title: 'Business Continuity Plan',
-    intro: 'This plan sets out how Delta Cleaning maintains service to clients during a disruption. It is reviewed annually and after any activation.',
+    intro: 'This plan sets out how Core Cleaning maintains service to clients during a disruption. It is reviewed annually and after any activation.',
     sections: [
       { heading: 'Cleaner unavailable or resigns', bullets: ['A backup cleaner or subcontractor from our bench is deployed', 'Site Packs (site details, access, scope) let a replacement step in and perform correctly', 'The client is notified if any change to timing is expected'] },
       { heading: 'Flood, fire or site incident', bullets: ['The client and management are notified immediately', 'Affected cleans are rescheduled once the site is safe', 'Alternative arrangements are made where access is lost'] },
       { heading: 'Vehicle breakdown', bullets: ['Backup or hired transport is arranged', 'Affected sites are re-sequenced or rescheduled the same day where possible'] },
       { heading: 'Equipment failure', bullets: ['Spare or hired equipment is sourced', 'Supplier contacts are maintained for rapid replacement'] },
-      { heading: 'Pandemic or widespread illness', bullets: ['Enhanced hygiene protocols are followed', 'Essential/priority sites are maintained first', 'Coordination continues remotely via Delta Hub'] },
-      { heading: 'Key person unavailable', bullets: ['Operations are documented in Delta Hub so the business runs without a single point of failure', 'A delegated contact manages client communication'] },
-      { heading: 'Communication', body: 'Clients are kept informed promptly during any disruption. Delta Cleaning management can be reached on ' + COMPANY.phone + '.' },
+      { heading: 'Pandemic or widespread illness', bullets: ['Enhanced hygiene protocols are followed', 'Essential/priority sites are maintained first', 'Coordination continues remotely via Core Cleaning Hub'] },
+      { heading: 'Key person unavailable', bullets: ['Operations are documented in Core Cleaning Hub so the business runs without a single point of failure', 'A delegated contact manages client communication'] },
+      { heading: 'Communication', body: 'Clients are kept informed promptly during any disruption. Core Cleaning management can be reached on ' + COMPANY.phone + '.' },
     ],
   },
 ]

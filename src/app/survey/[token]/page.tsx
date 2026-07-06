@@ -25,7 +25,7 @@ export default async function SurveyPage({ params }: { params: { token: string }
         <div style={{ textAlign: 'center', maxWidth: 400, padding: '0 24px' }}>
           <p style={{ fontSize: 48, marginBottom: 16 }}>🔍</p>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 8 }}>Survey not found</h1>
-          <p style={{ fontSize: 15, color: '#666' }}>This link is invalid or has expired. Please contact Delta Cleaning if you believe this is an error.</p>
+          <p style={{ fontSize: 15, color: '#666' }}>This link is invalid or has expired. Please contact Core Cleaning if you believe this is an error.</p>
         </div>
       </div>
     )
@@ -50,7 +50,7 @@ export default async function SurveyPage({ params }: { params: { token: string }
     <div style={{ minHeight: '100vh', background: '#f5f4f2', fontFamily: 'Arial, sans-serif' }}>
       {/* Header */}
       <div style={{ background: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: '14px 24px' }}>
-        <Image src="/logo-black.png" alt="Delta Cleaning" width={130} height={44} style={{ objectFit: 'contain', display: 'block' }} priority />
+        <Image src="/logo-black.png" alt="Core Cleaning" width={130} height={44} style={{ objectFit: 'contain', display: 'block' }} priority />
       </div>
 
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '40px 24px 80px' }}>

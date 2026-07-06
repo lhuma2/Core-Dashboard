@@ -1,4 +1,4 @@
-// Delta Cleaning — QA site inspection template + scoring.
+﻿// Core Cleaning — QA site inspection template + scoring.
 // A default commercial-cleaning inspection: areas → items, each scored
 // Pass / Minor / Fail. Shared by the form (client) and the actions (server),
 // so scoring is identical everywhere.

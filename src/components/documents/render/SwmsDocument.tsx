@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+﻿import type { CSSProperties } from 'react'
 import type { Swms, Policy } from '@/lib/documents/safety'
 import { MODERN_SLAVERY, SDS_REGISTER, DOC_CONTROL, COMPANY, LEGISLATION, REVIEW_TRIGGERS, EMERGENCY_CONTACTS } from '@/lib/documents/safety'
 import { SUBCONTRACTOR_AGREEMENT, CONTRACTOR_INDUCTION } from '@/lib/documents/subcontractor'
@@ -20,7 +20,7 @@ const sectionLabel: CSSProperties = { fontFamily: MONO, fontSize: 9.5, letterSpa
 function Header({ docNo }: { docNo: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid #E2E8F0', marginBottom: 20 }}>
-      <img src={WORDMARK_BLACK} alt="Delta Cleaning" style={{ height: 20, width: 'auto' }} />
+      <img src={WORDMARK_BLACK} alt="Core Cleaning" style={{ height: 20, width: 'auto' }} />
       <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.14em', color: '#94A3B8', textTransform: 'uppercase' }}>{docNo}</div>
     </div>
   )
@@ -95,7 +95,7 @@ function SignOff({ label }: { label: string }) {
 }
 
 // Director authorisation — stamps the approver's signature (script) + issue date.
-// These are Delta's own company documents, authorised by the Director.
+// These are Core Cleaning's own company documents, authorised by the Director.
 const DIRECTOR_NAME = DOC_CONTROL.approvedBy.split(',')[0].trim()
 function AuthorisedBy() {
   return (

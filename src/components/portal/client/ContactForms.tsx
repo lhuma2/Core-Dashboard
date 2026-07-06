@@ -90,7 +90,7 @@ function ReportIssueForm({ clientId, recentJobs }: Props) {
     <>
       {showSuccess && (
         <SuccessPopup
-          message="Thanks for letting us know, we've got this. Jackson and your assigned team leader have been notified and we'll follow this up shortly."
+          message="Thanks for letting us know, we've got this. Laith and your assigned team leader have been notified and we'll follow this up shortly."
           onClose={() => setShowSuccess(false)}
         />
       )}
@@ -157,7 +157,7 @@ function ReportIssueForm({ clientId, recentJobs }: Props) {
         </label>
 
         <p className="text-xs text-gray-400">
-          This goes directly to Jackson and your assigned team manager.
+          This goes directly to Laith and your assigned team manager.
         </p>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
@@ -254,7 +254,7 @@ function FeedbackForm({ clientId }: { clientId: string }) {
         </div>
 
         <p className="text-xs text-gray-400">
-          This goes directly to Jackson and your assigned team leader.
+          This goes directly to Laith and your assigned team leader.
         </p>
 
         {error && <p className="text-sm text-red-500">{error}</p>}

@@ -1,7 +1,7 @@
 // ─── BRAND CONTROL PANEL ─────────────────────────────────────────────────────
 // White-labelling this hub? Change the values here first. This is the single
 // source of truth for business identity. Anywhere the app still hardcodes a
-// "Delta" value (see WHITE-LABEL.md for the file list), point it at BRAND.<x>.
+// "Core Cleaning" value (see WHITE-LABEL.md for the file list), point it at BRAND.<x>.
 //
 // Nothing secret lives here — just public business details. Secrets go in .env
 // (see .env.example). Legal documents (SWMS, policies, service agreement) are
@@ -9,29 +9,29 @@
 
 export const BRAND = {
   // Identity
-  name:       'Delta Cleaning',
-  legalName:  'Delta Cleaning Pty Ltd',
-  abn:        '83 303 026 478',
-  owner:      'Jackson Jaillet',
+  name:       'Core Cleaning',
+  legalName:  'Core Cleaning',
+  abn:        '',
+  owner:      'Laith Humadi',
   ownerRole:  'Director',
   location:   'Brisbane, QLD',
 
   // Contact
-  email:      'hello@deltacleaning.com.au',
-  phone:      '0412 844 237',
-  website:    'deltacleaning.com.au',
-  websiteUrl: 'https://deltacleaning.com.au',
+  email:      'admin@corecleaning.services',
+  phone:      '0407 026 360',
+  website:    'corecleaning.services',
+  websiteUrl: 'https://www.corecleaning.services',
 
   // Portal (must match your deployed domain — also set NEXT_PUBLIC_APP_URL)
-  appUrl:     'https://portal.deltacleaning.com.au',
+  appUrl:     'https://portal.corecleaning.services',
 
   // Outbound email (the sending domain must be verified in Resend)
-  emailFromName: 'Jackson at Delta Cleaning',
-  emailFrom:     'Jackson at Delta Cleaning <hello@deltacleaning.com.au>',
-  replyTo:       'hello@deltacleaning.com.au',
+  emailFromName: 'Laith at Core Cleaning',
+  emailFrom:     'Laith at Core Cleaning <admin@corecleaning.services>',
+  replyTo:       'admin@corecleaning.services',
 
   // Compliance reference shown to clients (your own policy number)
-  insurancePolicyNumber: 'SPD015763734',
+  insurancePolicyNumber: '',
 
   // Brand colours
   colors: {

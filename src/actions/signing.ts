@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -10,8 +10,8 @@ import { withAgreementDefaults, type AgreementData } from '@/lib/documents/agree
 // The client-facing signing link MUST use the branded public domain — never a
 // bare *.vercel.app alias (which may 404 or sit behind Vercel auth). Pinned so a
 // misconfigured NEXT_PUBLIC_APP_URL can't break every client's link.
-const APP_URL = 'https://portal.deltacleaning.com.au'
-const OWNER_EMAIL = 'hello@deltacleaning.com.au'
+const APP_URL = 'https://portal.corecleaning.services'
+const OWNER_EMAIL = 'admin@corecleaning.services'
 const WORDMARK = `${APP_URL}/proposal-assets/wordmark-white.png`
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
@@ -76,7 +76,7 @@ export async function sendForSignatureAction(id: string, toEmail: string, messag
   const link = `${APP_URL}/sign/${code}`
   const res = await sendEmail(
     email,
-    `Your Delta Cleaning service agreement — ready to sign`,
+    `Your Core Cleaning service agreement — ready to sign`,
     inviteEmail(agreement, link, message),
   )
   if (!res.success) return { error: res.error ?? 'Could not send the email. Please try again.' }
@@ -289,7 +289,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
   <div style="background:#eef1f5;padding:32px 16px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(15,23,42,.10);">
       <div style="background:#0b1320;padding:30px 30px 26px;text-align:center;">
-        <img src="${WORDMARK}" alt="Delta Cleaning" style="height:26px;width:auto;" />
+        <img src="${WORDMARK}" alt="Core Cleaning" style="height:26px;width:auto;" />
       </div>
       <div style="height:4px;background:linear-gradient(90deg,#2563eb,#60a5fa);line-height:4px;font-size:0;">&nbsp;</div>
       <div style="padding:34px 34px 30px;">
@@ -313,7 +313,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
       </div>
     </div>
     <p style="font-size:11px;color:#94a3b8;margin:18px auto 0;text-align:center;max-width:560px;line-height:1.7;">
-      Delta Cleaning Pty Ltd &middot; ABN 83 303 026 478 &middot; Brisbane QLD<br/>
+      Core Cleaning &middot; ABN  &middot; Brisbane QLD<br/>
       This signing link is unique to you &mdash; please don&rsquo;t forward it.
     </p>
   </div>`
@@ -323,7 +323,7 @@ function signedOwnerEmail(a: AgreementData, name: string, signedAtIso: string, d
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto;padding:28px 18px;color:#0f172a;">
     <div style="background:#0b1320;border-radius:12px 12px 0 0;padding:22px 26px;">
-      <p style="margin:0;color:#86efac;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;">Delta Cleaning · Signed</p>
+      <p style="margin:0;color:#86efac;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;">Core Cleaning · Signed</p>
       <h1 style="margin:6px 0 0;color:#fff;font-size:20px;">${a.clientName} signed the agreement</h1>
     </div>
     <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:26px;">

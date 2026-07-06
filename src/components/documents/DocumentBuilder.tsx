@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -81,7 +81,7 @@ function BuilderShell({ docLabel, docSub, steps, step, onBack, clientName, child
       <div style={{ background: INK, padding: '28px 20px 24px', display: 'flex', flexDirection: 'column', position: 'sticky', top: '3.5rem', height: 'calc(100vh - 3.5rem)', overflowY: 'auto' }}>
         {/* Logo */}
         <div style={{ marginBottom: 8 }}>
-          <Image src="/logo-white.png" alt="Delta Cleaning" width={90} height={28} style={{ objectFit: 'contain', objectPosition: 'left center' }} />
+          <Image src="/logo-white.png" alt="Core Cleaning" width={90} height={28} style={{ objectFit: 'contain', objectPosition: 'left center' }} />
         </div>
 
         {/* Back */}
@@ -124,7 +124,7 @@ function BuilderShell({ docLabel, docSub, steps, step, onBack, clientName, child
         </div>
 
         <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: 9, color: 'rgba(255,255,255,0.14)', lineHeight: 1.9 }}>
-          Delta Cleaning<br />Document Builder
+          Core Cleaning<br />Document Builder
         </div>
       </div>
 
@@ -226,7 +226,7 @@ function HomeScreen({ onSelect }: { onSelect: (t: DocumentType) => void }) {
       <div style={{ position: 'absolute', top: 80, left: 32 }}>
         <button onClick={() => router.push('/documents')} style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>← Documents</button>
       </div>
-      <Image src="/logo-white.png" alt="Delta" width={100} height={32} style={{ objectFit: 'contain', marginBottom: 52 }} />
+      <Image src="/logo-white.png" alt="Core Cleaning" width={100} height={32} style={{ objectFit: 'contain', marginBottom: 52 }} />
       <p style={{ fontSize: 9, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', fontWeight: 600, textAlign: 'center', marginBottom: 12 }}>Document Builder</p>
       <h1 style={{ fontFamily: 'Inter', fontSize: 26, fontWeight: 400, color: 'white', textAlign: 'center', marginBottom: 40 }}>What would you like to create?</h1>
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 780, width: '100%' }}>
@@ -265,7 +265,7 @@ function ProposalBuilder({ clients, preselectedClientId, onBack }: { clients: Cl
   const [refNumber]                     = useState(generateRef)
 
   // Step 2
-  const [openingParagraph, setOpeningParagraph] = useState('Thank you for the opportunity to visit your site and put this proposal together. Following our walkthrough, I have a clear picture of your requirements and am confident we can deliver a service that meets the standard your facility deserves.\n\nWe look forward to the opportunity to support your business and to maintain a consistently high standard across your facility. Please do not hesitate to reach out with any questions before making a decision.\n\nWarm regards,\nJackson Jaillet\nFounder & Director, Delta Cleaning')
+  const [openingParagraph, setOpeningParagraph] = useState('Thank you for the opportunity to visit your site and put this proposal together. Following our walkthrough, I have a clear picture of your requirements and am confident we can deliver a service that meets the standard your facility deserves.\n\nWe look forward to the opportunity to support your business and to maintain a consistently high standard across your facility. Please do not hesitate to reach out with any questions before making a decision.\n\nWarm regards,\nLaith Humadi\nFounder & Director, Core Cleaning')
   const [additionalNote, setAdditionalNote] = useState('')
   const hasEditedOpening = useRef(false)
 
@@ -293,7 +293,7 @@ function ProposalBuilder({ clients, preselectedClientId, onBack }: { clients: Cl
       setContactEmail(selectedClient.contact_email || '')
       setSiteAddress([selectedClient.address, selectedClient.suburb, selectedClient.state, selectedClient.postcode].filter(Boolean).join(', '))
       if (!hasEditedOpening.current) {
-        setOpeningParagraph(`Thank you for the opportunity to put this proposal together. Following our walkthrough, I have a clear picture of your requirements and am confident we can deliver a service that meets the standard your facility deserves.\n\nWe look forward to the opportunity to support ${selectedClient.business_name} and to maintain a consistently high standard across your facility. Please do not hesitate to reach out with any questions before making a decision.\n\nWarm regards,\nJackson Jaillet\nFounder & Director, Delta Cleaning`)
+        setOpeningParagraph(`Thank you for the opportunity to put this proposal together. Following our walkthrough, I have a clear picture of your requirements and am confident we can deliver a service that meets the standard your facility deserves.\n\nWe look forward to the opportunity to support ${selectedClient.business_name} and to maintain a consistently high standard across your facility. Please do not hesitate to reach out with any questions before making a decision.\n\nWarm regards,\nLaith Humadi\nFounder & Director, Core Cleaning`)
       }
     }
   }, [selectedClient?.id])
@@ -398,7 +398,7 @@ function ProposalBuilder({ clients, preselectedClientId, onBack }: { clients: Cl
         <div>
           <PanelEyebrow n={2} total={6} />
           <PanelHeading>Opening message</PanelHeading>
-          <PanelSub>A personal note from Jackson following the site walkthrough.</PanelSub>
+          <PanelSub>A personal note from Laith following the site walkthrough.</PanelSub>
           <div style={{ marginBottom: 20 }}>
             <FieldLabel>Opening paragraph</FieldLabel>
             <p style={{ fontSize: 10.5, color: INK_FAINT, marginBottom: 8 }}>Appears after "Dear [Name]," in the introduction letter</p>
@@ -558,7 +558,7 @@ function AgreementBuilder({ docType, clients, preselectedClientId, onBack }: { d
   const [noticePeriod, setNoticePeriod]         = useState('30 days')
   const [paymentTerms, setPaymentTerms]         = useState('14 days')
   const [specialInstructions, setSpecialInstructions] = useState('')
-  const [terminationClause]                     = useState('Standard Delta Cleaning terms apply.')
+  const [terminationClause]                     = useState('Standard Core Cleaning terms apply.')
   const [signatoryName, setSignatoryName]       = useState('')
   const [signatoryTitle, setSignatoryTitle]     = useState('')
   const [specialistType, setSpecialistType]     = useState('Pressure Washing')

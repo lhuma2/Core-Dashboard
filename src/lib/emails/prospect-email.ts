@@ -1,4 +1,4 @@
-// Shared "prospect email" builders — the post-conversation capability-statement
+﻿// Shared "prospect email" builders — the post-conversation capability-statement
 // intro email and its light follow-up. Used by both the cold-call deck and the
 // pipeline lead profile so the copy and sending behaviour stay identical.
 // Plain module (not a server action file) so it can export helpers + constants.
@@ -7,9 +7,9 @@ import 'server-only'
 
 const SIGNATURE = `
   <p style="margin-top: 24px;">
-    Jackson<br/>
-    Delta Cleaning · Brisbane<br/>
-    <a href="mailto:hello@deltacleaning.com.au" style="color: #1e3a5f;">hello@deltacleaning.com.au</a>
+    Laith<br/>
+    Core Cleaning · Brisbane<br/>
+    <a href="mailto:admin@corecleaning.services" style="color: #1e3a5f;">admin@corecleaning.services</a>
   </p>`
 
 export const EMAIL_WRAP = (inner: string) =>
@@ -48,8 +48,8 @@ export async function sendThreadedEmail(opts: {
     const { Resend } = await import('resend')
     const resend = new Resend(apiKey)
     const res = await resend.emails.send({
-      from: 'Jackson at Delta Cleaning <hello@deltacleaning.com.au>',
-      reply_to: 'hello@deltacleaning.com.au',
+      from: 'Laith at Core Cleaning <admin@corecleaning.services>',
+      reply_to: 'admin@corecleaning.services',
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
@@ -72,7 +72,7 @@ export async function buildCapabilityAttachment(): Promise<{ filename: string; c
     const { CapabilityDocument } = await import('@/components/documents/render/CapabilityDocument')
     const { DEFAULT_CAPABILITY } = await import('@/lib/documents/capability')
     const pdf = await renderDocumentPdf(React.createElement(CapabilityDocument, { data: DEFAULT_CAPABILITY as any }))
-    return [{ filename: 'Delta Cleaning Capability Statement.pdf', content: pdf }]
+    return [{ filename: 'Core Cleaning Capability Statement.pdf', content: pdf }]
   } catch {
     return undefined
   }
@@ -85,17 +85,17 @@ export function introEmailContent(p: Prospect) {
   const firstName = (p.contactName || '').split(' ')[0]
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
   const locality = localityPhrase(p.suburb)
-  const subject = `Delta Cleaning — capability statement for ${p.businessName}`
+  const subject = `Core Cleaning — capability statement for ${p.businessName}`
   const bodyText =
     `${greeting}\n\n` +
-    `Thanks for taking my call earlier — great to chat. As promised, I've attached Delta Cleaning's capability statement so you can see exactly what we do.\n\n` +
+    `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.\n\n` +
     `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
-    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0412 844 237, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nDelta Cleaning`
+    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nCore Cleaning`
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
-  <p>Thanks for taking my call earlier — great to chat. As promised, I've attached Delta Cleaning's capability statement so you can see exactly what we do.</p>
+  <p>Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.</p>
   <p>We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.</p>
-  <p>Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on <a href="tel:+61412844237">0412 844 237</a>, or just reply here and I'll set up a quick, free site visit.</p>`)
+  <p>Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on <a href="tel:+61412844237">0407 026 360</a>, or just reply here and I'll set up a quick, free site visit.</p>`)
   return { subject, html, bodyText }
 }
 
@@ -107,7 +107,7 @@ export function followUpEmailContent(p: Prospect, introSubject: string) {
   const bodyText =
     `${greeting}\n\n` +
     `Just following up on my note below. I know things get busy.\n\n` +
-    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nDelta Cleaning`
+    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nCore Cleaning`
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
   <p>Just following up on my note below. I know things get busy.</p>

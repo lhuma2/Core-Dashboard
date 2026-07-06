@@ -25,7 +25,7 @@ export default async function SignPage({ params }: { params: { token: string } }
         <div>
           <h1 className="text-white text-xl font-bold mb-2">This signing link isn&apos;t valid</h1>
           <p className="text-slate-400 text-sm max-w-xs mx-auto">
-            The link may be mistyped or no longer active. Please contact Delta Cleaning for a fresh link.
+            The link may be mistyped or no longer active. Please contact Core Cleaning for a fresh link.
           </p>
         </div>
       </div>

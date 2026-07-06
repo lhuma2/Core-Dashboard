@@ -193,7 +193,7 @@ export function ProposalEditor({ id, initialData, status }: { id: string; initia
             <button onClick={addService} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1e3a5f] hover:underline"><Plus className="w-3.5 h-3.5" /> Add service</button>
           </Section>
 
-          <Section title="Delta contact">
+          <Section title="Core Cleaning contact">
             <Field label="Name" value={data.contactName} onChange={v => set('contactName', v)} />
             <Field label="Role" value={data.contactRole} onChange={v => set('contactRole', v)} />
             <Field label="Phone" value={data.contactPhone} onChange={v => set('contactPhone', v)} />

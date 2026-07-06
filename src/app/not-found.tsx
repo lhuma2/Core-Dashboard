@@ -1,4 +1,4 @@
-import Image from 'next/image'
+﻿import Image from 'next/image'
 import Link from 'next/link'
 
 export default function NotFound() {
@@ -8,7 +8,7 @@ export default function NotFound() {
         <div className="flex justify-center mb-6">
           <Image
             src="/logo-icon-black.png"
-            alt="Delta Cleaning"
+            alt="Core Cleaning"
             width={64}
             height={64}
             className="object-contain"
@@ -16,7 +16,7 @@ export default function NotFound() {
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-2">404</h1>
         <p className="text-gray-500 mb-6">
-          This page doesn&apos;t exist in Delta Operations Hub.
+          This page doesn&apos;t exist in Core Cleaning Operations Hub.
         </p>
         <Link
           href="/dashboard"

@@ -1,4 +1,4 @@
--- Delta Operations Hub — Row Level Security
+-- Core Cleaning Operations Hub — Row Level Security
 -- Single-tenant internal tool: all authenticated users have full access
 
 -- Enable RLS on all tables

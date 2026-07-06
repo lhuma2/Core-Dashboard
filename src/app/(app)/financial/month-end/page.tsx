@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import Link from 'next/link'
@@ -166,7 +166,7 @@ export default async function MonthEndReportPage({ searchParams }: { searchParam
       </div>
 
       <p className="text-[11px] text-gray-400 text-center">
-        Delta Cleaning · generated {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })} · figures exclude GST
+        Core Cleaning · generated {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })} · figures exclude GST
       </p>
     </div>
   )

@@ -11,3 +11,6 @@ Delta-Ops-Dashboard.xlsx
 Delta-Security-Audit-2026-06.docx
 *.xlsx
 *.docx
+
+# local dev/setup artifacts
+scratch_dev_*.log

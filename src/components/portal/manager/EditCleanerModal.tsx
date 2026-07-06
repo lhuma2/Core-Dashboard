@@ -127,7 +127,7 @@ export function EditCleanerModal({ profileId, userId, fullName, email }: Props) 
                 <div className="bg-gray-50 rounded-xl px-3 py-2.5">
                   <p className="text-xs text-gray-400 mb-0.5">Username</p>
                   <p className="text-xs font-mono text-gray-700 break-all">
-                    {email.replace('@delta-cleaner.internal', '')}
+                    {email.replace('@core-cleaner.internal', '')}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">Cleaner logs in with this username + password</p>
                 </div>

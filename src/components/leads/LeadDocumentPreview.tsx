@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Printer, Edit } from 'lucide-react'
@@ -84,7 +84,7 @@ function ProposalDocument({ data, lead }: { data: any; lead: Lead }) {
       {/* Header */}
       <div className="flex items-start justify-between mb-10 pb-8 border-b-2 border-gray-900">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Delta Cleaning</h1>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Core Cleaning</h1>
           <p className="text-sm text-gray-500 mt-1">Commercial Cleaning Services</p>
         </div>
         <div className="text-right">
@@ -170,9 +170,9 @@ function ProposalDocument({ data, lead }: { data: any; lead: Lead }) {
       {/* Footer */}
       <div className="mt-12 pt-8 border-t border-gray-200 text-center">
         <p className="text-xs text-gray-400">
-          Thank you for considering Delta Cleaning. We look forward to working with you.
+          Thank you for considering Core Cleaning. We look forward to working with you.
         </p>
-        <p className="text-xs text-gray-300 mt-1">Delta Cleaning · Brisbane, QLD</p>
+        <p className="text-xs text-gray-300 mt-1">Core Cleaning · Brisbane, QLD</p>
       </div>
     </div>
   )
@@ -186,7 +186,7 @@ function AgreementDocument({ data, lead }: { data: any; lead: Lead }) {
       {/* Header */}
       <div className="flex items-start justify-between mb-10 pb-8 border-b-2 border-gray-900">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Delta Cleaning</h1>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Core Cleaning</h1>
           <p className="text-sm text-gray-500 mt-1">Commercial Cleaning Services</p>
         </div>
         <div className="text-right">
@@ -201,7 +201,7 @@ function AgreementDocument({ data, lead }: { data: any; lead: Lead }) {
       <div className="grid grid-cols-2 gap-8 mb-8">
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Service Provider</p>
-          <p className="text-sm font-semibold text-gray-900">Delta Cleaning</p>
+          <p className="text-sm font-semibold text-gray-900">Core Cleaning</p>
           <p className="text-sm text-gray-500">Brisbane, QLD</p>
         </div>
         <div>
@@ -252,7 +252,7 @@ function AgreementDocument({ data, lead }: { data: any; lead: Lead }) {
           {/* Provider sig */}
           <div>
             <div className="h-14 border-b border-gray-300 mb-3" />
-            <p className="text-sm font-medium text-gray-900">Delta Cleaning</p>
+            <p className="text-sm font-medium text-gray-900">Core Cleaning</p>
             <p className="text-xs text-gray-400">Authorised Representative</p>
             <p className="text-xs text-gray-400 mt-1">Date: _______________</p>
           </div>

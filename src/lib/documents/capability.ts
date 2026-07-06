@@ -1,4 +1,4 @@
-// ─── Capability Statement — data model + defaults ────────────────────────────
+﻿// ─── Capability Statement — data model + defaults ────────────────────────────
 // A leave-behind that always travels with a proposal. Mostly fixed template;
 // these are the few editable fields.
 
@@ -21,15 +21,15 @@ export const DEFAULT_CAPABILITY: CapabilityData = {
   year: '2026',
   tagline: 'A higher standard of commercial cleaning, kept by the owner.',
   intro: 'Owner-led commercial cleaning for businesses across Brisbane and South East Queensland, built on reliability, accountability and personal involvement.',
-  testimonial: 'Jackson has clear communication and frequently checks in to make sure we are getting the best service. We would recommend Delta to other commercial sites.',
+  testimonial: 'Laith has clear communication and frequently checks in to make sure we are getting the best service. We would recommend Core Cleaning to other commercial sites.',
   testimonialAuthor: 'Braden L. · Physiotherapy Clinic',
   testimonial2: 'They understand the hygiene standards a medical environment needs and consistently deliver. Communication is clear and quality is always high.',
   testimonial2Author: 'Keziah W. · Medical Clinic Manager',
-  contactName: 'Jackson Jaillet',
+  contactName: 'Laith Humadi',
   contactRole: 'Founder & Director',
   contactPhone: '+61 412 844 237',
-  contactEmail: 'hello@deltacleaning.com.au',
-  website: 'deltacleaning.com.au',
+  contactEmail: 'admin@corecleaning.services',
+  website: 'corecleaning.services',
 }
 
 export function withCapabilityDefaults(data: Partial<CapabilityData> | null | undefined): CapabilityData {

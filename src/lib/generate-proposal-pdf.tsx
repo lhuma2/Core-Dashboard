@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { Document, Page, Text, View, pdf } from '@react-pdf/renderer'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -94,10 +94,10 @@ const ADDL_LABELS: Record<string, { label: string; price: string }> = {
 }
 
 const REVIEWS = [
-  { quote: 'Jackson has clear communication and frequently checks in on each customer to ensure they are receiving the best service. We have used Delta Cleaning for approximately 12 months and would recommend them.', name: 'Braden L.', role: 'Physiotherapy Clinic' },
+  { quote: 'Laith has clear communication and frequently checks in on each customer to ensure they are receiving the best service. We have used Core Cleaning for approximately 12 months and would recommend them.', name: 'Braden L.', role: 'Physiotherapy Clinic' },
   { quote: 'We have been really impressed. They have been reliable and a big improvement on the previous contractors.', name: 'Duncan K.', role: 'Office Manager' },
   { quote: 'They understand the high hygiene standards required in a medical environment and consistently deliver. Communication is clear and quality is always high.', name: 'Keziah W.', role: 'Medical Clinic Manager' },
-  { quote: 'Fantastic service — our office has never been cleaner. Jackson has been an absolute pleasure to deal with. Highly recommend.', name: 'Ashleigh B.', role: 'Office Administrator' },
+  { quote: 'Fantastic service — our office has never been cleaner. Laith has been an absolute pleasure to deal with. Highly recommend.', name: 'Ashleigh B.', role: 'Office Administrator' },
 ]
 
 const TERMS = [
@@ -105,7 +105,7 @@ const TERMS = [
   { title: 'Annual Price Review', body: 'Pricing reviewed annually in line with the Queensland CPI. Minimum 30 days written notice prior to any adjustment.' },
   { title: 'Cancellation Policy', body: 'Either party may terminate with 30 days written notice after the initial term. Early cancellation may incur an equivalent one-month service fee.' },
   { title: 'Site Access', body: 'Client responsible for providing safe, secure access. Keys, fobs, or codes must be provided prior to commencement.' },
-  { title: 'Products & Equipment', body: 'Delta Cleaning supplies all equipment and cleaning products. Safety Data Sheets available on request at no additional cost.' },
+  { title: 'Products & Equipment', body: 'Core Cleaning supplies all equipment and cleaning products. Safety Data Sheets available on request at no additional cost.' },
   { title: 'Confidentiality', body: 'All personnel bound by confidentiality obligations. Client credentials and site information handled with full discretion.' },
 ]
 
@@ -130,7 +130,7 @@ const Bullet = ({ text }: { text: string }) => (
 const PageHeader = ({ company, date }: { company: string; date: string }) => (
   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: RULE }}>
     <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', letterSpacing: 1, color: INK }}>
-      DELTA CLEANING
+      Core Cleaning
     </Text>
     <View style={{ alignItems: 'flex-end' }}>
       <Text style={{ fontSize: 8.5, color: INK_SOFT }}>Proposal for <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>{company}</Text></Text>
@@ -146,7 +146,7 @@ const CoverPage = ({ c }: { c: ProposalData }) => (
     <View style={{ flex: 1, padding: '36 44 40' }}>
       {/* Logo bar */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 56 }}>
-        <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: 2 }}>Δ DELTA CLEANING</Text>
+        <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: 2 }}>Δ Core Cleaning</Text>
         <View style={{ alignItems: 'flex-end' }}>
           <Text style={{ fontSize: 7, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 3 }}>Reference</Text>
           <Text style={{ fontSize: 12, color: WHITE, fontFamily: 'Helvetica-Bold' }}>{c.refNumber}</Text>
@@ -189,15 +189,15 @@ const CoverPage = ({ c }: { c: ProposalData }) => (
       {/* Submitted by */}
       <View style={{ flex: 1, padding: '28 32' }}>
         <Label>Submitted by</Label>
-        <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold', color: INK, marginBottom: 2 }}>Jackson Jaillet</Text>
-        <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 2 }}>Founder & Director, Delta Cleaning</Text>
+        <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold', color: INK, marginBottom: 2 }}>Laith Humadi</Text>
+        <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 2 }}>Founder & Director, Core Cleaning</Text>
         <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 2 }}>+61 412 844 237</Text>
-        <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 18 }}>hello@deltacleaning.com.au</Text>
+        <Text style={{ fontSize: 10, color: INK_SOFT, marginBottom: 18 }}>admin@corecleaning.services</Text>
         <Divider />
         <View style={{ marginTop: 12, marginBottom: 14 }}>
           <Label>About this proposal</Label>
           <Text style={{ fontSize: 10, color: INK_SOFT, lineHeight: 1.6 }}>
-            This proposal has been prepared for {c.companyName} following a site walkthrough conducted by Jackson Jaillet. It outlines the scope of services, service schedule, and the investment required.
+            This proposal has been prepared for {c.companyName} following a site walkthrough conducted by Laith Humadi. It outlines the scope of services, service schedule, and the investment required.
           </Text>
         </View>
         <Divider />
@@ -222,7 +222,7 @@ const IntroPage = ({ c }: { c: ProposalData }) => (
 
     <Label>Introduction</Label>
     <Text style={{ fontSize: 22, fontFamily: 'Times-Roman', color: INK, marginBottom: 18, lineHeight: 1.2 }}>
-      From Jackson Jaillet, Founder & Director
+      From Laith Humadi, Founder & Director
     </Text>
 
     {/* Letter */}
@@ -243,7 +243,7 @@ const IntroPage = ({ c }: { c: ProposalData }) => (
       {[
         { title: 'Reliable', body: 'A consistent standard on every visit. Same process, same team, every time.' },
         { title: 'Accountable', body: 'If something is not right, we address it immediately — no need to follow up twice.' },
-        { title: 'Communicative', body: 'Jackson personally checks in with every client to ensure the service meets expectations.' },
+        { title: 'Communicative', body: 'Laith personally checks in with every client to ensure the service meets expectations.' },
       ].map((v, i) => (
         <View key={v.title} style={{ flex: 1, padding: '14 16', borderLeftWidth: i > 0 ? 0.5 : 0, borderLeftColor: RULE }}>
           <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: INK, marginBottom: 5 }}>{v.title}</Text>
@@ -274,7 +274,7 @@ const IntroPage = ({ c }: { c: ProposalData }) => (
     {/* Owner involvement - subtle */}
     <View style={{ paddingTop: 12, borderTopWidth: 0.5, borderTopColor: RULE }}>
       <Text style={{ fontSize: 9, color: INK_FAINT, lineHeight: 1.6, textAlign: 'center' }}>
-        Every Delta Cleaning client is managed directly by Jackson Jaillet — the owner. Jackson personally handles onboarding, conducts quality checks, and remains your single point of contact throughout the engagement.
+        Every Core Cleaning client is managed directly by Laith Humadi — the owner. Laith personally handles onboarding, conducts quality checks, and remains your single point of contact throughout the engagement.
       </Text>
     </View>
   </Page>
@@ -404,7 +404,7 @@ const ScopePage = ({ c }: { c: ProposalData }) => {
       <View style={{ borderWidth: 0.5, borderColor: RULE, borderRadius: 3, padding: '10 14', backgroundColor: BG_LIGHT }}>
         <Text style={{ fontSize: 7, color: INK_FAINT, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 4 }}>Please note</Text>
         <Text style={{ fontSize: 9, color: INK_SOFT, lineHeight: 1.6 }}>
-          All cleaning products and equipment are supplied by Delta Cleaning. Safety Data Sheets are available on request. Any site-specific requirements must be communicated prior to commencement.
+          All cleaning products and equipment are supplied by Core Cleaning. Safety Data Sheets are available on request. Any site-specific requirements must be communicated prior to commencement.
         </Text>
       </View>
     </Page>
@@ -444,7 +444,7 @@ const TermsPage = ({ c }: { c: ProposalData }) => (
       {[
         { step: 'Step 01', tag: 'Accept', body: 'Confirm acceptance via email. A formal Service Agreement will then be issued for your review.' },
         { step: 'Step 02', tag: 'Agreement', body: 'Review and sign the Service Agreement to formalise the engagement and confirm all terms.' },
-        { step: 'Step 03', tag: 'Commence', body: 'Services begin on the agreed start date. Jackson will follow up after the first visit to confirm all is in order.' },
+        { step: 'Step 03', tag: 'Commence', body: 'Services begin on the agreed start date. Laith will follow up after the first visit to confirm all is in order.' },
       ].map((s, i) => (
         <View key={s.step} style={{ flex: 1, padding: '14 16', borderLeftWidth: i > 0 ? 0.5 : 0, borderLeftColor: RULE }}>
           <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: INK, marginBottom: 2 }}>{s.step}</Text>
@@ -466,7 +466,7 @@ const TermsPage = ({ c }: { c: ProposalData }) => (
     <View style={{ borderWidth: 0.5, borderColor: RULE, borderRadius: 3, backgroundColor: BG }}>
       <View style={{ padding: '14 18', borderBottomWidth: 0.5, borderBottomColor: RULE }}>
         <Text style={{ fontSize: 9, color: INK_SOFT }}>
-          To accept this proposal, please reply via email confirming your acceptance or contact Jackson Jaillet directly on <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>+61 412 844 237</Text> or <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>hello@deltacleaning.com.au</Text>.
+          To accept this proposal, please reply via email confirming your acceptance or contact Laith Humadi directly on <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>+61 412 844 237</Text> or <Text style={{ color: INK, fontFamily: 'Helvetica-Bold' }}>admin@corecleaning.services</Text>.
         </Text>
       </View>
       <View style={{ flexDirection: 'row' }}>
@@ -486,7 +486,7 @@ const TermsPage = ({ c }: { c: ProposalData }) => (
     {/* Footer */}
     <View style={{ marginTop: 20, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: RULE }}>
       <Text style={{ fontSize: 8, color: INK_FAINT, textAlign: 'center' }}>
-        Delta Cleaning · Brisbane, QLD · hello@deltacleaning.com.au · +61 412 844 237 · deltacleaning.com.au
+        Core Cleaning · Brisbane, QLD · admin@corecleaning.services · +61 412 844 237 · corecleaning.services
       </Text>
     </View>
   </Page>
@@ -494,7 +494,7 @@ const TermsPage = ({ c }: { c: ProposalData }) => (
 
 // ─── Main PDF Document ─────────────────────────────────────────────────────────
 const ProposalPDF = ({ c }: { c: ProposalData }) => (
-  <Document title={`Commercial Cleaning Proposal — ${c.companyName}`} author="Delta Cleaning" creator="Delta Operations Hub">
+  <Document title={`Commercial Cleaning Proposal — ${c.companyName}`} author="Core Cleaning" creator="Core Cleaning Operations Hub">
     <CoverPage c={c} />
     <IntroPage c={c} />
     <ScopePage c={c} />

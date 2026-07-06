@@ -26,7 +26,7 @@ async function geocode(q: string) {
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), 6000)
     const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=au`,
-      { headers: { 'Accept-Language': 'en', 'User-Agent': 'DeltaCleaningPortal/1.0' }, signal: ctrl.signal })
+      { headers: { 'Accept-Language': 'en', 'User-Agent': 'CoreCleaningPortal/1.0' }, signal: ctrl.signal })
     clearTimeout(t)
     const d = await r.json()
     return d?.[0] ? { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon) } : null

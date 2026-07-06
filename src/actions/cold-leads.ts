@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -158,7 +158,7 @@ export async function previewColdLeadsCsvAction(csvText: string) {
 // code can't silently import mis-mapped data, and prompt the user to update.
 export async function importColdLeadsAction(csvText: string, mapping?: ColumnMap) {
   if (!mapping) {
-    return { error: 'Your app needs to update. Fully close Delta (swipe it away in the app switcher) and reopen it, then import again — you’ll get a step to match your columns.' }
+    return { error: 'Your app needs to update. Fully close Core Cleaning (swipe it away in the app switcher) and reopen it, then import again — you’ll get a step to match your columns.' }
   }
 
   const rows = parseCsv(csvText)
@@ -330,9 +330,9 @@ export async function deleteColdLeadAction(id: string) {
 
 const SIGNATURE = `
   <p style="margin-top: 24px;">
-    Jackson<br/>
-    Delta Cleaning · Brisbane<br/>
-    <a href="mailto:hello@deltacleaning.com.au" style="color: #1e3a5f;">hello@deltacleaning.com.au</a>
+    Laith<br/>
+    Core Cleaning · Brisbane<br/>
+    <a href="mailto:admin@corecleaning.services" style="color: #1e3a5f;">admin@corecleaning.services</a>
   </p>`
 
 const EMAIL_WRAP = (inner: string) =>
@@ -371,8 +371,8 @@ async function sendThreadedEmail(opts: {
     const { Resend } = await import('resend')
     const resend = new Resend(apiKey)
     const res = await resend.emails.send({
-      from: 'Jackson at Delta Cleaning <hello@deltacleaning.com.au>',
-      reply_to: 'hello@deltacleaning.com.au',
+      from: 'Laith at Core Cleaning <admin@corecleaning.services>',
+      reply_to: 'admin@corecleaning.services',
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
@@ -398,20 +398,20 @@ export async function sendIntroEmailAction(id: string, scheduleFollowUp = false)
   const locality = localityPhrase(lead.suburb)
 
   // A Message-ID we own, so the follow-up can thread under this email
-  const messageId = `<intro-${id}-${Date.now()}@deltacleaning.com.au>`
-  const subject = `Delta Cleaning — capability statement for ${lead.business_name}`
+  const messageId = `<intro-${id}-${Date.now()}@corecleaning.services>`
+  const subject = `Core Cleaning — capability statement for ${lead.business_name}`
 
   const bodyText =
     `${greeting}\n\n` +
-    `Thanks for taking my call earlier — great to chat. As promised, I've attached Delta Cleaning's capability statement so you can see exactly what we do.\n\n` +
+    `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.\n\n` +
     `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
-    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0412 844 237, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nDelta Cleaning`
+    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nCore Cleaning`
 
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
-  <p>Thanks for taking my call earlier — great to chat. As promised, I've attached Delta Cleaning's capability statement so you can see exactly what we do.</p>
+  <p>Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.</p>
   <p>We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.</p>
-  <p>Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on <a href="tel:+61412844237">0412 844 237</a>, or just reply here and I'll set up a quick, free site visit.</p>`)
+  <p>Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on <a href="tel:+61412844237">0407 026 360</a>, or just reply here and I'll set up a quick, free site visit.</p>`)
 
   // Attach the capability statement (best-effort — still send if the PDF service is down)
   let attachments: { filename: string; content: Buffer }[] | undefined
@@ -421,7 +421,7 @@ export async function sendIntroEmailAction(id: string, scheduleFollowUp = false)
     const { CapabilityDocument } = await import('@/components/documents/render/CapabilityDocument')
     const { DEFAULT_CAPABILITY } = await import('@/lib/documents/capability')
     const pdf = await renderDocumentPdf(React.createElement(CapabilityDocument, { data: DEFAULT_CAPABILITY as any }))
-    attachments = [{ filename: 'Delta Cleaning Capability Statement.pdf', content: pdf }]
+    attachments = [{ filename: 'Core Cleaning Capability Statement.pdf', content: pdf }]
   } catch { /* no attachment if the PDF service is unavailable */ }
 
   const result = await sendThreadedEmail({ to: lead.email, subject, html, messageId, attachments })
@@ -460,7 +460,7 @@ export async function sendFollowUpEmailAction(id: string) {
   const bodyText =
     `${greeting}\n\n` +
     `Just following up on my note below. I know things get busy.\n\n` +
-    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nDelta Cleaning`
+    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nCore Cleaning`
 
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
@@ -496,12 +496,12 @@ export async function previewIntroEmailAction(id: string): Promise<{ to?: string
   const firstName = (lead.contact_name || '').split(' ')[0]
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
   const locality = localityPhrase(lead.suburb)
-  const subject = `Delta Cleaning — capability statement for ${lead.business_name}`
+  const subject = `Core Cleaning — capability statement for ${lead.business_name}`
   const body =
     `${greeting}\n\n` +
-    `Thanks for taking my call earlier — great to chat. As promised, I've attached Delta Cleaning's capability statement so you can see exactly what we do.\n\n` +
+    `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.\n\n` +
     `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
-    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0412 844 237, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nDelta Cleaning\n\n📎 Capability statement (PDF) attached`
+    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nCore Cleaning\n\n📎 Capability statement (PDF) attached`
   return { to: lead.email, subject, body }
 }
 
@@ -518,7 +518,7 @@ export async function previewFollowUpEmailAction(id: string): Promise<{ to?: str
   const body =
     `${greeting}\n\n` +
     `Just following up on my note below. I know things get busy.\n\n` +
-    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nDelta Cleaning`
+    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nCore Cleaning`
   return { to: lead.email, subject, body }
 }
 

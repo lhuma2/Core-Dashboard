@@ -166,7 +166,7 @@ export function AgreementEditor({ id, initialData, status, signCode, clients = [
               </div>
             ))}
           </Section>
-          <Section title="Delta contact">
+          <Section title="Core Cleaning contact">
             <Field label="Name" value={data.contactName} onChange={v => set('contactName', v)} />
             <Field label="Role" value={data.contactRole} onChange={v => set('contactRole', v)} />
             <Field label="Phone" value={data.contactPhone} onChange={v => set('contactPhone', v)} />

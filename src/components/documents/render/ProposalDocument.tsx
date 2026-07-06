@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+﻿import type { CSSProperties } from 'react'
 import type { ProposalData } from '@/lib/documents/proposal'
 
 // ─── Faithful recreation of the Premium Proposal design (10 × A4 pages) ───────
@@ -27,7 +27,7 @@ const eyebrow: CSSProperties = {
 function Header({ label }: { label: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 18, borderBottom: '1px solid #E2E8F0' }}>
-      <img src={WORDMARK_BLACK} alt="Delta Cleaning" style={{ height: 20, width: 'auto' }} />
+      <img src={WORDMARK_BLACK} alt="Core Cleaning" style={{ height: 20, width: 'auto' }} />
       <div style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, letterSpacing: '.12em', color: '#94A3B8', textTransform: 'uppercase' }}>{label}</div>
     </div>
   )
@@ -35,7 +35,7 @@ function Header({ label }: { label: string }) {
 function Footer({ n }: { n: string }) {
   return (
     <div style={{ position: 'absolute', left: 72, right: 72, bottom: 42, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: SANS, fontSize: 10.5, letterSpacing: '.06em', color: '#CBD5E1', textTransform: 'uppercase', borderTop: '1px solid #EEF2F6', paddingTop: 14 }}>
-      <span>Delta Cleaning · Service Proposal</span>
+      <span>Core Cleaning · Service Proposal</span>
       <span style={{ fontFamily: MONO }}>{n}</span>
     </div>
   )
@@ -65,7 +65,7 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
         <img src={MARK_WHITE} alt="" style={{ position: 'absolute', left: -180, bottom: -200, width: 560, opacity: 0.04 }} />
         <div style={{ position: 'relative', padding: '66px 72px', display: 'flex', flexDirection: 'column', minHeight: 1123 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <img src={WORDMARK_WHITE} alt="Delta Cleaning" style={{ height: 30, width: 'auto' }} />
+            <img src={WORDMARK_WHITE} alt="Core Cleaning" style={{ height: 30, width: 'auto' }} />
             <div style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11, letterSpacing: '.14em', color: '#64748B', lineHeight: 1.9 }}>
               <div>REFERENCE</div><div style={{ color: '#E2E8F0' }}>{data.refNumber}</div>
             </div>
@@ -79,7 +79,7 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
             <div style={{ fontSize: 15, color: '#94A3B8', marginTop: 6 }}>{data.siteAddress}</div>
           </div>
           <div style={{ marginTop: 62, paddingTop: 30, borderTop: '1px solid rgba(255,255,255,.12)', display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', gap: 24 }}>
-            <div><div style={{ ...eyebrow, fontSize: 10.5, color: '#64748B', marginBottom: 9 }}>Submitted by</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{data.contactName}</div><div style={{ fontSize: 13, color: '#94A3B8' }}>{data.contactRole}, Delta Cleaning</div></div>
+            <div><div style={{ ...eyebrow, fontSize: 10.5, color: '#64748B', marginBottom: 9 }}>Submitted by</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{data.contactName}</div><div style={{ fontSize: 13, color: '#94A3B8' }}>{data.contactRole}, Core Cleaning</div></div>
             <div><div style={{ ...eyebrow, fontSize: 10.5, color: '#64748B', marginBottom: 9 }}>Date</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{data.issueDate || '—'}</div></div>
             <div><div style={{ ...eyebrow, fontSize: 10.5, color: '#64748B', marginBottom: 9 }}>Valid for</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>30 days</div></div>
           </div>
@@ -104,8 +104,8 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
             <H2 size={32}>Contents</H2>
             <div style={{ display: 'flex', flexDirection: 'column', marginTop: 26 }}>
               {[
-                ['01', 'From the Director', '03'], ['02', 'Why Delta Cleaning', '04'],
-                ['03', 'Your Delta Portal', '05'], ['04', 'Scope of Services', '06'],
+                ['01', 'From the Director', '03'], ['02', 'Why Core Cleaning', '04'],
+                ['03', 'Your Core Cleaning Portal', '05'], ['04', 'Scope of Services', '06'],
                 ['05', 'Investment', '07'], ['06', 'What Our Clients Say', '08'],
                 ['07', 'Terms & Next Steps', '09'],
               ].map(([n, label, pg], i, arr) => (
@@ -134,16 +134,16 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
         <Header label="01 · From the Director" />
         <div style={{ marginTop: 54, display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 48, alignItems: 'start' }}>
           <div>
-            <div style={eyebrow}>A note from Jackson</div>
+            <div style={eyebrow}>A note from Laith</div>
             <H2>I look after every<br />site personally.</H2>
             <div style={{ height: 30 }} />
             <p style={{ fontSize: 15, lineHeight: 1.74, color: '#475569', margin: '0 0 15px' }}>Dear {data.attention},</p>
-            <p style={{ fontSize: 15, lineHeight: 1.74, color: '#475569', margin: '0 0 15px' }}>Thank you for having me through your site. I run Delta Cleaning personally, and I wanted to write this note myself so you know who you&apos;ll be working with.</p>
+            <p style={{ fontSize: 15, lineHeight: 1.74, color: '#475569', margin: '0 0 15px' }}>Thank you for having me through your site. I run Core Cleaning personally, and I wanted to write this note myself so you know who you&apos;ll be working with.</p>
             <p style={{ fontSize: 15, lineHeight: 1.74, color: '#475569', margin: '0 0 15px' }}>I stay close to every part of the job. I handle the walkthrough, set up your team, and I&apos;m the person you reach if anything ever needs attention. After your first clean I check in to make sure it&apos;s right, and I keep in touch regularly once we&apos;re up and running.</p>
             <p style={{ fontSize: 15, lineHeight: 1.74, color: '#475569', margin: '0 0 15px' }}>Behind that personal service sits a properly run business. We work to ISO-aligned systems, carry full insurance, and our people are trained and vetted. Every site also gets its own client portal, so you have clear visibility over each clean.</p>
             <p style={{ fontSize: 15, lineHeight: 1.74, color: '#475569', margin: '0 0 28px' }}>I&apos;d genuinely value the chance to look after {data.clientName}, and I&apos;m only ever a phone call away.</p>
             <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 22, color: NAVY }}>{data.contactName}</div>
-            <div style={{ fontSize: 13.5, color: '#64748B', marginTop: 2 }}>{data.contactRole}, Delta Cleaning</div>
+            <div style={{ fontSize: 13.5, color: '#64748B', marginTop: 2 }}>{data.contactRole}, Core Cleaning</div>
           </div>
           <div style={{ borderLeft: `2px solid ${NAVY}`, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 26, marginTop: 42 }}>
             {[['Reliable', 'The same standard, the same team, every visit.'], ['Accountable', "If something isn't right, I sort it straight away."], ['Involved', 'You hear from me before, during and after.']].map(([t, d]) => (
@@ -154,11 +154,11 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
         <Footer n="03" />
       </section>
 
-      {/* ── 4 · Why Delta ── */}
+      {/* ── 4 · Why Core Cleaning ── */}
       <section data-sheet style={page}>
-        <Header label="02 · Why Delta" />
+        <Header label="02 · Why Core Cleaning" />
         <div style={{ marginTop: 52 }}>
-          <div style={eyebrow}>Why Delta Cleaning</div>
+          <div style={eyebrow}>Why Core Cleaning</div>
           <H2 max={540}>Why clients stay with us.</H2>
         </div>
         <div style={{ marginTop: 42, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18 }}>
@@ -169,9 +169,9 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
             </div>
           ))}
         </div>
-        <p style={{ margin: '38px 0 0', fontSize: 15, lineHeight: 1.72, color: '#475569', maxWidth: 640 }}>Clients stay with us because the standard holds, the cleaners don&apos;t change, and they always know who to call. Delta is owner led, so the person who quotes your site is the same person looking after it long after the work begins.</p>
+        <p style={{ margin: '38px 0 0', fontSize: 15, lineHeight: 1.72, color: '#475569', maxWidth: 640 }}>Clients stay with us because the standard holds, the cleaners don&apos;t change, and they always know who to call. Core Cleaning is owner led, so the person who quotes your site is the same person looking after it long after the work begins.</p>
         <div style={{ marginTop: 30, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18 }}>
-          {[['Reliable', 'The same standard on every visit, with a team that knows your site.'], ['Accountable', 'If something needs attention, we put it right at the next clean.'], ['Involved', 'Jackson stays in touch personally, before, during and after the work starts.']].map(([t, d]) => (
+          {[['Reliable', 'The same standard on every visit, with a team that knows your site.'], ['Accountable', 'If something needs attention, we put it right at the next clean.'], ['Involved', 'Laith stays in touch personally, before, during and after the work starts.']].map(([t, d]) => (
             <div key={t} style={{ background: '#F8FAFC', border: '1px solid #EEF2F6', borderTop: `3px solid ${NAVY}`, borderRadius: 10, padding: 24 }}>
               <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 18, marginBottom: 8 }}>{t}</div>
               <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: '#64748B' }}>{d}</p>
@@ -191,19 +191,19 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
         <Footer n="04" />
       </section>
 
-      {/* ── 5 · Your Delta Portal ── */}
+      {/* ── 5 · Your Core Cleaning Portal ── */}
       <section data-sheet style={page}>
-        <Header label="03 · Your Delta Portal" />
+        <Header label="03 · Your Core Cleaning Portal" />
         <div style={{ marginTop: 52 }}>
           <div style={eyebrow}>Full visibility</div>
           <H2 max={560}>Your own cleaning portal.</H2>
-          <p style={{ margin: '20px 0 0', fontSize: 15, lineHeight: 1.7, color: '#475569', maxWidth: 640 }}>Every {data.clientName} site comes with access to the Delta client portal. It&apos;s where the whole service lives, so you&apos;re never left guessing what was done, or when.</p>
+          <p style={{ margin: '20px 0 0', fontSize: 15, lineHeight: 1.7, color: '#475569', maxWidth: 640 }}>Every {data.clientName} site comes with access to the Core Cleaning client portal. It&apos;s where the whole service lives, so you&apos;re never left guessing what was done, or when.</p>
         </div>
         <div style={{ marginTop: 40, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
           {[['01', 'Every clean tracked', 'Each visit is logged and time stamped, with photo verification on periodic and detail tasks, so you can see what was completed.'],
             ['02', 'A real feedback loop', 'Raise a request or flag anything from the portal. It reaches us right away and is actioned at the next service.'],
             ['03', 'Clear monthly reports', 'A simple monthly summary of completed work, periodic tasks and anything raised, ready to share with your team.'],
-            ['04', 'Always in the loop', 'The portal sits alongside a direct line to Jackson, so you&apos;re never far from an answer.']].map(([n, t, d]) => (
+            ['04', 'Always in the loop', 'The portal sits alongside a direct line to Laith, so you&apos;re never far from an answer.']].map(([n, t, d]) => (
             <div key={n} style={{ border: '1px solid #EEF2F6', borderRadius: 12, padding: 26 }}>
               <div style={{ fontFamily: MONO, fontSize: 11, color: '#94A3B8', marginBottom: 14 }}>{n}</div>
               <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 17, marginBottom: 8 }}>{t}</div>
@@ -213,7 +213,7 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
         </div>
         <div style={{ marginTop: 22, background: NAVY, borderRadius: 12, padding: '30px 32px', color: '#fff' }}>
           <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 19, marginBottom: 7 }}>Owner involved, every step</div>
-          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.62, color: '#94A3B8', maxWidth: 600 }}>From the first walkthrough, to the check in after your opening clean, to every month after, Jackson stays personally across your account. The portal keeps it transparent, and the phone stays answered.</p>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.62, color: '#94A3B8', maxWidth: 600 }}>From the first walkthrough, to the check in after your opening clean, to every month after, Laith stays personally across your account. The portal keeps it transparent, and the phone stays answered.</p>
         </div>
         <Footer n="05" />
       </section>
@@ -270,7 +270,7 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
           <div style={{ textAlign: 'right' }}><div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 38, letterSpacing: '-.02em' }}>{data.monthlyInvestment}</div></div>
         </div>
         <div style={{ marginTop: 30, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          <div><div style={{ ...eyebrow, fontSize: 10, marginBottom: 8 }}>Products &amp; equipment</div><p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#64748B' }}>All cleaning products and equipment are supplied by Delta Cleaning. Safety Data Sheets are available on request at no additional cost.</p></div>
+          <div><div style={{ ...eyebrow, fontSize: 10, marginBottom: 8 }}>Products &amp; equipment</div><p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#64748B' }}>All cleaning products and equipment are supplied by Core Cleaning. Safety Data Sheets are available on request at no additional cost.</p></div>
           <div><div style={{ ...eyebrow, fontSize: 10, marginBottom: 8 }}>Please note</div><p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#64748B' }}>Pricing is held for 30 days from issue. Any site specific requirements or hazards should be shared before we start.</p></div>
         </div>
         <Footer n="07" />
@@ -284,10 +284,10 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
           <H2 size={36}>What our clients say.</H2>
         </div>
         <div style={{ marginTop: 38, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-          {[['Jackson has clear communication and frequently checks in to make sure we&apos;re getting the best service. We&apos;ve used Delta for around 12 months and would recommend them to other commercial sites.', 'Braden L.', 'Physiotherapy Clinic'],
-            ['We&apos;ve engaged Delta for the past 8 months at our Banyo office and have been really impressed. Reliable, and a big improvement on the previous contractors.', 'Duncan K.', 'Office Manager'],
-            ['Jackson and the team have cleaned our clinic since early 2025. They understand the hygiene standards a medical environment needs and consistently deliver. Communication is clear and quality is always high.', 'Keziah W.', 'Medical Clinic Manager'],
-            ['Fantastic service, our office has never been cleaner. Jackson has been a pleasure to deal with and any extra requests are handled at our next clean. Highly recommend.', 'Ashleigh B.', 'Office Administrator']].map(([q, a, role], i) => (
+          {[['Laith has clear communication and frequently checks in to make sure we&apos;re getting the best service. We&apos;ve used Core Cleaning for around 12 months and would recommend them to other commercial sites.', 'Braden L.', 'Physiotherapy Clinic'],
+            ['We&apos;ve engaged Core Cleaning for the past 8 months at our Banyo office and have been really impressed. Reliable, and a big improvement on the previous contractors.', 'Duncan K.', 'Office Manager'],
+            ['Laith and the team have cleaned our clinic since early 2025. They understand the hygiene standards a medical environment needs and consistently deliver. Communication is clear and quality is always high.', 'Keziah W.', 'Medical Clinic Manager'],
+            ['Fantastic service, our office has never been cleaner. Laith has been a pleasure to deal with and any extra requests are handled at our next clean. Highly recommend.', 'Ashleigh B.', 'Office Administrator']].map(([q, a, role], i) => (
             <div key={i} style={{ border: '1px solid #EEF2F6', borderRadius: 12, padding: 28 }}>
               <div style={{ fontFamily: DISPLAY, fontSize: 30, color: NAVY, lineHeight: 0, height: 18 }}>&ldquo;</div>
               <p style={{ margin: '6px 0 18px', fontSize: 14, lineHeight: 1.62, color: '#334155' }} dangerouslySetInnerHTML={{ __html: q }} />
@@ -315,7 +315,7 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
             ['Annual price review', "Reviewed annually in line with Queensland CPI, with a minimum 30 days' written notice of any change."],
             ['Cancellation', "Either party may end the agreement with 30 days' written notice after the initial term."],
             ['Site access', 'You provide safe, secure access. Keys, fobs or codes are arranged before we start.'],
-            ['Products & equipment', 'All equipment and products supplied by Delta. SDS available on request at no cost.'],
+            ['Products & equipment', 'All equipment and products supplied by Core Cleaning. SDS available on request at no cost.'],
             ['Confidentiality & insurance', 'All personnel are bound by confidentiality. $20m public liability and personal accident & income protection in place.']].map(([t, d]) => (
             <div key={t} style={{ borderTop: `2px solid ${NAVY}`, paddingTop: 14 }}>
               <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{t}</div>
@@ -338,20 +338,20 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
         <img src={MARK_WHITE} alt="" style={{ position: 'absolute', left: -170, bottom: -190, width: 540, opacity: 0.05 }} />
         <div style={{ position: 'relative', padding: '66px 72px', display: 'flex', flexDirection: 'column', minHeight: 1123 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <img src={WORDMARK_WHITE} alt="Delta Cleaning" style={{ height: 24, width: 'auto' }} />
+            <img src={WORDMARK_WHITE} alt="Core Cleaning" style={{ height: 24, width: 'auto' }} />
             <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.14em', color: '#64748B' }}>{data.refNumber}</div>
           </div>
           <div style={{ marginTop: 'auto' }}>
             <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, letterSpacing: '.2em', textTransform: 'uppercase', color: '#7C8BA1', marginBottom: 22 }}>Thank you</div>
             <h2 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 52, lineHeight: 1.02, letterSpacing: '-.03em', margin: 0 }}>I&apos;d be proud to look<br />after {data.clientName}.</h2>
-            <p style={{ margin: '28px 0 0', fontSize: 16, lineHeight: 1.7, color: '#94A3B8', maxWidth: 520 }}>Thank you for considering Delta Cleaning. If you have any questions before deciding, just reach out. I&apos;d be glad to talk it through.</p>
+            <p style={{ margin: '28px 0 0', fontSize: 16, lineHeight: 1.7, color: '#94A3B8', maxWidth: 520 }}>Thank you for considering Core Cleaning. If you have any questions before deciding, just reach out. I&apos;d be glad to talk it through.</p>
           </div>
           <div style={{ marginTop: 62, paddingTop: 30, borderTop: '1px solid rgba(255,255,255,.12)', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 24, alignItems: 'end' }}>
-            <div><div style={{ ...eyebrow, fontSize: 10, color: '#64748B', marginBottom: 8 }}>Your contact</div><div style={{ fontSize: 17, fontWeight: 600, color: '#fff' }}>{data.contactName}</div><div style={{ fontSize: 13, color: '#94A3B8' }}>{data.contactRole}, Delta Cleaning</div></div>
+            <div><div style={{ ...eyebrow, fontSize: 10, color: '#64748B', marginBottom: 8 }}>Your contact</div><div style={{ fontSize: 17, fontWeight: 600, color: '#fff' }}>{data.contactName}</div><div style={{ fontSize: 13, color: '#94A3B8' }}>{data.contactRole}, Core Cleaning</div></div>
             <div><div style={{ ...eyebrow, fontSize: 10, color: '#64748B', marginBottom: 8 }}>Phone</div><div style={{ fontSize: 15, color: '#fff' }}>{data.contactPhone}</div></div>
             <div><div style={{ ...eyebrow, fontSize: 10, color: '#64748B', marginBottom: 8 }}>Email</div><div style={{ fontSize: 15, color: '#fff' }}>{data.contactEmail}</div></div>
           </div>
-          <div style={{ marginTop: 26, fontFamily: SANS, fontSize: 10, fontWeight: 500, letterSpacing: '.1em', textTransform: 'uppercase', color: '#475569' }}>Delta Cleaning · Brisbane QLD · Owner-led &amp; fully insured · deltacleaning.com.au</div>
+          <div style={{ marginTop: 26, fontFamily: SANS, fontSize: 10, fontWeight: 500, letterSpacing: '.1em', textTransform: 'uppercase', color: '#475569' }}>Core Cleaning · Brisbane QLD · Owner-led &amp; fully insured · corecleaning.services</div>
         </div>
       </section>
 

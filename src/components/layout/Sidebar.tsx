@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Image from 'next/image'
 import Link from 'next/link'
@@ -74,7 +74,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       <div className="flex items-center justify-between px-5 h-16 border-b border-white/5 flex-shrink-0">
         <Image
           src="/logo-mark-white.png"
-          alt="Delta Cleaning"
+          alt="Core Cleaning"
           width={104}
           height={44}
           className="object-contain"
@@ -102,7 +102,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       <div className="py-3 px-3 border-t border-white/5 space-y-1">
         {BOTTOM_ITEMS.map(navLink)}
         <p className="px-3 pt-2 text-[10px] text-slate-700 tracking-wide">
-          Delta Operations Hub
+          Core Cleaning Operations Hub
         </p>
       </div>
     </div>

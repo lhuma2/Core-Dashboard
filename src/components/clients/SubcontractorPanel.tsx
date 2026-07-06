@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { Link2, Check, Copy, Loader2, ShieldCheck, AlertTriangle, ExternalLink } from 'lucide-react'
@@ -42,7 +42,7 @@ export function SubcontractorPanel({ sub }: { sub: Sub | null }) {
 
   const signed = !!sub?.signed_at
   const ins = expiryInfo(sub?.insurance_expiry ?? null)
-  const shownLink = link ?? (sub?.sign_code ? `https://portal.deltacleaning.com.au/onboard/${sub.sign_code}` : null)
+  const shownLink = link ?? (sub?.sign_code ? `https://portal.corecleaning.services/onboard/${sub.sign_code}` : null)
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-8">

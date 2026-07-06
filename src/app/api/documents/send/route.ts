@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import React from 'react'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -56,12 +56,12 @@ export async function POST(req: Request) {
   if (!isAgreement && attachCapability) {
     try {
       const capPdf = await renderDocumentPdf(React.createElement(CapabilityDocument, { data: DEFAULT_CAPABILITY }))
-      attachments.push({ filename: 'Delta Cleaning Capability Statement.pdf', content: capPdf })
+      attachments.push({ filename: 'Core Cleaning Capability Statement.pdf', content: capPdf })
     } catch { /* optional */ }
   }
 
-  const contactName = (data as any).contactName || 'Jackson'
-  const contactEmail = (data as any).contactEmail || 'hello@deltacleaning.com.au'
+  const contactName = (data as any).contactName || 'Laith'
+  const contactEmail = (data as any).contactEmail || 'admin@corecleaning.services'
   const greeting = 'Hi,'
   const intro = (message && String(message).trim())
     || (isAgreement
@@ -72,11 +72,11 @@ export async function POST(req: Request) {
 <div style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #1a1a1a; line-height: 1.65; max-width: 560px;">
   <p>${greeting}</p>
   <p>${intro}</p>
-  ${(!isAgreement && attachCapability) ? '<p>I&rsquo;ve also attached our capability statement so you have a bit more background on Delta Cleaning.</p>' : ''}
+  ${(!isAgreement && attachCapability) ? '<p>I&rsquo;ve also attached our capability statement so you have a bit more background on Core Cleaning.</p>' : ''}
   <p>Whenever you&rsquo;re ready, just reply to this email.</p>
   <p style="margin-top: 22px;">
     ${contactName}<br/>
-    Delta Cleaning · Brisbane<br/>
+    Core Cleaning · Brisbane<br/>
     <a href="mailto:${contactEmail}" style="color:#1e3a5f;">${contactEmail}</a>
   </p>
 </div>`
@@ -85,8 +85,8 @@ export async function POST(req: Request) {
     const { Resend } = await import('resend')
     const resend = new Resend(apiKey)
     const res = await resend.emails.send({
-      from: 'Delta Cleaning <hello@deltacleaning.com.au>',
-      reply_to: 'hello@deltacleaning.com.au',
+      from: 'Core Cleaning <admin@corecleaning.services>',
+      reply_to: 'admin@corecleaning.services',
       to: toEmail,
       subject: isAgreement ? `Service agreement for ${clientName}` : `Cleaning proposal for ${clientName}`,
       html,

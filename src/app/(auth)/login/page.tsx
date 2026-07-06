@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Image from 'next/image'
@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     // Cleaners log in with just their username (e.g. "john.smith")
     // Admins/managers/clients use their full email address
-    const email = login.includes('@') ? login : `${login}@delta-cleaner.internal`
+    const email = login.includes('@') ? login : `${login}@core-cleaner.internal`
 
     // First sign-in (admin namespace) just discovers the user's role
     const supabase = createClient('admin')
@@ -70,7 +70,7 @@ export default function LoginPage() {
         <div className="flex justify-center mb-3">
           <Image
             src="/logo-mark-white.png"
-            alt="Delta Cleaning"
+            alt="Core Cleaning"
             width={150}
             height={63}
             className="object-contain invert"
@@ -100,7 +100,7 @@ export default function LoginPage() {
               value={login}
               onChange={(e) => setLogin(e.target.value.trim())}
               className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-[16px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/25 focus:border-[#1e3a5f] transition"
-              placeholder="john.smith or you@deltacleaning.com.au"
+              placeholder="john.smith or you@corecleaning.services"
             />
           </div>
 
@@ -140,7 +140,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs text-gray-400 mt-8">
-          Delta Cleaning · Brisbane, QLD
+          Core Cleaning · Brisbane, QLD
         </p>
       </div>
     </div>

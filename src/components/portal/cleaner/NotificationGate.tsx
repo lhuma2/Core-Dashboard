@@ -96,7 +96,7 @@ export function NotificationGate({ children }: { children: React.ReactNode }) {
       if (result !== 'granted') {
         setError(
           result === 'denied'
-            ? 'Notifications are blocked. Open your phone Settings, find Delta, and turn notifications on. Then tap "I\'ve turned them on" below.'
+            ? 'Notifications are blocked. Open your phone Settings, find Core Cleaning, and turn notifications on. Then tap "I\'ve turned them on" below.'
             : 'You need to allow notifications to continue.'
         )
         setPermission(result)
@@ -131,8 +131,8 @@ export function NotificationGate({ children }: { children: React.ReactNode }) {
 
       <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-xs">
         {permission === 'denied'
-          ? 'Notifications are blocked on this device. Go to Settings and enable them for Delta, then tap the button below.'
-          : 'Delta needs to send you notifications — new job assignments, reminders to start and finish your cleans, and updates from your manager.'
+          ? 'Notifications are blocked on this device. Go to Settings and enable them for Core Cleaning, then tap the button below.'
+          : 'Core Cleaning needs to send you notifications — new job assignments, reminders to start and finish your cleans, and updates from your manager.'
         }
       </p>
 

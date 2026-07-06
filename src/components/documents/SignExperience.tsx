@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, Check, ShieldCheck, PenLine, Download, Lock } from 'lucide-react'
@@ -80,7 +80,7 @@ export function SignExperience({
     <div className="min-h-[100dvh] bg-[#0b1320]">
       {/* ── Header ── */}
       <header className="px-5 pt-8 pb-6 text-center">
-        <img src={WORDMARK_WHITE} alt="Delta Cleaning" className="h-6 w-auto mx-auto mb-5 opacity-95" />
+        <img src={WORDMARK_WHITE} alt="Core Cleaning" className="h-6 w-auto mx-auto mb-5 opacity-95" />
         {signed ? (
           <>
             <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center mx-auto mb-4">
@@ -88,7 +88,7 @@ export function SignExperience({
             </div>
             <h1 className="text-white text-2xl font-bold tracking-tight">You&apos;re all set, {signed.name.split(' ')[0]}.</h1>
             <p className="text-slate-400 text-sm mt-2 max-w-sm mx-auto">
-              Your service agreement with Delta Cleaning is signed and saved. A copy is below — keep it for your records.
+              Your service agreement with Core Cleaning is signed and saved. A copy is below — keep it for your records.
             </p>
             <a href={`/sign/${token}/pdf`} target="_blank" rel="noreferrer"
               className="inline-flex items-center gap-2 mt-5 bg-white text-[#0b1320] text-sm font-bold rounded-xl px-5 py-3 active:scale-[0.98] transition-transform">
@@ -208,7 +208,7 @@ export function SignExperience({
       {signed && (
         <footer className="text-center py-8 px-5">
           <p className="text-slate-500 text-xs">
-            Signed by {signed.name} on {signed.date} · Delta Cleaning Pty Ltd
+            Signed by {signed.name} on {signed.date} · Core Cleaning
           </p>
         </footer>
       )}

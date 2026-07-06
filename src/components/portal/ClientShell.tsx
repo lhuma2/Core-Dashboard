@@ -1,4 +1,4 @@
-import Image from 'next/image'
+﻿import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { LayoutDashboard, ShieldCheck, Wrench, MessageCircle } from 'lucide-react'
@@ -47,7 +47,7 @@ export function ClientShell({ children, clientName, userName, activePath, sites,
           <div className="flex items-center gap-3 lg:gap-4 min-w-0">
             <Image
               src="/logo-mark-white.png"
-              alt="Delta Cleaning"
+              alt="Core Cleaning"
               width={80}
               height={34}
               className="object-contain flex-shrink-0"

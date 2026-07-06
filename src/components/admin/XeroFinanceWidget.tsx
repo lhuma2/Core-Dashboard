@@ -157,7 +157,7 @@ export function XeroFinanceWidget() {
       <div className="border border-dashed border-gray-200 rounded-2xl p-8 text-center">
         <p className="text-sm font-medium text-gray-700 mb-1">Connect Xero to track your P&amp;L</p>
         <p className="text-xs text-gray-400 mb-5">
-          Import invoices &amp; bills, approve what belongs to Delta, and see your real profit &amp; loss.
+          Import invoices &amp; bills, approve what belongs to Core Cleaning, and see your real profit &amp; loss.
         </p>
         <a
           href="/api/xero/connect"
@@ -217,7 +217,7 @@ export function XeroFinanceWidget() {
       {tab === 'review' && (
         <div className="space-y-5">
           <p className="text-xs text-gray-400">
-            Approve transactions that belong to <strong className="text-gray-700">Delta</strong> — ignore personal spending.
+            Approve transactions that belong to <strong className="text-gray-700">Core Cleaning</strong> — ignore personal spending.
             Only approved transactions count toward your P&amp;L.
           </p>
 
@@ -245,7 +245,7 @@ export function XeroFinanceWidget() {
           {/* Approved */}
           {approvedTx.length > 0 && (
             <div>
-              <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-2">Approved for Delta P&amp;L — {approvedTx.length}</p>
+              <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-2">Approved for Core Cleaning P&amp;L — {approvedTx.length}</p>
               <div className="space-y-1.5">
                 {approvedTx.map(tx => (
                   <TxRow key={tx.id} tx={tx} state="approved" loading={pendingAction === tx.id}

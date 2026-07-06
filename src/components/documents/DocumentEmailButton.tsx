@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -42,7 +42,7 @@ export function DocumentEmailButton({ document }: { document: Document }) {
     }
 
     // Pre-fill subject
-    setSubject(`${document.title || 'Document'} — Delta Cleaning`)
+    setSubject(`${document.title || 'Document'} — Core Cleaning`)
   }, [open])
 
   function pickTemplate(t: EmailTemplate) {

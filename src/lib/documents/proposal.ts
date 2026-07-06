@@ -1,4 +1,4 @@
-// ─── Premium Proposal — data model + defaults ────────────────────────────────
+﻿// ─── Premium Proposal — data model + defaults ────────────────────────────────
 // Faithful to the design handoff. Every field here is editable in the document
 // editor: client details, dates, frequency, pricing rows, scope groups, and the
 // "available on request" additional services.
@@ -27,7 +27,7 @@ export interface ProposalData {
   frequency: string
   monthlyInvestment: string
   validity: string
-  // Delta contact
+  // Core Cleaning contact
   contactName: string
   contactRole: string
   contactPhone: string
@@ -48,10 +48,10 @@ export const DEFAULT_PROPOSAL: ProposalData = {
   frequency: '5 nights per week (Mon to Fri)',
   monthlyInvestment: '$5,400 / month',
   validity: '30 days from the date of issue',
-  contactName: 'Jackson Jaillet',
+  contactName: 'Laith Humadi',
   contactRole: 'Founder & Director',
   contactPhone: '+61 412 844 237',
-  contactEmail: 'hello@deltacleaning.com.au',
+  contactEmail: 'admin@corecleaning.services',
   scopeGroups: [
     {
       title: 'General Offices & Workspaces',

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -50,8 +50,8 @@ function smsBody(lead: ColdLead): string {
   const first = (lead.contact_name || '').split(' ')[0]
   const hi = first ? `Hi ${first}, ` : 'Hi, '
   return (
-    `${hi}Jackson from Delta Cleaning here. Great chatting just now. As mentioned, happy to come past for a free ` +
-    `site visit of about fifteen minutes and a fixed monthly price whenever suits. Just reply here to lock in a time. Jackson`
+    `${hi}Laith from Core Cleaning here. Great chatting just now. As mentioned, happy to come past for a free ` +
+    `site visit of about fifteen minutes and a fixed monthly price whenever suits. Just reply here to lock in a time. Laith`
   )
 }
 

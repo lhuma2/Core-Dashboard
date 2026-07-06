@@ -1,4 +1,4 @@
--- Delta Operations Hub — Enhanced Leads (idempotent)
+-- Core Cleaning Operations Hub — Enhanced Leads (idempotent)
 
 -- ─────────────────────────────────────────────
 -- 1. Extend lead_status enum with new values

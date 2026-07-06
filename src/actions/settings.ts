@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -6,10 +6,10 @@ import type { AppSettings } from '@/types/app'
 
 const DEFAULT_SETTINGS: AppSettings = {
   business: {
-    name:    'Delta Cleaning',
-    email:   'hello@deltacleaning.com.au',
-    phone:   '0412 844 237',
-    website: 'https://www.deltacleaning.com.au',
+    name:    'Core Cleaning',
+    email:   'admin@corecleaning.services',
+    phone:   '0407 026 360',
+    website: 'https://www.corecleaning.services',
     address: 'Brisbane, QLD',
   },
   margin_thresholds:      { red: 24, yellow: 40 },
@@ -22,7 +22,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     { id: 'q2', key: 'reliability_score',   text: 'How reliable is our team (on time, consistent)?',                    min: 1, max: 10 },
     { id: 'q3', key: 'communication_score', text: 'How would you rate our communication and responsiveness?',            min: 1, max: 10 },
     { id: 'q4', key: 'value_score',         text: 'How well does our service represent value for money?',                min: 1, max: 10 },
-    { id: 'q5', key: 'nps_score',           text: 'How likely are you to recommend Delta Cleaning? (0 = not at all, 10 = extremely likely)', min: 0, max: 10 },
+    { id: 'q5', key: 'nps_score',           text: 'How likely are you to recommend Core Cleaning? (0 = not at all, 10 = extremely likely)', min: 0, max: 10 },
   ],
 }
 

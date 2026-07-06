@@ -4,7 +4,7 @@ import { SafetyPrint } from '@/components/documents/SafetyPrint'
 
 export const dynamic = 'force-dynamic'
 
-// Public, client-facing view of Delta's compliance library — the unsigned SWMS,
+// Public, client-facing view of Core Cleaning's compliance library — the unsigned SWMS,
 // policies, SDS register and Modern Slavery declaration. Shared with clients (in
 // their portal) and subcontractors (in the onboarding pack) so they can see our
 // compliance. Internal signed docs (Subcontractor Agreement, Induction) are NOT

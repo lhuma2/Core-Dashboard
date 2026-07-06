@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import { redirect } from 'next/navigation'
@@ -9,7 +9,7 @@ import { SWMS_LIST, POLICIES, MODERN_SLAVERY } from '@/lib/documents/safety'
 import { scoreBand } from '@/lib/inspections/template'
 import { FileText, Download, Shield, ClipboardCheck, Phone, Mail, User, Globe, HardHat, ChevronRight } from 'lucide-react'
 
-// Delta's client-facing compliance library — the unsigned SWMS + policies, shown
+// Core Cleaning's client-facing compliance library — the unsigned SWMS + policies, shown
 // in every client portal (and auto-included for new clients) so clients can see
 // our compliance. Rendered from code, always current; each links to the public
 // /compliance/<slug> print view. Internal signed docs are never listed here.
@@ -51,8 +51,8 @@ export default async function ClientCompliancePage() {
     ? await (supabase as any).from('clients').select('*').eq('id', clientId).single()
     : { data: null }
 
-  const abn = '83 303 026 478'
-  const insurancePolicyNumber = 'SPD015763734'
+  const abn = ''
+  const insurancePolicyNumber = ''
 
   // The client's own signed agreements (from the in-app signing flow). These live
   // in proposal_documents, which the client can't read under RLS, so fetch via an
@@ -125,7 +125,7 @@ export default async function ClientCompliancePage() {
         </div>
       </section>
 
-      {/* Quality inspections — score only, shared at Delta's discretion */}
+      {/* Quality inspections — score only, shared at Core Cleaning's discretion */}
       {sharedInspections && sharedInspections.length > 0 && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
@@ -163,7 +163,7 @@ export default async function ClientCompliancePage() {
         </section>
       )}
 
-      {/* Safety & Method Statements — Delta's compliance library (client-facing) */}
+      {/* Safety & Method Statements — Core Cleaning's compliance library (client-facing) */}
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-3">
           <HardHat className="w-4 h-4 text-gray-400" />
@@ -242,7 +242,7 @@ export default async function ClientCompliancePage() {
         <div className="bg-white rounded-2xl p-10 border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] text-center mb-8">
           <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">No documents uploaded yet.</p>
-          <p className="text-gray-400 text-xs mt-1">Contact Delta Cleaning for support documents.</p>
+          <p className="text-gray-400 text-xs mt-1">Contact Core Cleaning for support documents.</p>
         </div>
       )}
 
@@ -308,12 +308,12 @@ export default async function ClientCompliancePage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <p className="text-sm font-semibold text-black">Jackson Jaillet</p>
+              <p className="text-sm font-semibold text-black">Laith Humadi</p>
             </div>
             <div className="flex items-center gap-3">
               <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <a href="mailto:hello@deltacleaning.com.au" className="text-sm text-black hover:underline">
-                hello@deltacleaning.com.au
+              <a href="mailto:admin@corecleaning.services" className="text-sm text-black hover:underline">
+                admin@corecleaning.services
               </a>
             </div>
             <div className="flex items-center gap-3">
@@ -324,8 +324,8 @@ export default async function ClientCompliancePage() {
             </div>
             <div className="flex items-center gap-3">
               <Globe className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <a href="https://deltacleaning.com.au" className="text-sm text-black hover:underline">
-                deltacleaning.com.au
+              <a href="https://corecleaning.services" className="text-sm text-black hover:underline">
+                corecleaning.services
               </a>
             </div>
           </div>

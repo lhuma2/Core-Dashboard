@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Image from 'next/image'
 import type { Document, DocumentContent } from '@/types/app'
@@ -94,10 +94,10 @@ const ADDL_SERVICE_LABELS: Record<string, { label: string; price: string }> = {
 }
 
 const REVIEWS = [
-  { quote: 'Jackson has clear communication and frequently checks in on each customer to ensure they are receiving the best service. We have used Delta Cleaning for approximately 12 months now and would recommend them to other commercial sites.', name: 'Braden L.', role: 'Physiotherapy Clinic' },
-  { quote: 'We have engaged Delta Cleaning for the past 8 months at our Banyo office and have been really impressed. They have been reliable and a big improvement on the previous contractors.', name: 'Duncan K.', role: 'Office Manager' },
-  { quote: 'Jackson and the team have been cleaning our clinic since early 2025. They understand the high hygiene standards required in a medical environment and consistently deliver. Communication is clear and quality is always high.', name: 'Keziah W.', role: 'Medical Clinic Manager' },
-  { quote: 'Fantastic service — our office has never been cleaner. Jackson has been an absolute pleasure to deal with and any extra requests are taken care of with our next clean. Highly recommend.', name: 'Ashleigh B.', role: 'Office Administrator' },
+  { quote: 'Laith has clear communication and frequently checks in on each customer to ensure they are receiving the best service. We have used Core Cleaning for approximately 12 months now and would recommend them to other commercial sites.', name: 'Braden L.', role: 'Physiotherapy Clinic' },
+  { quote: 'We have engaged Core Cleaning for the past 8 months at our Banyo office and have been really impressed. They have been reliable and a big improvement on the previous contractors.', name: 'Duncan K.', role: 'Office Manager' },
+  { quote: 'Laith and the team have been cleaning our clinic since early 2025. They understand the high hygiene standards required in a medical environment and consistently deliver. Communication is clear and quality is always high.', name: 'Keziah W.', role: 'Medical Clinic Manager' },
+  { quote: 'Fantastic service — our office has never been cleaner. Laith has been an absolute pleasure to deal with and any extra requests are taken care of with our next clean. Highly recommend.', name: 'Ashleigh B.', role: 'Office Administrator' },
 ]
 
 const TERMS = [
@@ -105,7 +105,7 @@ const TERMS = [
   { title: 'Annual Price Review', body: 'Pricing reviewed annually in line with the Queensland CPI. Minimum 30 days\' written notice prior to any adjustment.' },
   { title: 'Cancellation Policy', body: 'Either party may terminate with 30 days\' written notice after the initial term. Early cancellation may incur an equivalent one-month service fee.' },
   { title: 'Site Access', body: 'Client responsible for providing safe, secure access. Keys, fobs, or codes must be provided prior to commencement.' },
-  { title: 'Products & Equipment', body: 'Delta Cleaning supplies all equipment and cleaning products. Safety Data Sheets available on request at no additional cost.' },
+  { title: 'Products & Equipment', body: 'Core Cleaning supplies all equipment and cleaning products. Safety Data Sheets available on request at no additional cost.' },
   { title: 'Confidentiality', body: 'All personnel bound by confidentiality obligations. Client credentials and site information handled with full discretion.' },
 ]
 
@@ -123,7 +123,7 @@ function PageHeader({ company, dateDisplay }: { company: string; dateDisplay: st
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 14, borderBottom: `1px solid ${RULE}`, marginBottom: 36 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Image src="/logo-icon-black.png" alt="" width={16} height={16} style={{ objectFit: 'contain' }} />
-          <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK }}>Delta Cleaning</span>
+          <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK }}>Core Cleaning</span>
         </div>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: 10, color: INK_SOFT }}>Proposal for <strong style={{ color: INK }}>{company}</strong></p>
@@ -180,7 +180,7 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
         {/* Dark band — flex grow so it fills remaining space above white panel */}
         <div style={{ padding: '36px 48px 52px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 72 }}>
-            <Image src="/logo-white.png" alt="Delta Cleaning" width={110} height={36} style={{ objectFit: 'contain' }} />
+            <Image src="/logo-white.png" alt="Core Cleaning" width={110} height={36} style={{ objectFit: 'contain' }} />
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: 8, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 3 }}>Reference</p>
               <p style={{ fontSize: 14, color: 'white', fontWeight: 500, letterSpacing: '0.02em' }}>{c.refNumber}</p>
@@ -216,15 +216,15 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
           {/* Right: submitted by */}
           <div style={{ padding: '36px 40px' }}>
             <SectionLabel>Submitted by</SectionLabel>
-            <p style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 2 }}>Jackson Jaillet</p>
-            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>Founder & Director, Delta Cleaning</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 2 }}>Laith Humadi</p>
+            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>Founder & Director, Core Cleaning</p>
             <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>+61 412 844 237</p>
-            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 28 }}>hello@deltacleaning.com.au</p>
+            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 28 }}>admin@corecleaning.services</p>
 
             <div style={{ borderTop: `1px solid ${RULE_LIGHT}`, paddingTop: 16, marginBottom: 20 }}>
               <SectionLabel>About this proposal</SectionLabel>
               <p style={{ fontSize: 11.5, color: INK_SOFT, lineHeight: 1.7 }}>
-                This proposal has been prepared for <strong style={{ color: INK }}>{c.companyName}</strong> following a site walkthrough conducted by Jackson Jaillet. It outlines the scope of services, any additional services discussed, the service schedule, and the investment required.
+                This proposal has been prepared for <strong style={{ color: INK }}>{c.companyName}</strong> following a site walkthrough conducted by Laith Humadi. It outlines the scope of services, any additional services discussed, the service schedule, and the investment required.
               </p>
             </div>
 
@@ -246,7 +246,7 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
         <PageHeader company={c.companyName} dateDisplay={c.proposalDateDisplay} />
 
         <SectionLabel>Introduction</SectionLabel>
-        <SectionHeading>From Jackson Jaillet, Founder & Director</SectionHeading>
+        <SectionHeading>From Laith Humadi, Founder & Director</SectionHeading>
 
         {/* Letter */}
         <div style={{ border: `1px solid ${RULE}`, borderRadius: 4, padding: '24px 28px', marginBottom: 32 }}>
@@ -264,7 +264,7 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
           {[
             { title: 'Reliable', body: 'A consistent standard on every visit. Same process, same team, every time.' },
             { title: 'Accountable', body: 'If something is not right, we address it immediately — no need to follow up twice.' },
-            { title: 'Communicative', body: 'Jackson personally checks in with every client to ensure the service meets expectations.' },
+            { title: 'Communicative', body: 'Laith personally checks in with every client to ensure the service meets expectations.' },
           ].map((v, i) => (
             <div key={v.title} style={{ padding: '18px 20px', borderLeft: i > 0 ? `1px solid ${RULE}` : 'none' }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: INK, marginBottom: 6 }}>{v.title}</p>
@@ -288,7 +288,7 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
         {/* Direct owner involvement — subtle note below reviews */}
         <div style={{ borderTop: `1px solid ${RULE_LIGHT}`, paddingTop: 14 }}>
           <p style={{ fontSize: 11, color: INK_FAINT, lineHeight: 1.7, textAlign: 'center' }}>
-            Every Delta Cleaning client is managed directly by Jackson Jaillet — the owner. Jackson personally handles onboarding, conducts quality checks, and remains your single point of contact throughout the engagement.
+            Every Core Cleaning client is managed directly by Laith Humadi — the owner. Laith personally handles onboarding, conducts quality checks, and remains your single point of contact throughout the engagement.
           </p>
         </div>
       </div>
@@ -424,7 +424,7 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
         {/* Please note */}
         <div style={{ border: `1px solid ${RULE_LIGHT}`, borderRadius: 4, padding: '14px 18px', background: '#FAFAF8' }}>
           <p style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 6 }}>Please note</p>
-          <p style={{ fontSize: 11.5, color: INK_SOFT, lineHeight: 1.7 }}>All cleaning products and equipment are supplied by Delta Cleaning. Safety Data Sheets (SDS) are available on request. Any site-specific requirements or hazards must be communicated prior to commencement of services.</p>
+          <p style={{ fontSize: 11.5, color: INK_SOFT, lineHeight: 1.7 }}>All cleaning products and equipment are supplied by Core Cleaning. Safety Data Sheets (SDS) are available on request. Any site-specific requirements or hazards must be communicated prior to commencement of services.</p>
         </div>
       </div>
 
@@ -451,7 +451,7 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
           {[
             { step: 'Step 01', tag: 'Accept', body: 'Confirm acceptance via email. A formal Service Agreement will then be issued for your review.' },
             { step: 'Step 02', tag: 'Agreement', body: 'Review and sign the Service Agreement to formalise the engagement and confirm all terms.' },
-            { step: 'Step 03', tag: 'Commence', body: 'Services begin on the agreed start date. Jackson will follow up after the first visit to confirm all is in order.' },
+            { step: 'Step 03', tag: 'Commence', body: 'Services begin on the agreed start date. Laith will follow up after the first visit to confirm all is in order.' },
           ].map((s, i) => (
             <div key={s.step} style={{ padding: '18px 20px', borderLeft: i > 0 ? `1px solid ${RULE}` : 'none' }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: INK, marginBottom: 2 }}>{s.step}</p>

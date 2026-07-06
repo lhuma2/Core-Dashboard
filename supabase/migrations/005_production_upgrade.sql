@@ -1,4 +1,4 @@
--- Delta Operations Hub — Production Upgrade (idempotent)
+-- Core Cleaning Operations Hub — Production Upgrade (idempotent)
 
 -- ─────────────────────────────────────────────
 -- 1. LEADS PIPELINE
@@ -52,13 +52,13 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 INSERT INTO settings (key, value) VALUES
-  ('business', '{"name":"Delta Cleaning","email":"hello@deltacleaning.com.au","phone":"0412 844 237","website":"https://www.deltacleaning.com.au","address":"Brisbane, QLD"}'),
+  ('business', '{"name":"Core Cleaning","email":"admin@corecleaning.services","phone":"0407 026 360","website":"https://www.corecleaning.services","address":"Brisbane, QLD"}'),
   ('margin_thresholds', '{"red":24,"yellow":40}'),
   ('valuation_multiple', '2.5'),
   ('survey_frequency_days', '90'),
   ('lead_followup_days', '7'),
   ('contract_renewal_days', '60'),
-  ('survey_questions', '[{"id":"q1","key":"quality_score","text":"How would you rate the quality of our cleaning service?","min":1,"max":10},{"id":"q2","key":"reliability_score","text":"How reliable is our team (on time, consistent)?","min":1,"max":10},{"id":"q3","key":"communication_score","text":"How would you rate our communication and responsiveness?","min":1,"max":10},{"id":"q4","key":"value_score","text":"How well does our service represent value for money?","min":1,"max":10},{"id":"q5","key":"nps_score","text":"How likely are you to recommend Delta Cleaning to others? (0 = not at all, 10 = extremely likely)","min":0,"max":10}]')
+  ('survey_questions', '[{"id":"q1","key":"quality_score","text":"How would you rate the quality of our cleaning service?","min":1,"max":10},{"id":"q2","key":"reliability_score","text":"How reliable is our team (on time, consistent)?","min":1,"max":10},{"id":"q3","key":"communication_score","text":"How would you rate our communication and responsiveness?","min":1,"max":10},{"id":"q4","key":"value_score","text":"How well does our service represent value for money?","min":1,"max":10},{"id":"q5","key":"nps_score","text":"How likely are you to recommend Core Cleaning to others? (0 = not at all, 10 = extremely likely)","min":0,"max":10}]')
 ON CONFLICT (key) DO NOTHING;
 
 -- ─────────────────────────────────────────────

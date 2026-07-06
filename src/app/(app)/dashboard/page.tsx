@@ -303,7 +303,7 @@ export default async function DashboardPage() {
           {new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
         <h1 className="font-display text-[26px] lg:text-[32px] font-extrabold tracking-tight text-gray-900 mt-1">
-          {greeting}, Jackson
+          {greeting}, Laith
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           {activeClients.length} active client{activeClients.length === 1 ? '' : 's'} · {formatAUD(mrr)} monthly revenue

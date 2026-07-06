@@ -1,4 +1,4 @@
-import { createClientAction } from '@/actions/clients'
+﻿import { createClientAction } from '@/actions/clients'
 import { ClientForm } from '@/components/clients/ClientForm'
 import { Card } from '@/components/ui/Card'
 import Link from 'next/link'
@@ -30,7 +30,7 @@ export default async function NewClientPage() {
         </Link>
         <h2 className="text-xl font-bold text-gray-900">Add New Client</h2>
         <p className="text-sm text-gray-500 mt-0.5">
-          Create a new client record for Delta Cleaning
+          Create a new client record for Core Cleaning
         </p>
       </div>
 

@@ -48,7 +48,7 @@ export default async function ManagerTeamPage() {
                   <p className="text-sm font-semibold text-black">{m.full_name ?? '—'}</p>
                   {m.email && (
                     <p className="text-xs text-gray-400 font-mono">
-                      Username: {m.email.replace('@delta-cleaner.internal', '')}
+                      Username: {m.email.replace('@core-cleaner.internal', '')}
                     </p>
                   )}
                 </div>

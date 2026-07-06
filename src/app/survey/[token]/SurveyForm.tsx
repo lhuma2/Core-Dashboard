@@ -27,7 +27,7 @@ const QUESTIONS = [
   {
     key: 'loyaltyScore' as const,
     section: null,
-    question: 'How likely are you to continue using Delta Cleaning long term?',
+    question: 'How likely are you to continue using Core Cleaning long term?',
   },
 ]
 
@@ -114,7 +114,7 @@ export function SurveyForm({ token }: { token: string }) {
         <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6 }}>
           Your feedback has been received. We really appreciate you taking the time — it helps us keep improving.
         </p>
-        <p style={{ fontSize: 14, color: '#999', marginTop: 16 }}>— Jackson &amp; the Delta Cleaning team</p>
+        <p style={{ fontSize: 14, color: '#999', marginTop: 16 }}>— Laith &amp; the Core Cleaning team</p>
       </div>
     )
   }
@@ -198,7 +198,7 @@ export function SurveyForm({ token }: { token: string }) {
       </button>
 
       <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 16 }}>
-        Your response is confidential and only shared with the Delta Cleaning team.
+        Your response is confidential and only shared with the Core Cleaning team.
       </p>
     </form>
   )

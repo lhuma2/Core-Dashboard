@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { scoreInspection, type InspArea } from '@/lib/inspections/template'
 
-const OWNER_EMAIL = 'hello@deltacleaning.com.au'
+const OWNER_EMAIL = 'admin@corecleaning.services'
 
 interface SavePayload {
   clientId: string
@@ -88,7 +88,7 @@ export async function notifySubcontractorAction(id: string): Promise<{ ok?: bool
       <p style="font-size:15px;color:#0b1320;">Hi ${sub.contact_name || sub.company_name || 'there'},</p>
       <p style="font-size:14px;color:#334155;line-height:1.6;">Following a quality inspection at <strong>${insp.site_label}</strong> on ${when}${insp.score != null ? ` (scored ${insp.score}%)` : ''}, the following items need attention on the next visit:</p>
       <table style="border-collapse:collapse;margin:14px 0;font-size:14px;">${rows}</table>
-      <p style="font-size:13px;color:#64748b;">Thanks,<br/>Delta Cleaning</p>
+      <p style="font-size:13px;color:#64748b;">Thanks,<br/>Core Cleaning</p>
     </div>`
 
   await sendEmail(sub.contact_email, `Rectifications — ${insp.site_label}`, html).catch(() => {})

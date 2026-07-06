@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { buildSchedule } from '@/lib/schedule'
 
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
   const rows: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Delta Cleaning//Cleaner//EN',
+    'PRODID:-//Core Cleaning//Cleaner//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
   ]
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
     nextDay.setUTCDate(nextDay.getUTCDate() + 1)
 
     rows.push('BEGIN:VEVENT')
-    rows.push(line(`UID:${ev.dateStr}-${ev.client.id}@deltacleaning`))
+    rows.push(line(`UID:${ev.dateStr}-${ev.client.id}@corecleaning`))
     rows.push(`DTSTAMP:${stamp()}`)
     rows.push(`DTSTART;VALUE=DATE:${dateOnly(ev.date)}`)
     rows.push(`DTEND;VALUE=DATE:${dateOnly(nextDay)}`)

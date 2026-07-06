@@ -1,4 +1,4 @@
-import 'server-only'
+﻿import 'server-only'
 import type { ReactElement } from 'react'
 
 // Render a document React element to a real A4 PDF.
@@ -11,7 +11,7 @@ import type { ReactElement } from 'react'
 const FONTS = 'https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap'
 
 function buildHtml(body: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.deltacleaning.com.au'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services'
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <base href="${appUrl}/">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

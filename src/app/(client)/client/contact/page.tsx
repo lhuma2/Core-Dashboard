@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import { redirect } from 'next/navigation'
@@ -26,7 +26,7 @@ export default async function ClientContactPage() {
     return (
       <ClientShell userName={profile?.full_name} activePath="/client/contact">
         <div className="text-center py-20">
-          <p className="text-gray-500 text-sm">Your account is not linked to a client. Contact Delta Cleaning.</p>
+          <p className="text-gray-500 text-sm">Your account is not linked to a client. Contact Core Cleaning.</p>
         </div>
       </ClientShell>
     )
@@ -71,7 +71,7 @@ export default async function ClientContactPage() {
           <MessageCircle className="w-6 h-6 text-black" />
           <h1 className="text-3xl font-bold text-black tracking-tight">Contact & Support</h1>
         </div>
-        <p className="text-gray-500 text-sm">Report an issue or share feedback with the Delta Cleaning team.</p>
+        <p className="text-gray-500 text-sm">Report an issue or share feedback with the Core Cleaning team.</p>
       </div>
 
       <div className="max-w-2xl">

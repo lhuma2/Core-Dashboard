@@ -1,4 +1,4 @@
--- Delta Operations Hub — Seed Data
+-- Core Cleaning Operations Hub — Seed Data
 -- 8 realistic Brisbane commercial cleaning clients
 
 insert into clients (
@@ -237,7 +237,7 @@ insert into sops (title, category, content, version, active) values
 #### 1. Preparation
 - Don PPE: gloves, non-slip footwear
 - Gather all equipment before entering the premises
-- Check the site-specific notes in the Delta Operations Hub
+- Check the site-specific notes in the Core Cleaning Operations Hub
 
 #### 2. Rubbish Removal
 - Remove rubbish from all bins

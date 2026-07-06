@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+﻿import type { CSSProperties } from 'react'
 import type { CapabilityData } from '@/lib/documents/capability'
 
 // Faithful recreation of the Capability Statement (3 × A4 pages).
@@ -34,7 +34,7 @@ export function CapabilityDocument({ data }: { data: CapabilityData }) {
         <div style={{ background: NAVY, color: '#fff', padding: '52px 64px 46px', position: 'relative', overflow: 'hidden' }}>
           <img src={MARK_WHITE} alt="" style={{ position: 'absolute', right: -100, top: -80, width: 340, opacity: 0.06 }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative' }}>
-            <img src={WORDMARK_WHITE} alt="Delta Cleaning" style={{ height: 28, width: 'auto' }} />
+            <img src={WORDMARK_WHITE} alt="Core Cleaning" style={{ height: 28, width: 'auto' }} />
             <div style={{ textAlign: 'right', fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#7C8BA1', lineHeight: 1.9 }}><div>CAPABILITY</div><div style={{ color: '#E2E8F0' }}>STATEMENT {data.year}</div></div>
           </div>
           <div style={{ marginTop: 46, position: 'relative' }}>
@@ -52,7 +52,7 @@ export function CapabilityDocument({ data }: { data: CapabilityData }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: 42 }}>
             <div>
               <div style={eyebrow}>Who we are</div>
-              <p style={{ fontSize: 14, lineHeight: 1.72, color: '#475569', margin: '0 0 14px' }}>Delta Cleaning is an owner-led commercial cleaning business based in Brisbane, serving offices, medical and healthcare facilities, warehouses, retail and facility-managed sites across South East Queensland.</p>
+              <p style={{ fontSize: 14, lineHeight: 1.72, color: '#475569', margin: '0 0 14px' }}>Core Cleaning is an owner-led commercial cleaning business based in Brisbane, serving offices, medical and healthcare facilities, warehouses, retail and facility-managed sites across South East Queensland.</p>
               <p style={{ fontSize: 14, lineHeight: 1.72, color: '#475569', margin: '0 0 14px' }}>We keep things deliberately hands-on. The owner is involved in every account, from the first walkthrough through to the ongoing service, so the standard is set and held by the person you actually deal with.</p>
               <p style={{ fontSize: 14, lineHeight: 1.72, color: '#475569', margin: 0 }}>Each site is serviced by trained, vetted cleaners and backed by a single point of contact who answers the phone. The same crew returns to your site, so the quality stays consistent visit after visit.</p>
             </div>
@@ -71,13 +71,13 @@ export function CapabilityDocument({ data }: { data: CapabilityData }) {
             </div>
           </div>
         </div>
-        <Foot left="Delta Cleaning · Capability Statement" n="01" />
+        <Foot left="Core Cleaning · Capability Statement" n="01" />
       </section>
 
       {/* ── 2 · Sectors + approach + env/H&S ── */}
       <section data-sheet style={{ ...page, padding: '60px 64px', boxShadow: '0 8px 40px rgba(15,23,42,.10)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 18, borderBottom: '1px solid #E2E8F0' }}>
-          <img src={WORDMARK_BLACK} alt="Delta Cleaning" style={{ height: 20, width: 'auto' }} />
+          <img src={WORDMARK_BLACK} alt="Core Cleaning" style={{ height: 20, width: 'auto' }} />
           <div style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, letterSpacing: '.12em', color: '#94A3B8', textTransform: 'uppercase' }}>Sectors &amp; Approach</div>
         </div>
         <div style={{ marginTop: 36 }}>
@@ -118,13 +118,13 @@ export function CapabilityDocument({ data }: { data: CapabilityData }) {
             <p style={{ margin: 0, fontSize: 12.6, lineHeight: 1.6, color: '#64748B' }}>Following ISO 45001 principles we work to Safe Work Method Statements, site risk assessments and incident reporting. All cleaners are inducted, police-checked and trained in safe chemical handling.</p>
           </div>
         </div>
-        <Foot left="Delta Cleaning · Capability Statement" n="02" />
+        <Foot left="Core Cleaning · Capability Statement" n="02" />
       </section>
 
       {/* ── 3 · Services + differentiators + testimonials + contact ── */}
       <section data-sheet style={{ ...page, padding: '60px 64px', boxShadow: '0 8px 40px rgba(15,23,42,.10)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 18, borderBottom: '1px solid #E2E8F0' }}>
-          <img src={WORDMARK_BLACK} alt="Delta Cleaning" style={{ height: 20, width: 'auto' }} />
+          <img src={WORDMARK_BLACK} alt="Core Cleaning" style={{ height: 20, width: 'auto' }} />
           <div style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, letterSpacing: '.12em', color: '#94A3B8', textTransform: 'uppercase' }}>Capabilities &amp; Contact</div>
         </div>
         <div style={{ marginTop: 34 }}>
@@ -145,7 +145,7 @@ export function CapabilityDocument({ data }: { data: CapabilityData }) {
           </div>
         </div>
         <div style={{ marginTop: 30 }}>
-          <div style={eyebrow}>Why clients choose Delta</div>
+          <div style={eyebrow}>Why clients choose Core Cleaning</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[['01', 'Owner-led accountability', 'The owner knows your site and stays your point of contact.'],
               ['02', 'Zero cleaner churn', 'The same vetted crew returns, so the standard is never relearned.'],
@@ -171,7 +171,7 @@ export function CapabilityDocument({ data }: { data: CapabilityData }) {
           <div>
             <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase', color: '#7C8BA1', marginBottom: 12 }}>Get in touch</div>
             <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 19 }}>{data.contactName}</div>
-            <div style={{ fontSize: 13, color: '#94A3B8', marginBottom: 10 }}>{data.contactRole}, Delta Cleaning</div>
+            <div style={{ fontSize: 13, color: '#94A3B8', marginBottom: 10 }}>{data.contactRole}, Core Cleaning</div>
             <div style={{ fontSize: 13.5, color: '#E2E8F0', lineHeight: 1.7 }}>{data.contactPhone}<br />{data.contactEmail}<br />{data.website}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -179,7 +179,7 @@ export function CapabilityDocument({ data }: { data: CapabilityData }) {
             <div style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.6 }}>Brisbane · Gold Coast · Ipswich<br />Logan · Redlands · Moreton Bay</div>
           </div>
         </div>
-        <Foot left="Delta Cleaning · Brisbane QLD · deltacleaning.com.au" n="03" />
+        <Foot left="Core Cleaning · Brisbane QLD · corecleaning.services" n="03" />
       </section>
 
     </div>

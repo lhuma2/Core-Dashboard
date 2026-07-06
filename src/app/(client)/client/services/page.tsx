@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import { redirect } from 'next/navigation'
@@ -48,7 +48,7 @@ export default async function ClientServicesPage() {
     return (
       <ClientShell userName={profile?.full_name} activePath="/client/services">
         <div className="text-center py-20">
-          <p className="text-gray-500 text-sm">Your account is not linked to a client. Contact Delta Cleaning.</p>
+          <p className="text-gray-500 text-sm">Your account is not linked to a client. Contact Core Cleaning.</p>
         </div>
       </ClientShell>
     )
