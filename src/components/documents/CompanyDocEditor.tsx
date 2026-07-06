@@ -2,20 +2,22 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Minus, Plus, Palette } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Minus, Plus, Palette, PenLine } from 'lucide-react'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
 
 const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
 
-type FieldType = 'clientName' | 'quotedPrice' | 'text'
+type FieldType = 'clientName' | 'quotedPrice' | 'text' | 'signature'
 type BgStyle = 'white' | 'dark' | 'none'
 type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number } // x,y = % of page
 
+const EDITABLE: FieldType[] = ['text', 'signature']
 const BG_CYCLE: BgStyle[] = ['white', 'dark', 'none']
 // Matches the contract PDFs, which are set in Arial (ArialMT).
 const DOC_FONT = 'Arial, "Helvetica Neue", Helvetica, "Liberation Sans", Arimo, sans-serif'
-function boxStyle(bg: BgStyle, size: number): React.CSSProperties {
-  const base: React.CSSProperties = { fontFamily: DOC_FONT, fontSize: size, lineHeight: 1.15, fontWeight: 400, padding: '2px 6px', borderRadius: 4 }
+const SIGN_FONT = '"Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive'
+function boxStyle(bg: BgStyle, size: number, font: string): React.CSSProperties {
+  const base: React.CSSProperties = { fontFamily: font, fontSize: size, lineHeight: 1.15, fontWeight: 400, padding: '2px 6px', borderRadius: 4 }
   if (bg === 'white') return { ...base, background: '#ffffff', color: '#111827' }
   if (bg === 'dark')  return { ...base, background: '#00250e', color: '#ffffff' }
   return { ...base, background: 'transparent', color: '#111827', textShadow: '0 1px 4px rgba(255,255,255,0.9)' }
@@ -27,6 +29,7 @@ const FIELD_META: Record<FieldType, { label: string; icon: any; placeholder: str
   clientName:  { label: 'Client Name',  icon: User,       placeholder: 'e.g. Northpoint Commercial' },
   quotedPrice: { label: 'Quoted Price', icon: DollarSign, placeholder: 'e.g. $5,400 / month' },
   text:        { label: 'Text box',     icon: Type,       placeholder: '' },
+  signature:   { label: 'Signature',    icon: PenLine,    placeholder: '' },
 }
 
 export function CompanyDocEditor({
@@ -40,6 +43,7 @@ export function CompanyDocEditor({
   const [pages, setPages] = useState<PageImg[]>([])
   const [loadingMsg, setLoadingMsg] = useState('Loading document…')
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('saved')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
   const dragging = useRef<null | { id: string }>(null)
@@ -102,7 +106,10 @@ export function CompanyDocEditor({
     const r = wrap.getBoundingClientRect()
     const x = Math.min(96, Math.max(1, ((e.clientX - r.left) / r.width) * 100))
     const y = Math.min(98, Math.max(1, ((e.clientY - r.top) / r.height) * 100))
-    setPlacements((p) => [...p, { id: Math.random().toString(36).slice(2), type, page: pageNum, x, y, bg: 'white', size: 15, ...(type === 'text' ? { text: '' } : {}) }])
+    const isSig = type === 'signature'
+    const id = Math.random().toString(36).slice(2)
+    setPlacements((p) => [...p, { id, type, page: pageNum, x, y, bg: isSig ? 'none' : 'white', size: isSig ? 26 : 15, ...(EDITABLE.includes(type) ? { text: '' } : {}) }])
+    setSelectedId(id)
   }
 
   // ── Reposition an EXISTING placement (mouse drag) ────────────────────────
@@ -184,7 +191,7 @@ export function CompanyDocEditor({
                   <Icon className="w-4 h-4" />
                   {meta.label}
                 </div>
-                {type === 'text' ? (
+                {EDITABLE.includes(type) ? (
                   <p className="text-[11px] text-gray-400 px-0.5">Drag on, then type directly on the document.</p>
                 ) : (
                   <input
@@ -199,13 +206,13 @@ export function CompanyDocEditor({
           })}
           <p className="text-[11px] text-gray-400 leading-relaxed border-t border-gray-100 pt-3">
             Drag a field onto the document — it drops as a white box so it <span className="font-semibold text-gray-500">covers</span> printed
-            placeholders like <span className="font-semibold text-gray-500">$0.00</span>. Hover a placed field for controls:
-            move, background (white / dark / none), font size, and remove. Changes save automatically.
+            placeholders like <span className="font-semibold text-gray-500">$0.00</span>. Click a placed field to keep its
+            controls open (move, background, font size, remove) until you click elsewhere. Changes save automatically.
           </p>
         </div>
 
         {/* Right: full scrollable PDF with drop targets */}
-        <div className="flex-1 overflow-y-auto bg-[#E6E8EB] p-4">
+        <div className="flex-1 overflow-y-auto bg-[#E6E8EB] p-4" onMouseDown={() => setSelectedId(null)}>
           {pages.length === 0 && (
             <div className="h-full flex items-center justify-center text-sm text-gray-500">
               <Loader2 className="w-4 h-4 animate-spin mr-2" /> {loadingMsg}
@@ -228,10 +235,18 @@ export function CompanyDocEditor({
                   {placements.filter((pl) => pl.page === pageNum).map((pl) => {
                     const bg = pl.bg ?? 'white'
                     const size = pl.size ?? 15
+                    const editable = EDITABLE.includes(pl.type)
+                    const font = pl.type === 'signature' ? SIGN_FONT : DOC_FONT
+                    const selected = selectedId === pl.id
                     return (
-                      <div key={pl.id} style={{ left: `${pl.x}%`, top: `${pl.y}%` }} className="absolute -translate-y-1/2 group">
-                        {/* Control toolbar (shows on hover) */}
-                        <div className="absolute -top-6 left-0 hidden group-hover:flex items-center gap-0.5 bg-gray-900 text-white rounded px-1 py-0.5 shadow-lg z-10 whitespace-nowrap">
+                      <div
+                        key={pl.id}
+                        onMouseDownCapture={() => setSelectedId(pl.id)}
+                        style={{ left: `${pl.x}%`, top: `${pl.y}%` }}
+                        className="absolute -translate-y-1/2 group"
+                      >
+                        {/* Control toolbar — stays while selected, or on hover */}
+                        <div className={`absolute -top-6 left-0 items-center gap-0.5 bg-gray-900 text-white rounded px-1 py-0.5 shadow-lg z-10 whitespace-nowrap ${selected ? 'flex' : 'hidden group-hover:flex'}`}>
                           <button onMouseDown={startMove(pl.id)} className="p-0.5 cursor-move hover:text-emerald-300" aria-label="Move" title="Drag to move"><GripVertical className="w-3 h-3" /></button>
                           <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); cycleBg(pl.id) }} className="p-0.5 hover:text-emerald-300" aria-label="Background" title="Background: white / dark / none"><Palette className="w-3 h-3" /></button>
                           <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); changeSize(pl.id, -1) }} className="p-0.5 hover:text-emerald-300" aria-label="Smaller" title="Smaller"><Minus className="w-3 h-3" /></button>
@@ -240,18 +255,18 @@ export function CompanyDocEditor({
                         </div>
                         {/* The value box that covers the underlying text */}
                         <div
-                          onMouseDown={pl.type === 'text' ? undefined : startMove(pl.id)}
-                          style={boxStyle(bg, size)}
-                          className={`inline-flex items-center whitespace-nowrap ring-1 ring-transparent group-hover:ring-emerald-400/70 ${pl.type === 'text' ? '' : 'cursor-move'}`}
+                          onMouseDown={editable ? undefined : startMove(pl.id)}
+                          style={boxStyle(bg, size, font)}
+                          className={`inline-flex items-center whitespace-nowrap ring-1 ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move'}`}
                         >
-                          {pl.type === 'text' ? (
+                          {editable ? (
                             <input
                               value={pl.text ?? ''}
                               onChange={(e) => updateText(pl.id, e.target.value)}
                               onMouseDown={(e) => e.stopPropagation()}
-                              placeholder="Type…"
+                              placeholder={pl.type === 'signature' ? 'Signature…' : 'Type…'}
                               size={Math.max(4, (pl.text ?? '').length)}
-                              style={{ fontFamily: DOC_FONT, fontSize: size, fontWeight: 400, color: 'inherit' }}
+                              style={{ fontFamily: font, fontSize: size, fontWeight: 400, color: 'inherit' }}
                               className="bg-transparent outline-none min-w-[2rem]"
                             />
                           ) : (
