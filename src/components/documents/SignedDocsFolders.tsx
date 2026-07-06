@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Folder, FolderOpen, FilePen, FileText, Plus, Trash2, X, Loader2, Check, FolderInput, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { createFolderAction, deleteFolderAction, moveDocToFolderAction, addFolderFileAction, deleteFolderFileAction } from '@/actions/folders'
+import { deleteProposalDocAction } from '@/actions/proposal-docs'
 
 type Doc = { id: string; client_name: string | null; kind: string; folder_id: string | null; signed_at: string | null }
 type FolderFile = { id: string; folder_id: string; name: string; file_url: string }
@@ -36,6 +37,10 @@ export function SignedDocsFolders({ folders, signed, files }: { folders: FolderT
   }
   async function moveTo(docId: string, folderId: string | null) { await moveDocToFolderAction(docId, folderId); router.refresh() }
   async function removeFile(id: string) { await deleteFolderFileAction(id); router.refresh() }
+  async function removeDoc(id: string) {
+    if (!confirm('Permanently delete this signed document? This cannot be undone.')) return
+    await deleteProposalDocAction(id); router.refresh()
+  }
 
   // Upload external files dropped from the user's computer into a folder.
   async function uploadFilesToFolder(folderId: string, fileList: FileList) {
@@ -68,7 +73,7 @@ export function SignedDocsFolders({ folders, signed, files }: { folders: FolderT
     onDragStart: (e: React.DragEvent) => { e.dataTransfer.setData('docId', docId); e.dataTransfer.effectAllowed = 'move' },
   })
 
-  const DocRow = ({ d, showUnfile }: { d: Doc; showUnfile?: boolean }) => (
+  const DocRow = ({ d, showUnfile, showDelete }: { d: Doc; showUnfile?: boolean; showDelete?: boolean }) => (
     <div {...dragProps(d.id)} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 cursor-grab active:cursor-grabbing">
       <div className="w-8 h-8 rounded-lg bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0"><FilePen className="w-4 h-4 text-[#00250e]" /></div>
       <div className="min-w-0 flex-1">
@@ -77,6 +82,7 @@ export function SignedDocsFolders({ folders, signed, files }: { folders: FolderT
       </div>
       <Link href={`/documents/${d.id}`} className="text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-3 py-1 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">View</Link>
       {showUnfile && <button onClick={() => moveTo(d.id, null)} title="Remove from folder" className="text-gray-400 hover:text-red-500 flex-shrink-0"><X className="w-4 h-4" /></button>}
+      {showDelete && <button onClick={() => removeDoc(d.id)} title="Delete document" className="text-gray-400 hover:text-red-500 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>}
     </div>
   )
 
@@ -162,7 +168,7 @@ export function SignedDocsFolders({ folders, signed, files }: { folders: FolderT
         <div className="divide-y divide-gray-100">
           {unfiled.length === 0
             ? <p className="px-4 py-5 text-sm text-gray-400 text-center">No unfiled signed documents.</p>
-            : unfiled.map((d) => <DocRow key={d.id} d={d} />)}
+            : unfiled.map((d) => <DocRow key={d.id} d={d} showDelete />)}
         </div>
       </div>
     </div>
