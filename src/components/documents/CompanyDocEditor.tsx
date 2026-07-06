@@ -2,94 +2,124 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, Move } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign } from 'lucide-react'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
 
-type Pos = { x: number; y: number } // percentages of the preview box
-type Fields = { preparedFor: string; quotedPrice: string }
-type Overlay = { name: Pos; price: Pos }
+const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
 
-const DEFAULT_OVERLAY: Overlay = { name: { x: 8, y: 82 }, price: { x: 8, y: 90 } }
+type FieldType = 'clientName' | 'quotedPrice'
+type Placement = { id: string; type: FieldType; page: number; x: number; y: number } // x,y = % of page
+type FieldValues = { clientName: string; quotedPrice: string }
+type PageImg = { src: string; aspect: number } // aspect = height / width
+
+const FIELD_META: Record<FieldType, { label: string; icon: any; placeholder: string }> = {
+  clientName:  { label: 'Client Name',  icon: User,       placeholder: 'e.g. Northpoint Commercial' },
+  quotedPrice: { label: 'Quoted Price', icon: DollarSign, placeholder: 'e.g. $5,400 / month' },
+}
 
 export function CompanyDocEditor({
   id, initialData, pdfUrl, docTitle,
-}: {
-  id: string
-  initialData: any
-  pdfUrl: string
-  docTitle: string
-}) {
-  // Price only applies to quote-style documents (proposals / agreements / quotes).
-  const showPrice = /proposal|agreement|quote|bond|residential/i.test(pdfUrl + ' ' + docTitle)
-
-  const [fields, setFields] = useState<Fields>({
-    preparedFor: initialData?.docFields?.preparedFor ?? initialData?.clientName ?? '',
-    quotedPrice: initialData?.docFields?.quotedPrice ?? '',
+}: { id: string; initialData: any; pdfUrl: string; docTitle: string }) {
+  const [values, setValues] = useState<FieldValues>({
+    clientName:  initialData?.fieldValues?.clientName ?? initialData?.clientName ?? '',
+    quotedPrice: initialData?.fieldValues?.quotedPrice ?? '',
   })
-  const [overlay, setOverlay] = useState<Overlay>({
-    name:  initialData?.overlay?.name  ?? DEFAULT_OVERLAY.name,
-    price: initialData?.overlay?.price ?? DEFAULT_OVERLAY.price,
-  })
+  const [placements, setPlacements] = useState<Placement[]>(initialData?.placements ?? [])
+  const [pages, setPages] = useState<PageImg[]>([])
+  const [loadingMsg, setLoadingMsg] = useState('Loading document…')
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('saved')
-  const boxRef = useRef<HTMLDivElement>(null)
-  const dragging = useRef<null | 'name' | 'price'>(null)
+
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([])
+  const dragging = useRef<null | { id: string }>(null)
   const firstRun = useRef(true)
 
-  // Debounced autosave whenever fields or positions change
+  // ── Render the PDF to page images (client only) ──────────────────────────
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const pdfjs: any = await import('pdfjs-dist')
+        pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER
+        const pdf = await pdfjs.getDocument({ url: pdfUrl }).promise
+        if (cancelled) return
+        const out: PageImg[] = []
+        for (let i = 1; i <= pdf.numPages; i++) {
+          if (cancelled) return
+          setLoadingMsg(`Rendering page ${i} of ${pdf.numPages}…`)
+          const page = await pdf.getPage(i)
+          const viewport = page.getViewport({ scale: 1.4 })
+          const canvas = document.createElement('canvas')
+          canvas.width = viewport.width
+          canvas.height = viewport.height
+          const ctx = canvas.getContext('2d')!
+          await page.render({ canvasContext: ctx, viewport, canvas }).promise
+          out.push({ src: canvas.toDataURL('image/jpeg', 0.82), aspect: viewport.height / viewport.width })
+          setPages([...out])
+        }
+        setLoadingMsg('')
+      } catch (e: any) {
+        setLoadingMsg('Could not render this document. You can still open it with the button above.')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [pdfUrl])
+
+  // ── Autosave ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (firstRun.current) { firstRun.current = false; return }
     setSaved('saving')
     const t = setTimeout(async () => {
-      const data = {
+      await saveProposalDocAction(id, {
         ...initialData,
-        clientName: fields.preparedFor || initialData?.clientName,
-        docFields: fields,
-        overlay,
-      }
-      await saveProposalDocAction(id, data)
+        clientName: values.clientName || initialData?.clientName,
+        fieldValues: values,
+        placements,
+      })
       setSaved('saved')
     }, 700)
     return () => clearTimeout(t)
-  }, [fields, overlay, id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [values, placements, id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const onDrag = useCallback((e: MouseEvent) => {
-    if (!dragging.current || !boxRef.current) return
-    const r = boxRef.current.getBoundingClientRect()
-    const x = Math.min(96, Math.max(2, ((e.clientX - r.left) / r.width) * 100))
-    const y = Math.min(97, Math.max(2, ((e.clientY - r.top) / r.height) * 100))
-    setOverlay((o) => ({ ...o, [dragging.current === 'name' ? 'name' : 'price']: { x, y } }))
-  }, [])
-
-  const stopDrag = useCallback(() => {
-    dragging.current = null
-    window.removeEventListener('mousemove', onDrag)
-    window.removeEventListener('mouseup', stopDrag)
-  }, [onDrag])
-
-  const startDrag = (which: 'name' | 'price') => (e: React.MouseEvent) => {
+  // ── Drop a NEW field from the palette onto a page ────────────────────────
+  const onDropField = (pageNum: number) => (e: React.DragEvent) => {
     e.preventDefault()
-    dragging.current = which
-    window.addEventListener('mousemove', onDrag)
-    window.addEventListener('mouseup', stopDrag)
+    const type = e.dataTransfer.getData('fieldType') as FieldType
+    if (!type) return
+    const wrap = pageRefs.current[pageNum - 1]
+    if (!wrap) return
+    const r = wrap.getBoundingClientRect()
+    const x = Math.min(96, Math.max(1, ((e.clientX - r.left) / r.width) * 100))
+    const y = Math.min(98, Math.max(1, ((e.clientY - r.top) / r.height) * 100))
+    setPlacements((p) => [...p, { id: Math.random().toString(36).slice(2), type, page: pageNum, x, y }])
   }
 
-  const Chip = ({ which, text }: { which: 'name' | 'price'; text: string }) => {
-    const pos = which === 'name' ? overlay.name : overlay.price
-    return (
-      <div
-        onMouseDown={startDrag(which)}
-        style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-        className="absolute -translate-y-1/2 cursor-move select-none group"
-        title="Drag to position on the document"
-      >
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-white font-semibold text-[15px] whitespace-nowrap"
-          style={{ textShadow: '0 1px 4px rgba(0,0,0,0.55)', outline: '1px dashed rgba(255,255,255,0.5)' }}>
-          <Move className="w-3 h-3 opacity-0 group-hover:opacity-70" />
-          {text || (which === 'name' ? 'Name…' : 'Price…')}
-        </span>
-      </div>
-    )
+  // ── Reposition an EXISTING placement (mouse drag) ────────────────────────
+  const onMove = useCallback((e: MouseEvent) => {
+    const d = dragging.current
+    if (!d) return
+    setPlacements((prev) => prev.map((pl) => {
+      if (pl.id !== d.id) return pl
+      const wrap = pageRefs.current[pl.page - 1]
+      if (!wrap) return pl
+      const r = wrap.getBoundingClientRect()
+      const x = Math.min(97, Math.max(1, ((e.clientX - r.left) / r.width) * 100))
+      const y = Math.min(99, Math.max(1, ((e.clientY - r.top) / r.height) * 100))
+      return { ...pl, x, y }
+    }))
+  }, [])
+  const stopMove = useCallback(() => {
+    dragging.current = null
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', stopMove)
+  }, [onMove])
+  const startMove = (pid: string) => (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    dragging.current = { id: pid }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', stopMove)
   }
+
+  const removePlacement = (pid: string) => setPlacements((p) => p.filter((x) => x.id !== pid))
 
   return (
     <div className="h-[calc(100dvh-3.5rem)] flex flex-col -m-4 lg:-m-8">
@@ -114,48 +144,87 @@ export function CompanyDocEditor({
       </div>
 
       <div className="flex-1 flex min-h-0">
-        {/* Left: editable fields */}
-        <div className="w-full lg:w-[360px] flex-shrink-0 border-r border-gray-200 bg-white overflow-y-auto p-5 space-y-5">
+        {/* Left: field boxes to drag onto the document */}
+        <div className="w-full lg:w-[340px] flex-shrink-0 border-r border-gray-200 bg-white overflow-y-auto p-5 space-y-4">
           <div>
-            <h3 className="text-sm font-semibold text-gray-800">Document details</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Fill these in, then drag each onto the right spot on the document.</p>
+            <h3 className="text-sm font-semibold text-gray-800">Fields</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Type a value, then drag the box onto the document where it should appear.</p>
           </div>
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">Name (Prepared for)</label>
-            <input
-              value={fields.preparedFor}
-              onChange={(e) => setFields((f) => ({ ...f, preparedFor: e.target.value }))}
-              placeholder="e.g. Northpoint Commercial"
-              className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00250e]/25 focus:border-[#00250e]"
-            />
-          </div>
-          {showPrice && (
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">Quoted price</label>
-              <input
-                value={fields.quotedPrice}
-                onChange={(e) => setFields((f) => ({ ...f, quotedPrice: e.target.value }))}
-                placeholder="e.g. $5,400 / month"
-                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00250e]/25 focus:border-[#00250e]"
-              />
-            </div>
-          )}
-          <p className="text-[11px] text-gray-400 leading-relaxed border-t border-gray-100 pt-4">
-            Changes save automatically. The document shows the cover page — drag the
-            <span className="font-semibold text-gray-500"> Name</span>{showPrice && <> and <span className="font-semibold text-gray-500">Price</span></>} labels onto the correct positions.
+          {(Object.keys(FIELD_META) as FieldType[]).map((type) => {
+            const meta = FIELD_META[type]
+            const Icon = meta.icon
+            return (
+              <div key={type} className="rounded-xl border border-gray-200 p-3 space-y-2 bg-gray-50/60">
+                <div
+                  draggable
+                  onDragStart={(e) => { e.dataTransfer.setData('fieldType', type); e.dataTransfer.effectAllowed = 'copy' }}
+                  className="flex items-center gap-2 cursor-grab active:cursor-grabbing rounded-lg bg-[#00250e] text-white px-3 py-2 text-sm font-semibold select-none"
+                  title="Drag me onto the document"
+                >
+                  <GripVertical className="w-4 h-4 opacity-70" />
+                  <Icon className="w-4 h-4" />
+                  {meta.label}
+                </div>
+                <input
+                  value={values[type]}
+                  onChange={(e) => setValues((v) => ({ ...v, [type]: e.target.value }))}
+                  placeholder={meta.placeholder}
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00250e]/25 focus:border-[#00250e]"
+                />
+              </div>
+            )
+          })}
+          <p className="text-[11px] text-gray-400 leading-relaxed border-t border-gray-100 pt-3">
+            Scroll the document on the right through all pages. Drag a field onto any page;
+            drag a placed field to move it, or click the × to remove it. Changes save automatically.
           </p>
         </div>
 
-        {/* Right: PDF cover with draggable overlay */}
-        <div className="flex-1 overflow-auto bg-[#E6E8EB] p-4 flex items-start justify-center">
-          <div ref={boxRef} className="relative bg-white shadow-lg w-full max-w-[560px]" style={{ aspectRatio: '1 / 1' }}>
-            <iframe
-              src={`${pdfUrl}#page=1&view=Fit&toolbar=0&navpanes=0`}
-              title="Company document cover"
-              className="absolute inset-0 w-full h-full pointer-events-none"
-            />
-            <Chip which="name" text={fields.preparedFor} />
-            {showPrice && <Chip which="price" text={fields.quotedPrice} />}
+        {/* Right: full scrollable PDF with drop targets */}
+        <div className="flex-1 overflow-y-auto bg-[#E6E8EB] p-4">
+          {pages.length === 0 && (
+            <div className="h-full flex items-center justify-center text-sm text-gray-500">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" /> {loadingMsg}
+            </div>
+          )}
+          <div className="max-w-[720px] mx-auto space-y-4">
+            {pages.map((pg, i) => {
+              const pageNum = i + 1
+              return (
+                <div
+                  key={i}
+                  ref={(el) => { pageRefs.current[i] = el }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={onDropField(pageNum)}
+                  className="relative bg-white shadow-md w-full"
+                  style={{ aspectRatio: `1 / ${pg.aspect}` }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={pg.src} alt={`Page ${pageNum}`} className="absolute inset-0 w-full h-full" draggable={false} />
+                  {placements.filter((pl) => pl.page === pageNum).map((pl) => (
+                    <div
+                      key={pl.id}
+                      onMouseDown={startMove(pl.id)}
+                      style={{ left: `${pl.x}%`, top: `${pl.y}%` }}
+                      className="absolute -translate-y-1/2 group cursor-move"
+                    >
+                      <span className="inline-flex items-center gap-1 rounded bg-[#00250e]/90 text-white text-[13px] font-semibold px-2 py-0.5 whitespace-nowrap shadow"
+                        style={{ outline: '1px solid rgba(255,255,255,0.4)' }}>
+                        {values[pl.type] || FIELD_META[pl.type].label}
+                        <button
+                          onMouseDown={(e) => { e.stopPropagation() }}
+                          onClick={(e) => { e.stopPropagation(); removePlacement(pl.id) }}
+                          className="ml-0.5 opacity-70 hover:opacity-100"
+                          aria-label="Remove field"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
