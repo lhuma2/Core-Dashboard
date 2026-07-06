@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NewProposalButton } from '@/components/documents/NewProposalButton'
 import { DeleteDocButton } from '@/components/documents/DeleteDocButton'
+import { UploadCompanyDocButton } from '@/components/documents/UploadCompanyDocButton'
+import { DeleteCompanyDocButton } from '@/components/documents/DeleteCompanyDocButton'
 import { FileText, FilePen, ChevronRight, FileDown } from 'lucide-react'
 
 // The company's own reviewed/branded PDFs, bundled in /public/documents.
@@ -54,6 +56,13 @@ export default async function DocumentsPage() {
     : { data: [] }
   const clientMap = new Map((contractClients ?? []).map((c: any) => [c.id, c]))
 
+  // Admin-uploaded company documents
+  const { data: uploadedRows } = await db
+    .from('company_documents')
+    .select('id, name, file_url, created_at')
+    .order('created_at', { ascending: false })
+  const uploadedDocs: any[] = uploadedRows ?? []
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-end justify-between gap-3">
@@ -97,7 +106,10 @@ export default async function DocumentsPage() {
       )}
 
       <div className="pt-2">
-        <p className="text-sm text-gray-500 mb-3">Company documents · {COMPANY_DOCS.length}</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm text-gray-500">Company documents · {COMPANY_DOCS.length + uploadedDocs.length}</p>
+          <UploadCompanyDocButton />
+        </div>
         <div className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden divide-y divide-gray-100">
           {COMPANY_DOCS.map((d) => (
             <div key={d.file} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
@@ -112,6 +124,22 @@ export default async function DocumentsPage() {
                 className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-4 py-1.5 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">
                 <FileDown className="w-3.5 h-3.5" /> View
               </a>
+            </div>
+          ))}
+          {uploadedDocs.map((d) => (
+            <div key={d.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+              <div className="w-9 h-9 rounded-lg bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-[#00250e]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Uploaded document</p>
+              </div>
+              <a href={d.file_url} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-4 py-1.5 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">
+                <FileDown className="w-3.5 h-3.5" /> View
+              </a>
+              <DeleteCompanyDocButton id={d.id} />
             </div>
           ))}
         </div>
