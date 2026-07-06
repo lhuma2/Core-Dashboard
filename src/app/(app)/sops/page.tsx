@@ -5,7 +5,12 @@ import { SOPCategoryFilter } from '@/components/sops/SOPCategoryFilter'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { Plus } from 'lucide-react'
+import { Plus, FileText, FileDown } from 'lucide-react'
+
+// Company SOP documents bundled as PDFs in /public/documents.
+const COMPANY_SOPS = [
+  { name: 'Bond Clean SOP', file: '/documents/bond-clean-sop.pdf' },
+]
 
 export default async function SOPsPage({
   searchParams,
@@ -68,6 +73,27 @@ export default async function SOPsPage({
       <Card padding={false}>
         <SOPTable sops={sops} />
       </Card>
+
+      <div className="pt-1">
+        <p className="text-sm text-gray-500 mb-3">Company SOPs · {COMPANY_SOPS.length}</p>
+        <div className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden divide-y divide-gray-100">
+          {COMPANY_SOPS.map((d) => (
+            <div key={d.file} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+              <div className="w-9 h-9 rounded-lg bg-[#003314]/5 border border-[#003314]/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-[#003314]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">PDF · standard procedure</p>
+              </div>
+              <a href={d.file} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#003314] border border-[#003314]/20 rounded-full px-4 py-1.5 hover:bg-[#003314] hover:text-white transition-colors flex-shrink-0">
+                <FileDown className="w-3.5 h-3.5" /> View
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
