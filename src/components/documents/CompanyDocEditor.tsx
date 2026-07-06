@@ -2,13 +2,22 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Minus, Plus, Palette } from 'lucide-react'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
 
 const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
 
 type FieldType = 'clientName' | 'quotedPrice' | 'text'
-type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string } // x,y = % of page
+type BgStyle = 'white' | 'dark' | 'none'
+type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number } // x,y = % of page
+
+const BG_CYCLE: BgStyle[] = ['white', 'dark', 'none']
+function boxStyle(bg: BgStyle, size: number): React.CSSProperties {
+  const base: React.CSSProperties = { fontSize: size, lineHeight: 1.15, fontWeight: 600, padding: '2px 6px', borderRadius: 4 }
+  if (bg === 'white') return { ...base, background: '#ffffff', color: '#111827' }
+  if (bg === 'dark')  return { ...base, background: '#00250e', color: '#ffffff' }
+  return { ...base, background: 'transparent', color: '#111827', textShadow: '0 1px 4px rgba(255,255,255,0.9)' }
+}
 type FieldValues = { clientName: string; quotedPrice: string }
 type PageImg = { src: string; aspect: number } // aspect = height / width
 
@@ -91,7 +100,7 @@ export function CompanyDocEditor({
     const r = wrap.getBoundingClientRect()
     const x = Math.min(96, Math.max(1, ((e.clientX - r.left) / r.width) * 100))
     const y = Math.min(98, Math.max(1, ((e.clientY - r.top) / r.height) * 100))
-    setPlacements((p) => [...p, { id: Math.random().toString(36).slice(2), type, page: pageNum, x, y, ...(type === 'text' ? { text: '' } : {}) }])
+    setPlacements((p) => [...p, { id: Math.random().toString(36).slice(2), type, page: pageNum, x, y, bg: 'white', size: 15, ...(type === 'text' ? { text: '' } : {}) }])
   }
 
   // ── Reposition an EXISTING placement (mouse drag) ────────────────────────
@@ -123,6 +132,11 @@ export function CompanyDocEditor({
   const removePlacement = (pid: string) => setPlacements((p) => p.filter((x) => x.id !== pid))
   const updateText = (pid: string, text: string) =>
     setPlacements((p) => p.map((x) => (x.id === pid ? { ...x, text } : x)))
+  const cycleBg = (pid: string) =>
+    setPlacements((p) => p.map((x) => x.id === pid
+      ? { ...x, bg: BG_CYCLE[(BG_CYCLE.indexOf(x.bg ?? 'white') + 1) % BG_CYCLE.length] } : x))
+  const changeSize = (pid: string, delta: number) =>
+    setPlacements((p) => p.map((x) => x.id === pid ? { ...x, size: Math.min(48, Math.max(8, (x.size ?? 15) + delta)) } : x))
 
   return (
     <div className="h-[calc(100dvh-3.5rem)] flex flex-col -m-4 lg:-m-8">
@@ -182,8 +196,9 @@ export function CompanyDocEditor({
             )
           })}
           <p className="text-[11px] text-gray-400 leading-relaxed border-t border-gray-100 pt-3">
-            Scroll the document on the right through all pages. Drag a field onto any page;
-            drag a placed field to move it, or click the × to remove it. Changes save automatically.
+            Drag a field onto the document — it drops as a white box so it <span className="font-semibold text-gray-500">covers</span> printed
+            placeholders like <span className="font-semibold text-gray-500">$0.00</span>. Hover a placed field for controls:
+            move, background (white / dark / none), font size, and remove. Changes save automatically.
           </p>
         </div>
 
@@ -208,40 +223,42 @@ export function CompanyDocEditor({
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={pg.src} alt={`Page ${pageNum}`} className="absolute inset-0 w-full h-full" draggable={false} />
-                  {placements.filter((pl) => pl.page === pageNum).map((pl) => (
-                    pl.type === 'text' ? (
-                      <div key={pl.id} style={{ left: `${pl.x}%`, top: `${pl.y}%` }} className="absolute -translate-y-1/2">
-                        <span className="inline-flex items-center gap-1 rounded bg-white border border-[#00250e]/40 text-gray-900 text-[13px] px-1 py-0.5 shadow">
-                          <button onMouseDown={startMove(pl.id)} className="cursor-move text-gray-400 hover:text-gray-600" aria-label="Move">
-                            <GripVertical className="w-3 h-3" />
-                          </button>
-                          <input
-                            value={pl.text ?? ''}
-                            onChange={(e) => updateText(pl.id, e.target.value)}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            placeholder="Type…"
-                            size={Math.max(6, (pl.text ?? '').length)}
-                            className="bg-transparent outline-none text-[13px] px-0.5 min-w-[3rem]"
-                          />
-                          <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); removePlacement(pl.id) }}
-                            className="text-gray-400 hover:text-red-500" aria-label="Remove field">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      </div>
-                    ) : (
-                      <div key={pl.id} onMouseDown={startMove(pl.id)} style={{ left: `${pl.x}%`, top: `${pl.y}%` }} className="absolute -translate-y-1/2 group cursor-move">
-                        <span className="inline-flex items-center gap-1 rounded bg-[#00250e]/90 text-white text-[13px] font-semibold px-2 py-0.5 whitespace-nowrap shadow"
-                          style={{ outline: '1px solid rgba(255,255,255,0.4)' }}>
-                          {values[pl.type as 'clientName' | 'quotedPrice'] || FIELD_META[pl.type].label}
-                          <button onMouseDown={(e) => { e.stopPropagation() }} onClick={(e) => { e.stopPropagation(); removePlacement(pl.id) }}
-                            className="ml-0.5 opacity-70 hover:opacity-100" aria-label="Remove field">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
+                  {placements.filter((pl) => pl.page === pageNum).map((pl) => {
+                    const bg = pl.bg ?? 'white'
+                    const size = pl.size ?? 15
+                    return (
+                      <div key={pl.id} style={{ left: `${pl.x}%`, top: `${pl.y}%` }} className="absolute -translate-y-1/2 group">
+                        {/* Control toolbar (shows on hover) */}
+                        <div className="absolute -top-6 left-0 hidden group-hover:flex items-center gap-0.5 bg-gray-900 text-white rounded px-1 py-0.5 shadow-lg z-10 whitespace-nowrap">
+                          <button onMouseDown={startMove(pl.id)} className="p-0.5 cursor-move hover:text-emerald-300" aria-label="Move" title="Drag to move"><GripVertical className="w-3 h-3" /></button>
+                          <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); cycleBg(pl.id) }} className="p-0.5 hover:text-emerald-300" aria-label="Background" title="Background: white / dark / none"><Palette className="w-3 h-3" /></button>
+                          <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); changeSize(pl.id, -1) }} className="p-0.5 hover:text-emerald-300" aria-label="Smaller" title="Smaller"><Minus className="w-3 h-3" /></button>
+                          <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); changeSize(pl.id, 1) }} className="p-0.5 hover:text-emerald-300" aria-label="Larger" title="Larger"><Plus className="w-3 h-3" /></button>
+                          <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); removePlacement(pl.id) }} className="p-0.5 hover:text-red-400" aria-label="Remove" title="Remove"><X className="w-3 h-3" /></button>
+                        </div>
+                        {/* The value box that covers the underlying text */}
+                        <div
+                          onMouseDown={pl.type === 'text' ? undefined : startMove(pl.id)}
+                          style={boxStyle(bg, size)}
+                          className={`inline-flex items-center whitespace-nowrap ring-1 ring-transparent group-hover:ring-emerald-400/70 ${pl.type === 'text' ? '' : 'cursor-move'}`}
+                        >
+                          {pl.type === 'text' ? (
+                            <input
+                              value={pl.text ?? ''}
+                              onChange={(e) => updateText(pl.id, e.target.value)}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              placeholder="Type…"
+                              size={Math.max(4, (pl.text ?? '').length)}
+                              style={{ fontSize: size, color: 'inherit' }}
+                              className="bg-transparent outline-none min-w-[2rem]"
+                            />
+                          ) : (
+                            values[pl.type as 'clientName' | 'quotedPrice'] || FIELD_META[pl.type].label
+                          )}
+                        </div>
                       </div>
                     )
-                  ))}
+                  })}
                 </div>
               )
             })}
