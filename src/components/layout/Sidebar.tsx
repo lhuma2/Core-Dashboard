@@ -71,7 +71,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const content = (
     <div className="flex flex-col h-full bg-[#00250e] border-r border-white/5">
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 h-16 border-b border-white/5 flex-shrink-0">
+      <div className="relative flex items-center justify-center px-5 h-16 border-b border-white/5 flex-shrink-0">
         <Image
           src="/logo-mark-white.png"
           alt="Core Cleaning"
@@ -83,7 +83,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         {onMobileClose && (
           <button
             onClick={onMobileClose}
-            className="ml-3 lg:hidden p-1.5 rounded text-slate-500 hover:text-slate-300"
+            className="absolute right-3 lg:hidden p-1.5 rounded text-slate-500 hover:text-slate-300"
           >
             <X className="w-4 h-4" />
           </button>
