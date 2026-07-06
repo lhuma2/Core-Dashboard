@@ -11,6 +11,7 @@ import {
   updateComplianceInfoAction,
 } from '@/actions/settings'
 import type { AppSettings, SurveyQuestion } from '@/types/app'
+import { ChangePasswordCard } from '@/components/settings/ChangePasswordCard'
 import { Settings, Building2, Percent, MessageSquare, Bell, Plus, Trash2, ShieldCheck } from 'lucide-react'
 
 const DEFAULT: AppSettings = {
@@ -63,6 +64,9 @@ export default function SettingsPage() {
         <h2 className="text-xl font-bold text-gray-900">Settings</h2>
         <p className="text-sm text-gray-500 mt-0.5">Business configuration and system defaults</p>
       </div>
+
+      {/* Account security */}
+      <ChangePasswordCard />
 
       {/* Business Details */}
       <Card>
