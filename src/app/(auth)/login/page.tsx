@@ -69,11 +69,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="flex justify-center mb-3">
           <Image
-            src="/logo-mark-white.png"
+            src="/proposal-assets/wordmark-black.png"
             alt="Core Cleaning"
-            width={150}
-            height={63}
-            className="object-contain invert"
+            width={210}
+            height={116}
+            className="object-contain"
             priority
           />
         </div>
