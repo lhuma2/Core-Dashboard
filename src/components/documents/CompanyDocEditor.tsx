@@ -10,7 +10,7 @@ const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.
 
 type FieldType = 'clientName' | 'quotedPrice' | 'text' | 'signature'
 type BgStyle = 'white' | 'dark' | 'none'
-type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number } // x,y = % of page
+type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number; w?: number; h?: number } // x,y,w,h = % of page
 
 const EDITABLE: FieldType[] = ['text', 'signature']
 const BG_CYCLE: BgStyle[] = ['white', 'dark', 'none']
@@ -172,6 +172,38 @@ export function CompanyDocEditor({
     window.addEventListener('mouseup', stopResize)
   }
 
+  // ── Edge (wall) resize — width via left/right, height via top/bottom ─────
+  const edgeResizing = useRef<null | { id: string; edge: 'l' | 'r' | 't' | 'b'; pageRect: DOMRect; x: number; y: number; rightPct: number }>(null)
+  const onEdge = useCallback((e: MouseEvent) => {
+    const r = edgeResizing.current
+    if (!r) return
+    const mx = ((e.clientX - r.pageRect.left) / r.pageRect.width) * 100
+    const my = ((e.clientY - r.pageRect.top) / r.pageRect.height) * 100
+    setPlacements((prev) => prev.map((pl) => {
+      if (pl.id !== r.id) return pl
+      if (r.edge === 'r') return { ...pl, w: Math.min(100, Math.max(1, mx - r.x)) }
+      if (r.edge === 'l') { const nx = Math.min(r.rightPct - 1, Math.max(0, mx)); return { ...pl, x: nx, w: Math.max(1, r.rightPct - nx) } }
+      if (r.edge === 'b') return { ...pl, h: Math.min(100, Math.max(1, 2 * (my - r.y))) }
+      return { ...pl, h: Math.min(100, Math.max(1, 2 * (r.y - my))) }
+    }))
+  }, [])
+  const stopEdge = useCallback(() => {
+    edgeResizing.current = null
+    window.removeEventListener('mousemove', onEdge)
+    window.removeEventListener('mouseup', stopEdge)
+  }, [onEdge])
+  const startEdge = (pl: Placement, edge: 'l' | 'r' | 't' | 'b') => (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    const pageRect = pageRefs.current[pl.page - 1]?.getBoundingClientRect()
+    if (!pageRect) return
+    const box = (e.currentTarget as HTMLElement).parentElement as HTMLElement
+    const brect = box.getBoundingClientRect()
+    const startWpct = pl.w ?? (brect.width / pageRect.width) * 100
+    edgeResizing.current = { id: pl.id, edge, pageRect, x: pl.x, y: pl.y, rightPct: pl.x + startWpct }
+    window.addEventListener('mousemove', onEdge)
+    window.addEventListener('mouseup', stopEdge)
+  }
+
   return (
     <div className="h-[calc(100dvh-3.5rem)] flex flex-col -m-4 lg:-m-8">
       {/* Header */}
@@ -269,11 +301,12 @@ export function CompanyDocEditor({
                     const editable = EDITABLE.includes(pl.type)
                     const font = pl.type === 'signature' ? SIGN_FONT : DOC_FONT
                     const selected = selectedId === pl.id
+                    const sized = pl.w != null || pl.h != null
                     return (
                       <div
                         key={pl.id}
                         onMouseDownCapture={() => setSelectedId(pl.id)}
-                        style={{ left: `${pl.x}%`, top: `${pl.y}%` }}
+                        style={{ left: `${pl.x}%`, top: `${pl.y}%`, width: pl.w != null ? `${pl.w}%` : undefined, height: pl.h != null ? `${pl.h}%` : undefined }}
                         className="absolute -translate-y-1/2 group"
                       >
                         {/* Control toolbar — stays while selected, or on hover */}
@@ -285,8 +318,8 @@ export function CompanyDocEditor({
                         {/* The value box that covers the underlying text */}
                         <div
                           onMouseDown={editable ? undefined : startMove(pl.id)}
-                          style={boxStyle(bg, size, font)}
-                          className={`relative inline-flex items-center whitespace-nowrap ring-1 ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move'}`}
+                          style={{ ...boxStyle(bg, size, font), ...(sized ? { width: '100%', height: '100%', display: 'flex', alignItems: 'center', overflow: 'hidden' } : {}) }}
+                          className={`relative items-center whitespace-nowrap ring-1 ${sized ? 'flex' : 'inline-flex'} ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move'}`}
                         >
                           {editable ? (
                             <input
@@ -310,6 +343,14 @@ export function CompanyDocEditor({
                             <span key={idx} onMouseDown={startResize(pl.id, size)}
                               className={`absolute ${c} w-2 h-2 bg-emerald-500 border border-white rounded-sm z-10`} />
                           ))}
+                          {selected && (
+                            <>
+                              <span onMouseDown={startEdge(pl, 'l')} title="Drag to widen / narrow" className="absolute top-1 bottom-1 -left-1 w-1.5 cursor-ew-resize hover:bg-emerald-400/50 rounded" />
+                              <span onMouseDown={startEdge(pl, 'r')} title="Drag to widen / narrow" className="absolute top-1 bottom-1 -right-1 w-1.5 cursor-ew-resize hover:bg-emerald-400/50 rounded" />
+                              <span onMouseDown={startEdge(pl, 't')} title="Drag to heighten / shorten" className="absolute left-1 right-1 -top-1 h-1.5 cursor-ns-resize hover:bg-emerald-400/50 rounded" />
+                              <span onMouseDown={startEdge(pl, 'b')} title="Drag to heighten / shorten" className="absolute left-1 right-1 -bottom-1 h-1.5 cursor-ns-resize hover:bg-emerald-400/50 rounded" />
+                            </>
+                          )}
                         </div>
                       </div>
                     )

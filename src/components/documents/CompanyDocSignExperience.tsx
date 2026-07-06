@@ -10,7 +10,7 @@ const SIGN_FONT = '"Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple 
 
 type FieldType = 'clientName' | 'quotedPrice' | 'text' | 'signature'
 type BgStyle = 'white' | 'dark' | 'none'
-type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number }
+type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number; w?: number; h?: number }
 type PageImg = { src: string; aspect: number }
 
 function boxStyle(bg: BgStyle, size: number, font: string): React.CSSProperties {
@@ -168,8 +168,11 @@ export function CompanyDocSignExperience({
                           </div>
                         )
                       }
+                      const sized = pl.w != null || pl.h != null
                       return (
-                        <div key={pl.id} style={{ ...boxStyle(bg, size, DOC_FONT), left: `${pl.x}%`, top: `${pl.y}%` }} className="absolute -translate-y-1/2 inline-flex items-center whitespace-nowrap">
+                        <div key={pl.id}
+                          style={{ ...boxStyle(bg, size, DOC_FONT), left: `${pl.x}%`, top: `${pl.y}%`, width: pl.w != null ? `${pl.w}%` : undefined, height: pl.h != null ? `${pl.h}%` : undefined, ...(sized ? { display: 'flex', alignItems: 'center', overflow: 'hidden' } : {}) }}
+                          className={`absolute -translate-y-1/2 items-center whitespace-nowrap ${sized ? 'flex' : 'inline-flex'}`}>
                           {valueFor(pl)}
                         </div>
                       )
