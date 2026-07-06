@@ -91,7 +91,7 @@ export function CreateJobForm({ cleaners, clients }: { cleaners: Cleaner[]; clie
         <textarea className={inp} rows={4} value={checklist} onChange={(e) => setChecklist(e.target.value)} placeholder="Vacuum all floors&#10;Clean bathrooms&#10;Empty bins&#10;Mop hard floors" />
       </div>
 
-      <button type="submit" disabled={submitting} className="w-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 mt-1">
+      <button type="submit" disabled={submitting} className="w-full bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 mt-1">
         {submitting ? 'Creating…' : 'Create Job'}
       </button>
     </form>

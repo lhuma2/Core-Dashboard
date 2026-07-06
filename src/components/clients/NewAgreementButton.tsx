@@ -12,7 +12,7 @@ export function NewAgreementButton({ clientId }: { clientId: string }) {
     <button
       onClick={() => { setBusy(true); createAgreementForClientAction(clientId) }}
       disabled={busy}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-xs font-semibold px-3 py-2 transition-colors disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-lg bg-[#003314] hover:bg-[#00250e] text-white text-xs font-semibold px-3 py-2 transition-colors disabled:opacity-50"
     >
       {busy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating…</> : <><PenLine className="w-3.5 h-3.5" /> New agreement</>}
     </button>

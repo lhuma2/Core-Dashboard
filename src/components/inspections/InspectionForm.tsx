@@ -188,7 +188,7 @@ export function InspectionForm({ clients, sites }: { clients: ClientRow[]; sites
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
           <span className="text-sm text-gray-400">Score <span className={`font-bold ${BAND_COLOR[band]}`}>{overall != null ? `${overall}%` : '—'}</span></span>
           <button onClick={submit} disabled={busy}
-            className="inline-flex items-center gap-2 bg-[#0b1320] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl px-6 py-3 disabled:opacity-50 transition-colors">
+            className="inline-flex items-center gap-2 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl px-6 py-3 disabled:opacity-50 transition-colors">
             {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><ShieldCheck className="w-4 h-4" /> Complete inspection</>}
           </button>
         </div>

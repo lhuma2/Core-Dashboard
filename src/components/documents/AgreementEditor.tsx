@@ -95,7 +95,7 @@ export function AgreementEditor({ id, initialData, status, signCode, clients = [
             <PenLine className="w-3.5 h-3.5" /> Email it
           </button>
           <button onClick={copySignLink} disabled={!signCode}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#1e3a5f] hover:bg-[#162d4a] text-white rounded-lg px-3 py-2 transition-colors disabled:opacity-40">
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#003314] hover:bg-[#00250e] text-white rounded-lg px-3 py-2 transition-colors disabled:opacity-40">
             {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Link2 className="w-3.5 h-3.5" /> Copy signing link</>}
           </button>
         </div>

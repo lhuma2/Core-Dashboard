@@ -39,7 +39,7 @@ export default async function InspectionsPage() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-5">
         <p className="text-sm text-gray-500">{list.length} inspection{list.length !== 1 ? 's' : ''} on record</p>
-        <Link href="/inspections/new" className="inline-flex items-center gap-1.5 bg-[#0b1320] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl px-4 py-2.5 transition-colors">
+        <Link href="/inspections/new" className="inline-flex items-center gap-1.5 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl px-4 py-2.5 transition-colors">
           <Plus className="w-4 h-4" /> New inspection
         </Link>
       </div>

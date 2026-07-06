@@ -128,7 +128,7 @@ export function CreatePortalUserForm({ clients }: { clients: Client[] }) {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 mt-2"
+        className="w-full bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 mt-2"
       >
         {submitting ? 'Creating…' : 'Create User'}
       </button>

@@ -54,7 +54,7 @@ export function InspectionActions({ id, shared, hasFixes }: { id: string; shared
       <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
         {hasFixes && (
           <button onClick={notify} disabled={busy === 'notify'}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-[#1e3a5f] hover:bg-[#162d4a] rounded-xl px-4 py-2.5 disabled:opacity-50 transition-colors">
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-[#003314] hover:bg-[#00250e] rounded-xl px-4 py-2.5 disabled:opacity-50 transition-colors">
             {busy === 'notify' ? <Loader2 className="w-4 h-4 animate-spin" /> : sent ? <Check className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
             {sent ? 'Sent to subcontractor' : 'Email fix-list to subcontractor'}
           </button>

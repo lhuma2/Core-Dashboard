@@ -331,7 +331,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
           <div className="flex items-center gap-2 mt-4">
             {lead.phone ? (
               <a href={`tel:${cleanPhone(lead.phone)}`} onClick={() => setLogging(true)}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] active:scale-[0.98] text-white text-sm font-semibold rounded-xl py-3 shadow-[0_4px_12px_rgba(30,58,95,0.25)] transition-all">
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-[#003314] hover:bg-[#00250e] active:scale-[0.98] text-white text-sm font-semibold rounded-xl py-3 shadow-[0_4px_12px_rgba(30,58,95,0.25)] transition-all">
                 <Phone className="w-4 h-4" /> Call {lead.contact_name ? lead.contact_name.split(' ')[0] : ''}
               </a>
             ) : (
@@ -461,7 +461,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
             )}
             <div className="flex gap-2 mt-2">
               <button onClick={confirmSendEmail} disabled={busy === 'email'}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl py-3 disabled:opacity-50 active:scale-[0.98] transition-all">
+                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl py-3 disabled:opacity-50 active:scale-[0.98] transition-all">
                 <Mail className="w-4 h-4" /> {busy === 'email' ? 'Sending…' : 'Send email'}
               </button>
               <button onClick={() => setEmailPreview(null)} disabled={busy === 'email'}
@@ -589,7 +589,7 @@ function ImportPanel({ onClose, onDone }: { onClose: () => void; onDone: (msg: s
               <button onClick={() => { setHeaders(null); setMap(null); setError(null) }}
                 className="px-4 text-sm text-gray-400 hover:text-gray-600">Back</button>
               <button onClick={run} disabled={busy || !map || map.business < 0}
-                className="flex-1 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
+                className="flex-1 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
                 {busy ? 'Importing…' : `Import ${rowCount} lead${rowCount === 1 ? '' : 's'}`}
               </button>
             </div>
@@ -632,7 +632,7 @@ function ImportPanel({ onClose, onDone }: { onClose: () => void; onDone: (msg: s
             {error && <div className="mt-3 rounded-xl bg-red-50 border border-red-100 px-3 py-2.5 text-sm text-red-600">{error}</div>}
 
             <button onClick={preview} disabled={!csv.trim() || busy}
-              className="w-full mt-4 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
+              className="w-full mt-4 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
               {busy ? 'Reading…' : 'Next: match columns'}
             </button>
             <p className="text-[11px] text-gray-400 text-center mt-2">You'll confirm which column is which · duplicates skipped</p>
@@ -772,7 +772,7 @@ export function CallDeck({ initialLeads }: { initialLeads: ColdLead[] }) {
               className="w-full pl-8 pr-3 py-2 text-[16px] sm:text-sm bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
           </div>
           <button onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl px-3.5 py-2 shadow-[0_4px_12px_rgba(30,58,95,0.25)] active:scale-[0.98] transition-all flex-shrink-0">
+            className="inline-flex items-center gap-2 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl px-3.5 py-2 shadow-[0_4px_12px_rgba(30,58,95,0.25)] active:scale-[0.98] transition-all flex-shrink-0">
             <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Import</span>
           </button>
         </div>

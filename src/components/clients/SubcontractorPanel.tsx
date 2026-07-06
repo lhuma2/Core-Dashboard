@@ -87,7 +87,7 @@ export function SubcontractorPanel({ sub }: { sub: Sub | null }) {
             </div>
           )}
           <button onClick={makeLink} disabled={busy}
-            className="inline-flex items-center gap-1.5 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl px-4 py-2.5 disabled:opacity-50 transition-colors">
+            className="inline-flex items-center gap-1.5 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl px-4 py-2.5 disabled:opacity-50 transition-colors">
             {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><Link2 className="w-4 h-4" /> {shownLink ? 'New link' : 'Create onboarding link'}</>}
           </button>
         </div>

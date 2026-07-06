@@ -102,7 +102,7 @@ export function ComplianceUploadForm({ clients, cleaners = [] }: { clients: Pers
         <input ref={fileRef} type="file" accept=".pdf,image/*" className={inp + ' py-1.5'}
           onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
       </div>
-      <button type="submit" disabled={uploading} className="w-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50">
+      <button type="submit" disabled={uploading} className="w-full bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50">
         {uploading ? 'Uploading…' : 'Upload Document'}
       </button>
     </form>

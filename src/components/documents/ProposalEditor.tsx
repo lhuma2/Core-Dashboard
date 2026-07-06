@@ -113,7 +113,7 @@ export function ProposalEditor({ id, initialData, status }: { id: string; initia
             <Send className="w-3.5 h-3.5" /> Send
           </button>
           <button onClick={() => { setConverting(true); convertToAgreementAction(id) }} disabled={converting}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#1e3a5f] hover:bg-[#162d4a] text-white rounded-lg px-3 py-2 transition-colors disabled:opacity-60">
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#003314] hover:bg-[#00250e] text-white rounded-lg px-3 py-2 transition-colors disabled:opacity-60">
             {converting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FilePen className="w-3.5 h-3.5" />} Convert to agreement
           </button>
         </div>

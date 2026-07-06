@@ -161,7 +161,7 @@ export function XeroFinanceWidget() {
         </p>
         <a
           href="/api/xero/connect"
-          className="inline-flex items-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition"
+          className="inline-flex items-center gap-2 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition"
         >
           <XeroLogo />
           Connect Xero

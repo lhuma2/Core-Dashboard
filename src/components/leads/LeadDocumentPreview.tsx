@@ -39,7 +39,7 @@ export function LeadDocumentPreview({ lead, type }: Props) {
           </button>
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-lg bg-[#1e3a5f] hover:bg-[#162d4a] text-white font-medium transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-lg bg-[#003314] hover:bg-[#00250e] text-white font-medium transition-colors"
           >
             <Printer className="w-3.5 h-3.5" />
             Print / Save PDF

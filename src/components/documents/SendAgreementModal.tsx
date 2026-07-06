@@ -70,7 +70,7 @@ export function SendAgreementModal({ id, onClose }: { id: string; status?: strin
             </div>
             {error && <div className="mt-3 rounded-xl bg-red-50 border border-red-100 px-3 py-2.5 text-sm text-red-600">{error}</div>}
             <button onClick={send} disabled={busy || !email.trim()}
-              className="w-full mt-4 inline-flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
+              className="w-full mt-4 inline-flex items-center justify-center gap-2 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl py-3.5 disabled:opacity-40 active:scale-[0.99] transition-all">
               {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</> : <><PenLine className="w-4 h-4" /> Send for signature</>}
             </button>
           </>
