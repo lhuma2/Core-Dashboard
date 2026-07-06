@@ -39,5 +39,5 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
       />
     )
   }
-  return <ProposalEditor id={doc.id} status={doc.status} initialData={withProposalDefaults(doc.data)} />
+  return <ProposalEditor id={doc.id} status={doc.status} initialData={withProposalDefaults(doc.data)} pdfUrl={doc.pdf_url} />
 }

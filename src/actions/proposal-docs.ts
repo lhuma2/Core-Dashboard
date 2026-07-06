@@ -52,6 +52,27 @@ export async function createProposalAction(seed?: Partial<ProposalData> & { clie
   redirect(`/documents/${row.id}`)
 }
 
+// ─── Create from a selected company document (embeds that PDF as the proposal) ─
+
+export async function createProposalFromDocAction(name: string, fileUrl: string, clientName?: string) {
+  const db = createAdminClient() as any
+  const ref = nextRef('DC-PROP')
+  const data: ProposalData = { ...DEFAULT_PROPOSAL, clientName: clientName || name, refNumber: ref }
+
+  const { data: row, error } = await db.from('proposal_documents').insert({
+    kind: 'proposal',
+    status: 'draft',
+    ref_number: ref,
+    client_name: data.clientName,
+    pdf_url: fileUrl,   // the selected company document shown in the preview
+    data,
+  }).select('id').single()
+
+  if (error) return { error: error.message }
+  revalidatePath('/documents')
+  redirect(`/documents/${row.id}`)
+}
+
 // ─── Save (with optional version snapshot) ───────────────────────────────────
 
 export async function saveProposalDocAction(id: string, data: ProposalData, snapshotLabel?: string) {

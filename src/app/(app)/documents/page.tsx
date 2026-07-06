@@ -63,6 +63,12 @@ export default async function DocumentsPage() {
     .order('created_at', { ascending: false })
   const uploadedDocs: any[] = uploadedRows ?? []
 
+  // Options for the "New proposal" picker: bundled + uploaded company documents.
+  const proposalDocOptions = [
+    ...COMPANY_DOCS.map((d) => ({ name: d.name, url: d.file })),
+    ...uploadedDocs.map((d) => ({ name: d.name, url: d.file_url })),
+  ]
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-end justify-between gap-3">
@@ -70,7 +76,7 @@ export default async function DocumentsPage() {
           <h2 className="font-display text-2xl font-extrabold tracking-tight text-gray-900">Documents</h2>
           <p className="text-sm text-gray-400 mt-0.5">Proposals and service agreements · {list.length}</p>
         </div>
-        <NewProposalButton />
+        <NewProposalButton docs={proposalDocOptions} />
       </div>
 
       {list.length === 0 ? (
