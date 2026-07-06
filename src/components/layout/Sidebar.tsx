@@ -52,7 +52,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         className={cn(
           'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
           active
-            ? 'bg-[#17cc96] text-white shadow-[0_1px_10px_rgba(23,204,150,0.45)]'
+            ? 'bg-[#149e76] text-white shadow-[0_1px_10px_rgba(20,158,118,0.35)]'
             : 'text-slate-400 hover:bg-white/5 hover:text-white hover:translate-x-0.5'
         )}
       >
