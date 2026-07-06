@@ -12,8 +12,10 @@ type BgStyle = 'white' | 'dark' | 'none'
 type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number } // x,y = % of page
 
 const BG_CYCLE: BgStyle[] = ['white', 'dark', 'none']
+// Matches the contract PDFs, which are set in Arial (ArialMT).
+const DOC_FONT = 'Arial, "Helvetica Neue", Helvetica, "Liberation Sans", Arimo, sans-serif'
 function boxStyle(bg: BgStyle, size: number): React.CSSProperties {
-  const base: React.CSSProperties = { fontSize: size, lineHeight: 1.15, fontWeight: 600, padding: '2px 6px', borderRadius: 4 }
+  const base: React.CSSProperties = { fontFamily: DOC_FONT, fontSize: size, lineHeight: 1.15, fontWeight: 400, padding: '2px 6px', borderRadius: 4 }
   if (bg === 'white') return { ...base, background: '#ffffff', color: '#111827' }
   if (bg === 'dark')  return { ...base, background: '#00250e', color: '#ffffff' }
   return { ...base, background: 'transparent', color: '#111827', textShadow: '0 1px 4px rgba(255,255,255,0.9)' }
@@ -249,7 +251,7 @@ export function CompanyDocEditor({
                               onMouseDown={(e) => e.stopPropagation()}
                               placeholder="Type…"
                               size={Math.max(4, (pl.text ?? '').length)}
-                              style={{ fontSize: size, color: 'inherit' }}
+                              style={{ fontFamily: DOC_FONT, fontSize: size, fontWeight: 400, color: 'inherit' }}
                               className="bg-transparent outline-none min-w-[2rem]"
                             />
                           ) : (
