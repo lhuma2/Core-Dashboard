@@ -141,7 +141,7 @@ export async function GET(request: Request) {
 
   const html = `
     <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px 18px;color:#0f172a;">
-      <div style="background:#0b1320;border-radius:12px 12px 0 0;padding:22px 26px;">
+      <div style="background:#00250e;border-radius:12px 12px 0 0;padding:22px 26px;">
         <p style="margin:0;color:#93c5fd;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;">Core Cleaning · Alert</p>
         <h1 style="margin:6px 0 0;color:#fff;font-size:20px;">${totalIssues} clean${totalIssues !== 1 ? 's' : ''} not marked off</h1>
       </div>
@@ -149,7 +149,7 @@ export async function GET(request: Request) {
         <p style="font-size:13px;color:#64748b;margin:0 0 16px;">Mark each off if it was done — keeps billing and reports accurate.</p>
         ${jobCards}
         ${missingRecords.length ? `<p style="font-size:12px;color:#94a3b8;margin:14px 0 0;">+ ${missingRecords.length} scheduled clean${missingRecords.length !== 1 ? 's' : ''} with no job record.</p>` : ''}
-        <a href="${appUrl}/dashboard" style="display:inline-block;margin-top:18px;background:#0b1320;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Mark it off →</a>
+        <a href="${appUrl}/dashboard" style="display:inline-block;margin-top:18px;background:#00250e;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Mark it off →</a>
         <p style="font-size:11px;color:#94a3b8;margin:22px 0 0;border-top:1px solid #f1f5f9;padding-top:14px;">Sent Monday mornings · Core Cleaning Operations Hub</p>
       </div>
     </div>

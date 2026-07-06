@@ -59,7 +59,7 @@ export function SendProposalModal({ id, defaultEmail, onClose }: { id: string; d
                   className="w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
               </div>
               <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                <input type="checkbox" checked={attachCapability} onChange={e => setAttachCapability(e.target.checked)} className="w-4 h-4 accent-[#1e3a5f]" />
+                <input type="checkbox" checked={attachCapability} onChange={e => setAttachCapability(e.target.checked)} className="w-4 h-4 accent-[#00250e]" />
                 <span className="text-sm text-gray-700">Attach capability statement</span>
               </label>
               <p className="text-[11px] text-gray-400">The proposal PDF is attached automatically. Generating PDFs can take a few seconds.</p>

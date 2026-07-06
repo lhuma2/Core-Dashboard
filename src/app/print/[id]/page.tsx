@@ -141,7 +141,7 @@ export default function PrintPage() {
       {/* Toolbar — hidden during print */}
       <div className="no-print" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        background: '#1e3a5f', color: 'white', padding: '10px 20px',
+        background: '#00250e', color: 'white', padding: '10px 20px',
         fontFamily: 'Inter, system-ui, sans-serif', fontSize: 13,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
@@ -150,7 +150,7 @@ export default function PrintPage() {
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={() => window.print()}
-            style={{ background: 'white', color: '#1e3a5f', border: 'none', padding: '7px 20px', borderRadius: 4, fontWeight: 700, fontSize: 12, cursor: 'pointer', letterSpacing: '0.05em' }}
+            style={{ background: 'white', color: '#00250e', border: 'none', padding: '7px 20px', borderRadius: 4, fontWeight: 700, fontSize: 12, cursor: 'pointer', letterSpacing: '0.05em' }}
           >
             Download PDF
           </button>

@@ -105,11 +105,11 @@ export function AgreementEditor({ id, initialData, status, signCode, clients = [
       {/* Mobile Edit/Preview toggle (desktop shows both side-by-side) */}
       <div className="lg:hidden flex border-b border-gray-200 bg-white flex-shrink-0">
         <button onClick={() => setMobileView('edit')}
-          className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${mobileView === 'edit' ? 'text-[#1e3a5f] border-b-2 border-[#1e3a5f]' : 'text-gray-400 border-b-2 border-transparent'}`}>
+          className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${mobileView === 'edit' ? 'text-[#00250e] border-b-2 border-[#00250e]' : 'text-gray-400 border-b-2 border-transparent'}`}>
           Edit
         </button>
         <button onClick={() => setMobileView('preview')}
-          className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${mobileView === 'preview' ? 'text-[#1e3a5f] border-b-2 border-[#1e3a5f]' : 'text-gray-400 border-b-2 border-transparent'}`}>
+          className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${mobileView === 'preview' ? 'text-[#00250e] border-b-2 border-[#00250e]' : 'text-gray-400 border-b-2 border-transparent'}`}>
           Preview
         </button>
       </div>
@@ -162,7 +162,7 @@ export function AgreementEditor({ id, initialData, status, signCode, clients = [
                     <button onClick={() => removeScopeItem(gi, ii)} className="text-gray-300 hover:text-red-500 flex-shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 ))}
-                <button onClick={() => addScopeItem(gi)} className="text-[11px] font-semibold text-[#1e3a5f] hover:underline">+ Add inclusion</button>
+                <button onClick={() => addScopeItem(gi)} className="text-[11px] font-semibold text-[#00250e] hover:underline">+ Add inclusion</button>
               </div>
             ))}
           </Section>

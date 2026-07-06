@@ -35,8 +35,8 @@ export default async function SafetyPage() {
             <Link key={s.code} href={`/safety/${slug}`} target="_blank" className="block">
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 flex items-center justify-between gap-3 hover:border-gray-300 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                    <ShieldCheck className="w-4 h-4 text-[#1e3a5f]" />
+                  <div className="w-9 h-9 rounded-xl bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                    <ShieldCheck className="w-4 h-4 text-[#00250e]" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{s.title}</p>
@@ -60,8 +60,8 @@ export default async function SafetyPage() {
           <Link key={p.slug} href={`/safety/${p.slug}`} target="_blank" className="block">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 flex items-center justify-between gap-3 hover:border-gray-300 transition-colors">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-4 h-4 text-[#1e3a5f]" />
+                <div className="w-9 h-9 rounded-xl bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-4 h-4 text-[#00250e]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{p.title}</p>
@@ -75,8 +75,8 @@ export default async function SafetyPage() {
         <Link href="/safety/modern-slavery" target="_blank" className="block">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 flex items-center justify-between gap-3 hover:border-gray-300 transition-colors">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-[#1e3a5f]" />
+              <div className="w-9 h-9 rounded-xl bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-[#00250e]" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{MODERN_SLAVERY.title}</p>
@@ -89,8 +89,8 @@ export default async function SafetyPage() {
         <Link href="/safety/sds-register" target="_blank" className="block">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 flex items-center justify-between gap-3 hover:border-gray-300 transition-colors">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                <FlaskConical className="w-4 h-4 text-[#1e3a5f]" />
+              <div className="w-9 h-9 rounded-xl bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                <FlaskConical className="w-4 h-4 text-[#00250e]" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{SDS_REGISTER.title}</p>
@@ -117,8 +117,8 @@ export default async function SafetyPage() {
             <Link key={d.slug} href={`/safety/${d.slug}`} target="_blank" className="block">
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 flex items-center justify-between gap-3 hover:border-gray-300 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-4 h-4 text-[#1e3a5f]" />
+                  <div className="w-9 h-9 rounded-xl bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4 text-[#00250e]" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{d.title}</p>

@@ -262,7 +262,7 @@ export default function FinancialPage() {
         })}
         <a
           href="/financial/month-end"
-          className="ml-auto mb-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[#1e3a5f] border border-[#1e3a5f]/20 bg-[#1e3a5f]/5 rounded-lg px-3 py-1.5 hover:bg-[#1e3a5f]/10 transition-colors"
+          className="ml-auto mb-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[#00250e] border border-[#00250e]/20 bg-[#00250e]/5 rounded-lg px-3 py-1.5 hover:bg-[#00250e]/10 transition-colors"
         >
           <FileText className="w-3.5 h-3.5" /> Month-End Report
         </a>

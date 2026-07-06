@@ -47,7 +47,7 @@ function newSite(): SiteFormData {
   }
 }
 
-const inp = 'w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#1e3a5f] transition-colors'
+const inp = 'w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00250e] transition-colors'
 const lbl = 'block text-xs font-medium text-gray-600 mb-1'
 
 export function SiteBuilder({ defaultSites, cleaners = [], onChange }: Props) {
@@ -118,7 +118,7 @@ export function SiteBuilder({ defaultSites, cleaners = [], onChange }: Props) {
               className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#1e3a5f] text-white text-xs font-bold flex items-center justify-center">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00250e] text-white text-xs font-bold flex items-center justify-center">
                   {i + 1}
                 </span>
                 <div className="min-w-0">
@@ -135,7 +135,7 @@ export function SiteBuilder({ defaultSites, cleaners = [], onChange }: Props) {
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 {monthly > 0 && (
-                  <span className="text-xs font-semibold text-[#1e3a5f] hidden sm:block">
+                  <span className="text-xs font-semibold text-[#00250e] hidden sm:block">
                     {formatAUD(monthly)}/mo
                   </span>
                 )}
@@ -204,13 +204,13 @@ export function SiteBuilder({ defaultSites, cleaners = [], onChange }: Props) {
                     <div className="flex flex-wrap gap-1.5">
                       {DAYS.map((day) => (
                         <button key={day} type="button" onClick={() => toggleDay(site._localId, day)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${site.service_days.includes(day) ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#1e3a5f]'}`}>
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${site.service_days.includes(day) ? 'bg-[#00250e] text-white border-[#00250e]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#00250e]'}`}>
                           {day}
                         </button>
                       ))}
                     </div>
                     {site.service_days.length > 0 && (
-                      <p className="text-xs text-[#1e3a5f] font-medium mt-2">Cleans on: {site.service_days.join(', ')}</p>
+                      <p className="text-xs text-[#00250e] font-medium mt-2">Cleans on: {site.service_days.join(', ')}</p>
                     )}
                   </div>
                 </div>
@@ -233,7 +233,7 @@ export function SiteBuilder({ defaultSites, cleaners = [], onChange }: Props) {
                     </div>
                   </div>
                   {monthly > 0 && (
-                    <p className="text-xs text-[#1e3a5f] font-medium mt-2">≈ {formatAUD(monthly)} / month</p>
+                    <p className="text-xs text-[#00250e] font-medium mt-2">≈ {formatAUD(monthly)} / month</p>
                   )}
                 </div>
 
@@ -281,7 +281,7 @@ export function SiteBuilder({ defaultSites, cleaners = [], onChange }: Props) {
       <button
         type="button"
         onClick={addSite}
-        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:border-[#1e3a5f] hover:text-[#1e3a5f] transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:border-[#00250e] hover:text-[#00250e] transition-colors"
       >
         <Plus className="w-4 h-4" />
         Add another site

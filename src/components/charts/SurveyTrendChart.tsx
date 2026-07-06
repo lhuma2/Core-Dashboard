@@ -54,8 +54,8 @@ export function SurveyTrendChart({ data }: SurveyTrendChartProps) {
           }}
         />
         <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px' }} />
-        <Line type="monotone" dataKey="quality" stroke="#1e3a5f" strokeWidth={2} dot={{ r: 3 }} name="Quality" connectNulls />
-        <Line type="monotone" dataKey="reliability" stroke="#2a4f80" strokeWidth={2} dot={{ r: 3 }} name="Reliability" connectNulls />
+        <Line type="monotone" dataKey="quality" stroke="#00250e" strokeWidth={2} dot={{ r: 3 }} name="Quality" connectNulls />
+        <Line type="monotone" dataKey="reliability" stroke="#0a3d22" strokeWidth={2} dot={{ r: 3 }} name="Reliability" connectNulls />
         <Line type="monotone" dataKey="communication" stroke="#4a7ab5" strokeWidth={2} dot={{ r: 3 }} name="Communication" connectNulls />
         <Line type="monotone" dataKey="value" stroke="#6b9fd4" strokeWidth={2} dot={{ r: 3 }} name="Value" connectNulls />
       </LineChart>

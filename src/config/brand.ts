@@ -35,8 +35,8 @@ export const BRAND = {
 
   // Brand colours
   colors: {
-    ink:  '#0b1320', // darkest navy — sidebars, dark surfaces
-    navy: '#1e3a5f', // primary accent — buttons, active states
+    ink:  '#00250e', // darkest navy — sidebars, dark surfaces
+    navy: '#00250e', // primary accent — buttons, active states
   },
 
   // Logo assets in /public — replace the files, keep the paths (or update here)

@@ -21,7 +21,7 @@ export default async function SignPage({ params }: { params: { token: string } }
 
   if (!doc || doc.kind !== 'agreement') {
     return (
-      <div className="min-h-[100dvh] bg-[#0b1320] flex items-center justify-center px-6 text-center">
+      <div className="min-h-[100dvh] bg-[#00250e] flex items-center justify-center px-6 text-center">
         <div>
           <h1 className="text-white text-xl font-bold mb-2">This signing link isn&apos;t valid</h1>
           <p className="text-slate-400 text-sm max-w-xs mx-auto">

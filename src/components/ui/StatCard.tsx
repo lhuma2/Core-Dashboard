@@ -57,7 +57,7 @@ export function StatCard({
           >
             <Icon
               className="w-5 h-5"
-              style={{ color: accent ? '#fff' : '#1e3a5f' }}
+              style={{ color: accent ? '#fff' : '#00250e' }}
             />
           </div>
         )}

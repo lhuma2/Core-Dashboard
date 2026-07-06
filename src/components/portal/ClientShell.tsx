@@ -39,7 +39,7 @@ export function ClientShell({ children, clientName, userName, activePath, sites,
     <div className="min-h-[100dvh] bg-[#f5f6f8] flex flex-col">
       {/* ── Top bar — navy ink ─────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-40 bg-[#0b1320] border-b border-white/5"
+        className="sticky top-0 z-40 bg-[#00250e] border-b border-white/5"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="flex items-center justify-between gap-3 px-5 lg:px-8 h-16 max-w-5xl mx-auto">
@@ -131,10 +131,10 @@ export function ClientShell({ children, clientName, userName, activePath, sites,
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors ${
-                  active ? 'text-[#1e3a5f]' : 'text-gray-400'
+                  active ? 'text-[#00250e]' : 'text-gray-400'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? 'text-[#1e3a5f]' : 'text-gray-400'}`} />
+                <Icon className={`w-5 h-5 ${active ? 'text-[#00250e]' : 'text-gray-400'}`} />
                 {item.label}
               </Link>
             )

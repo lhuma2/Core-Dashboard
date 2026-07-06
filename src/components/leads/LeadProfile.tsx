@@ -206,7 +206,7 @@ export function LeadProfile({ lead: initialLead }: { lead: Lead }) {
                     <div
                       className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
                         isCurrent
-                          ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white'
+                          ? 'bg-[#00250e] border-[#00250e] text-white'
                           : isComplete
                           ? 'bg-emerald-500 border-emerald-500 text-white'
                           : isNext
@@ -380,7 +380,7 @@ export function LeadProfile({ lead: initialLead }: { lead: Lead }) {
                   </div>
                   {emailPreview.kind === 'intro' && (
                     <label className="flex items-start gap-2 mt-2 px-1 cursor-pointer select-none">
-                      <input type="checkbox" checked={includeFollowUp} onChange={e => setIncludeFollowUp(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#1e3a5f] flex-shrink-0" />
+                      <input type="checkbox" checked={includeFollowUp} onChange={e => setIncludeFollowUp(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#00250e] flex-shrink-0" />
                       <span className="text-[13px] text-gray-600">Also send a 5-day follow-up if they don’t reply <span className="text-gray-400">(automatic, skips weekends)</span></span>
                     </label>
                   )}

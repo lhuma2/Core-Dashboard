@@ -68,7 +68,7 @@ export function LinkClientButton({ profileId, currentClientId, currentClientName
       <button
         onClick={handleSave}
         disabled={saving}
-        className="text-xs font-semibold bg-[#1e3a5f] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#162d4a] disabled:opacity-50"
+        className="text-xs font-semibold bg-[#00250e] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#001a09] disabled:opacity-50"
       >
         {saving ? '…' : 'Save'}
       </button>

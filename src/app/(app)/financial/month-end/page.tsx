@@ -29,7 +29,7 @@ export default async function MonthEndReportPage({ searchParams }: { searchParam
     return (
       <div className="max-w-3xl mx-auto py-16 text-center">
         <p className="text-gray-500">No financial data yet — upload invoices on the Financial page to build month-end reports.</p>
-        <Link href="/financial" className="text-[#1e3a5f] text-sm font-semibold mt-3 inline-block">← Back to Financial</Link>
+        <Link href="/financial" className="text-[#00250e] text-sm font-semibold mt-3 inline-block">← Back to Financial</Link>
       </div>
     )
   }
@@ -97,7 +97,7 @@ export default async function MonthEndReportPage({ searchParams }: { searchParam
           {months.slice(0, 12).map((m) => (
             <Link key={m} href={`/financial/month-end?month=${m.slice(0, 7)}`}
               className={`text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-colors ${
-                m === month ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                m === month ? 'bg-[#00250e] text-white border-[#00250e]' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
               }`}>
               {monthLabel(m)}
             </Link>

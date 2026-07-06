@@ -62,7 +62,7 @@ export function MarkJobCompleteButton({
       {!expanded ? (
         <button
           onClick={() => setExpanded(true)}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1e3a5f] border border-[#1e3a5f]/25 bg-white hover:bg-[#1e3a5f] hover:text-white px-3 py-1.5 rounded-lg transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00250e] border border-[#00250e]/25 bg-white hover:bg-[#00250e] hover:text-white px-3 py-1.5 rounded-lg transition-colors"
         >
           <CheckCircle className="w-3.5 h-3.5" />
           Mark as Complete
@@ -89,7 +89,7 @@ export function MarkJobCompleteButton({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={`e.g. Cleaner couldn't submit — confirmed complete`}
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white resize-none focus:outline-none focus:border-[#1e3a5f]"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white resize-none focus:outline-none focus:border-[#00250e]"
             />
           </div>
 
@@ -100,7 +100,7 @@ export function MarkJobCompleteButton({
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 text-sm font-semibold bg-[#1e3a5f] text-white py-2 rounded-lg hover:bg-[#162d4a] transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 text-sm font-semibold bg-[#00250e] text-white py-2 rounded-lg hover:bg-[#001a09] transition-colors disabled:opacity-50"
           >
             <CheckCircle className="w-4 h-4" />
             {loading ? 'Saving…' : `Confirm — mark complete`}

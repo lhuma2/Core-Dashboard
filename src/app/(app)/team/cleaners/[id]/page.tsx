@@ -73,8 +73,8 @@ export default async function CleanerProfilePage({ params }: { params: { id: str
 
   const stats = [
     { label: 'Jobs completed', value: String(completed.length), sub: 'all time', icon: CheckCircle2, color: 'text-emerald-600' },
-    { label: 'This month', value: String(completedThisMonth), sub: 'completed', icon: Clock, color: 'text-[#1e3a5f]' },
-    { label: 'Avg time on site', value: fmtDuration(avgDuration), sub: durations.length > 0 ? `from ${durations.length} timed jobs` : 'no timed jobs yet', icon: Timer, color: 'text-[#1e3a5f]' },
+    { label: 'This month', value: String(completedThisMonth), sub: 'completed', icon: Clock, color: 'text-[#00250e]' },
+    { label: 'Avg time on site', value: fmtDuration(avgDuration), sub: durations.length > 0 ? `from ${durations.length} timed jobs` : 'no timed jobs yet', icon: Timer, color: 'text-[#00250e]' },
     { label: 'Flags raised', value: String(flagged.length), sub: 'issues reported', icon: Flag, color: flagged.length > 0 ? 'text-amber-600' : 'text-gray-400' },
   ]
 
@@ -87,7 +87,7 @@ export default async function CleanerProfilePage({ params }: { params: { id: str
           <ArrowLeft className="w-3.5 h-3.5" /> Team
         </Link>
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white font-display text-xl font-bold flex-shrink-0">
+          <div className="w-14 h-14 rounded-full bg-[#00250e] flex items-center justify-center text-white font-display text-xl font-bold flex-shrink-0">
             {(profile.full_name ?? '?').charAt(0).toUpperCase()}
           </div>
           <div>

@@ -33,7 +33,7 @@ interface ParsedInvoice {
 
 type Step = 'upload' | 'review' | 'confirm'
 
-const inputCls = 'w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/50'
+const inputCls = 'w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00250e]/20 focus:border-[#00250e]/50'
 const labelCls = 'text-xs font-medium text-gray-500 block mb-1.5'
 
 export function InvoiceUploadModal({
@@ -223,8 +223,8 @@ export function InvoiceUploadModal({
           const labels  = ['Upload', 'Match Clients', 'Save']
           return (
             <div key={s} className="flex items-center gap-1">
-              <div className={`flex items-center gap-1.5 text-xs font-medium ${active ? 'text-[#1e3a5f]' : done ? 'text-emerald-600' : 'text-gray-400'}`}>
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs border ${active ? 'border-[#1e3a5f] text-[#1e3a5f]' : done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 text-gray-400'}`}>
+              <div className={`flex items-center gap-1.5 text-xs font-medium ${active ? 'text-[#00250e]' : done ? 'text-emerald-600' : 'text-gray-400'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs border ${active ? 'border-[#00250e] text-[#00250e]' : done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 text-gray-400'}`}>
                   {done ? <Check className="w-3 h-3" /> : i + 1}
                 </div>
                 {labels[i]}
@@ -252,23 +252,23 @@ export function InvoiceUploadModal({
             onDrop={handleDrop}
             className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
               uploading
-                ? 'border-[#1e3a5f]/30 bg-[#1e3a5f]/5'
+                ? 'border-[#00250e]/30 bg-[#00250e]/5'
                 : dragOver
-                ? 'border-[#1e3a5f] bg-[#1e3a5f]/5'
-                : 'border-gray-200 hover:border-[#1e3a5f]/40 hover:bg-gray-50'
+                ? 'border-[#00250e] bg-[#00250e]/5'
+                : 'border-gray-200 hover:border-[#00250e]/40 hover:bg-gray-50'
             }`}
           >
             {uploading ? (
               <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 text-[#1e3a5f] animate-spin" />
+                <Loader2 className="w-8 h-8 text-[#00250e] animate-spin" />
                 <p className="text-sm text-gray-500">Parsing invoice…</p>
               </div>
             ) : dragOver ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#1e3a5f]/10 flex items-center justify-center">
-                  <Upload className="w-6 h-6 text-[#1e3a5f]" />
+                <div className="w-12 h-12 rounded-xl bg-[#00250e]/10 flex items-center justify-center">
+                  <Upload className="w-6 h-6 text-[#00250e]" />
                 </div>
-                <p className="text-sm font-medium text-[#1e3a5f]">Drop your PDF here</p>
+                <p className="text-sm font-medium text-[#00250e]">Drop your PDF here</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
@@ -373,7 +373,7 @@ export function InvoiceUploadModal({
                               ...prev,
                               [line.line_number]: e.target.value || null,
                             }))}
-                            className={`w-full text-xs rounded-lg border px-2 py-1.5 pr-6 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 ${
+                            className={`w-full text-xs rounded-lg border px-2 py-1.5 pr-6 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00250e]/20 ${
                               matched
                                 ? 'bg-white border-emerald-300 text-emerald-800 font-medium'
                                 : 'bg-white border-gray-300 text-gray-500'

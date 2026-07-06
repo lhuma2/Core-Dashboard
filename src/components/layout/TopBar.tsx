@@ -79,7 +79,7 @@ export function TopBar({ userEmail, onMenuClick }: TopBarProps) {
           onClick={() => setMenuOpen(!menuOpen)}
           className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
         >
-          <div className="w-6 h-6 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-xs font-semibold">
+          <div className="w-6 h-6 rounded-full bg-[#001a09] flex items-center justify-center text-white text-xs font-semibold">
             {initials}
           </div>
           <span className="hidden sm:block text-xs text-gray-500 max-w-28 truncate">

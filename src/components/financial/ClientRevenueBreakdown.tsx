@@ -116,7 +116,7 @@ export function ClientRevenueBreakdown({ clients }: ClientRevenueBreakdownProps)
                     </div>
                   ) : <span style={{ color: '#AAAAAA' }}>—</span>}
                 </td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#1e3a5f' }}>
+                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#00250e' }}>
                   {formatAUD(c.monthly)}
                 </td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>
@@ -138,7 +138,7 @@ export function ClientRevenueBreakdown({ clients }: ClientRevenueBreakdownProps)
             <td colSpan={5} style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#777772', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Total MRR ({active.length} clients)
             </td>
-            <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, fontSize: 14, color: '#1e3a5f' }}>
+            <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, fontSize: 14, color: '#00250e' }}>
               {formatAUD(totalMRR)}
             </td>
             <td colSpan={2} />

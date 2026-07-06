@@ -15,7 +15,7 @@ interface DataPoint {
   value: number
 }
 
-const COLORS = ['#1e3a5f', '#2a4f80', '#4a7ab5', '#6b9fd4', '#94c0e8', '#b8d9f5']
+const COLORS = ['#00250e', '#0a3d22', '#4a7ab5', '#6b9fd4', '#94c0e8', '#b8d9f5']
 
 interface ClientBreakdownPieProps {
   data: DataPoint[]

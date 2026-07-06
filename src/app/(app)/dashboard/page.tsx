@@ -529,13 +529,13 @@ export default async function DashboardPage() {
 
         {/* 12-month forecast — navy ink panel */}
         {mrr > 0 && (
-          <div className="relative overflow-hidden bg-[#0b1320] rounded-2xl p-6">
+          <div className="relative overflow-hidden bg-[#00250e] rounded-2xl p-6">
             <div
               className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse 70% 90% at 85% -20%, rgba(30,58,95,0.95), transparent 60%)' }}
+              style={{ background: 'radial-gradient(ellipse 70% 90% at 85% -20%, rgba(0,37,14,0.95), transparent 60%)' }}
             />
             <span aria-hidden className="font-display absolute -right-6 -bottom-16 text-[11rem] font-black leading-none select-none text-white/[0.04]">Δ</span>
-            <p className="relative text-sky-400/80 text-[11px] font-semibold uppercase tracking-[0.18em] mb-5">12-Month Forecast</p>
+            <p className="relative text-emerald-400/80 text-[11px] font-semibold uppercase tracking-[0.18em] mb-5">12-Month Forecast</p>
             <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div>
                 <p className="text-slate-400 text-xs mb-1.5">Annual Revenue</p>

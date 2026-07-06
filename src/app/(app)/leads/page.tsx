@@ -99,7 +99,7 @@ export default function LeadsPage() {
           { label: 'Conversion',   value: conversionPct != null ? `${conversionPct}%` : '—', sub: `${wonLeads.length} of ${leads.length}` },
         ].map(kpi => (
           <div key={kpi.label} className="bg-white border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] hover:shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:-translate-y-0.5 transition-all duration-200 rounded-2xl p-4 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-[3px] bg-[#1e3a5f]/15" />
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-[#00250e]/15" />
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.14em]">{kpi.label}</p>
             <p className="font-display text-[26px] font-extrabold text-gray-900 mt-2 tabular-nums tracking-tight">{kpi.value}</p>
             <p className="text-xs text-gray-400 mt-1.5">{kpi.sub}</p>
@@ -118,7 +118,7 @@ export default function LeadsPage() {
               onClick={() => setStatusFilter(isSelected ? 'active' : stage.key)}
               className={`rounded-xl p-3 text-left border transition-all duration-150 ${
                 isSelected
-                  ? 'border-[#1e3a5f] bg-[#1e3a5f] shadow-[0_4px_12px_rgba(30,58,95,0.3)]'
+                  ? 'border-[#00250e] bg-[#00250e] shadow-[0_4px_12px_rgba(0,37,14,0.3)]'
                   : 'border-gray-200/70 bg-white hover:border-gray-300 hover:shadow-sm'
               }`}
             >
@@ -156,7 +156,7 @@ export default function LeadsPage() {
               onClick={() => setStatusFilter(v)}
               className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
                 statusFilter === v
-                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
+                  ? 'bg-[#00250e] text-white border-[#00250e]'
                   : 'border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-400'
               }`}
             >

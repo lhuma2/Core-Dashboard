@@ -42,7 +42,7 @@ export function InspectionActions({ id, shared, hasFixes }: { id: string; shared
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><Share2 className="w-4 h-4 text-[#1e3a5f]" /> Share with client</p>
+          <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><Share2 className="w-4 h-4 text-[#00250e]" /> Share with client</p>
           <p className="text-xs text-gray-400 mt-0.5">{isShared ? 'Visible in the client’s portal.' : 'Only you can see this inspection.'}</p>
         </div>
         <button onClick={toggleShare} disabled={busy === 'share'} role="switch" aria-checked={isShared}

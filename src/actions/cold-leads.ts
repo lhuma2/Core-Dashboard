@@ -332,7 +332,7 @@ const SIGNATURE = `
   <p style="margin-top: 24px;">
     Laith<br/>
     Core Cleaning · Brisbane<br/>
-    <a href="mailto:admin@corecleaning.services" style="color: #1e3a5f;">admin@corecleaning.services</a>
+    <a href="mailto:admin@corecleaning.services" style="color: #00250e;">admin@corecleaning.services</a>
   </p>`
 
 const EMAIL_WRAP = (inner: string) =>

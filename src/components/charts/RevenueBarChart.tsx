@@ -50,7 +50,7 @@ export function RevenueBarChart({ data }: RevenueBarChartProps) {
             fontSize: '12px',
           }}
         />
-        <Bar dataKey="income" fill="#1e3a5f" radius={[4, 4, 0, 0]} name="income" />
+        <Bar dataKey="income" fill="#00250e" radius={[4, 4, 0, 0]} name="income" />
         <Bar dataKey="expense" fill="#cbd5e1" radius={[4, 4, 0, 0]} name="expense" />
       </BarChart>
     </ResponsiveContainer>

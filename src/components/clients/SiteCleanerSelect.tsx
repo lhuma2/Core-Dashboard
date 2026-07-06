@@ -30,7 +30,7 @@ export function SiteCleanerSelect({
         value={value}
         onChange={(e) => change(e.target.value)}
         disabled={saving}
-        className="text-xs rounded-lg border border-gray-200 bg-white px-2 py-1.5 focus:border-[#1e3a5f] outline-none disabled:opacity-50"
+        className="text-xs rounded-lg border border-gray-200 bg-white px-2 py-1.5 focus:border-[#00250e] outline-none disabled:opacity-50"
       >
         <option value="">Unassigned</option>
         {cleaners.map((c) => (

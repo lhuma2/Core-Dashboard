@@ -288,7 +288,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
   return `
   <div style="background:#eef1f5;padding:32px 16px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(15,23,42,.10);">
-      <div style="background:#0b1320;padding:30px 30px 26px;text-align:center;">
+      <div style="background:#00250e;padding:30px 30px 26px;text-align:center;">
         <img src="${WORDMARK}" alt="Core Cleaning" style="height:26px;width:auto;" />
       </div>
       <div style="height:4px;background:linear-gradient(90deg,#2563eb,#60a5fa);line-height:4px;font-size:0;">&nbsp;</div>
@@ -303,7 +303,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
           <p style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin:16px 0 2px;">Summary</p>
           <table style="width:100%;border-collapse:collapse;">${summary}</table>
         </div>` : ''}
-        <a href="${link}" style="display:block;text-align:center;background:#0b1320;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:12px;padding:18px 24px;">Review &amp; sign &rarr;</a>
+        <a href="${link}" style="display:block;text-align:center;background:#00250e;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:12px;padding:18px 24px;">Review &amp; sign &rarr;</a>
         <p style="text-align:center;font-size:12px;color:#94a3b8;margin:14px 0 0;">&#128274;&nbsp; Secure &middot; unique to you &middot; no account needed</p>
         <p style="text-align:center;font-size:11.5px;color:#cbd5e1;margin:10px 0 0;">Button not working? Paste this: <span style="color:#94a3b8;word-break:break-all;">${link}</span></p>
         <div style="border-top:1px solid #f1f5f9;margin-top:28px;padding-top:22px;">
@@ -322,7 +322,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
 function signedOwnerEmail(a: AgreementData, name: string, signedAtIso: string, docId: string, newClientId?: string | null): string {
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto;padding:28px 18px;color:#0f172a;">
-    <div style="background:#0b1320;border-radius:12px 12px 0 0;padding:22px 26px;">
+    <div style="background:#00250e;border-radius:12px 12px 0 0;padding:22px 26px;">
       <p style="margin:0;color:#86efac;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;">Core Cleaning · Signed</p>
       <h1 style="margin:6px 0 0;color:#fff;font-size:20px;">${a.clientName} signed the agreement</h1>
     </div>
@@ -336,8 +336,8 @@ function signedOwnerEmail(a: AgreementData, name: string, signedAtIso: string, d
       ${newClientId ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-top:18px;font-size:13px;color:#166534;line-height:1.5;">
         <strong>New client profile created</strong> from this agreement. A few fields (cleaner cost, exact schedule, scope) need finishing — open the profile to complete it.
       </div>
-      <a href="${APP_URL}/clients/${newClientId}" style="display:inline-block;margin-top:14px;background:#0b1320;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Open the client profile →</a>`
-      : `<a href="${APP_URL}/documents/${docId}" style="display:inline-block;margin-top:18px;background:#0b1320;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">View the signed agreement →</a>`}
+      <a href="${APP_URL}/clients/${newClientId}" style="display:inline-block;margin-top:14px;background:#00250e;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Open the client profile →</a>`
+      : `<a href="${APP_URL}/documents/${docId}" style="display:inline-block;margin-top:18px;background:#00250e;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">View the signed agreement →</a>`}
     </div>
   </div>`
 }

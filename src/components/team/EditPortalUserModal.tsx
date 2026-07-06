@@ -145,7 +145,7 @@ export function EditPortalUserModal({ profileId, userId, fullName, email, role, 
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 bg-[#1e3a5f] text-white text-sm font-medium rounded-lg py-2.5 disabled:opacity-40 hover:bg-[#162d4a] transition-colors"
+                  className="flex-1 bg-[#00250e] text-white text-sm font-medium rounded-lg py-2.5 disabled:opacity-40 hover:bg-[#001a09] transition-colors"
                 >
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>

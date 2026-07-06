@@ -366,12 +366,12 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
               <span className="text-gray-400">Signed contract</span>
               {signedAgreement ? (
                 <a href={`/documents/${signedAgreement.id}/print`} target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-medium text-[#1e3a5f] hover:underline">
+                  className="inline-flex items-center gap-1 font-medium text-[#00250e] hover:underline">
                   <FileText className="w-3.5 h-3.5" /> Open contract
                 </a>
               ) : contractDoc ? (
                 <a href={`/api/file?url=${Buffer.from(contractDoc.file_url).toString('base64url')}`} target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-medium text-[#1e3a5f] hover:underline">
+                  className="inline-flex items-center gap-1 font-medium text-[#00250e] hover:underline">
                   <FileText className="w-3.5 h-3.5" /> Open PDF
                 </a>
               ) : (
@@ -485,7 +485,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                     <p className="text-xs text-gray-400 mt-0.5">{freqLabel[svc.frequency] ?? svc.frequency}</p>
                   </div>
                   <div className="text-right space-y-0.5">
-                    <p className="text-sm font-bold text-[#1e3a5f]">{formatAUD(svc.my_rate_per_visit)} / visit</p>
+                    <p className="text-sm font-bold text-[#00250e]">{formatAUD(svc.my_rate_per_visit)} / visit</p>
                     {svc.cleaner_cost_per_visit > 0 && (
                       <p className="text-xs text-gray-400">Cost: {formatAUD(svc.cleaner_cost_per_visit)} / visit</p>
                     )}
@@ -507,7 +507,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
               if (svcs.length < 2 || totalRev === 0) return null
               return (
                 <div className="flex gap-6 pt-2 border-t border-gray-200 text-sm">
-                  <div><p className="text-xs text-gray-400">Total / Month</p><p className="font-bold text-[#1e3a5f]">{formatAUD(totalRev)}</p></div>
+                  <div><p className="text-xs text-gray-400">Total / Month</p><p className="font-bold text-[#00250e]">{formatAUD(totalRev)}</p></div>
                   {totalLab > 0 && <div><p className="text-xs text-gray-400">Cost / Month</p><p className="font-bold text-red-500">{formatAUD(totalLab)}</p></div>}
                   {totalLab > 0 && <div><p className="text-xs text-gray-400">Profit / Month</p><p className={`font-bold ${totalProf >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatAUD(totalProf)}</p></div>}
                 </div>
@@ -562,7 +562,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                   <div key={site.id} className="border border-gray-100 rounded-xl p-4 bg-white">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#1e3a5f] text-white text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00250e] text-white text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-gray-900">{site.site_name}</p>
                           {(site.address || site.suburb) && (

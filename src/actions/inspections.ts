@@ -80,12 +80,12 @@ export async function notifySubcontractorAction(id: string): Promise<{ ok?: bool
   if (items.length === 0) return { error: 'Nothing to rectify on this inspection.' }
 
   const rows = items
-    .map((r) => `<tr><td style="padding:6px 12px 6px 0;color:#0b1320;font-weight:600;">${r.area}</td><td style="padding:6px 0;color:#475569;">${r.label}${r.rating === 'fail' ? ' <span style="color:#dc2626;font-weight:600;">(fail)</span>' : ''}</td></tr>`)
+    .map((r) => `<tr><td style="padding:6px 12px 6px 0;color:#00250e;font-weight:600;">${r.area}</td><td style="padding:6px 0;color:#475569;">${r.label}${r.rating === 'fail' ? ' <span style="color:#dc2626;font-weight:600;">(fail)</span>' : ''}</td></tr>`)
     .join('')
   const when = new Date(insp.inspected_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Brisbane' })
   const html = `
     <div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:520px;">
-      <p style="font-size:15px;color:#0b1320;">Hi ${sub.contact_name || sub.company_name || 'there'},</p>
+      <p style="font-size:15px;color:#00250e;">Hi ${sub.contact_name || sub.company_name || 'there'},</p>
       <p style="font-size:14px;color:#334155;line-height:1.6;">Following a quality inspection at <strong>${insp.site_label}</strong> on ${when}${insp.score != null ? ` (scored ${insp.score}%)` : ''}, the following items need attention on the next visit:</p>
       <table style="border-collapse:collapse;margin:14px 0;font-size:14px;">${rows}</table>
       <p style="font-size:13px;color:#64748b;">Thanks,<br/>Core Cleaning</p>

@@ -29,7 +29,7 @@ function KPITile({
 }) {
   return (
     <div className="group bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] hover:shadow-[0_4px_16px_rgba(16,24,40,0.08)] hover:-translate-y-0.5 transition-all duration-200 p-4 sm:p-5 relative overflow-hidden">
-      <div className={`absolute top-0 left-0 w-full h-[3px] ${accentBar ?? 'bg-[#1e3a5f]/15'}`} />
+      <div className={`absolute top-0 left-0 w-full h-[3px] ${accentBar ?? 'bg-[#00250e]/15'}`} />
       <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.14em] truncate">{label}</p>
       <p className={`font-display text-[22px] sm:text-[26px] xl:text-[28px] font-extrabold mt-2.5 leading-none tabular-nums tracking-tight whitespace-nowrap ${valueColor}`}>{value}</p>
       {subtext && <p className="text-xs text-gray-400 mt-2.5">{subtext}</p>}

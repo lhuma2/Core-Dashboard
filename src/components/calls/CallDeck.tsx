@@ -56,11 +56,11 @@ function smsBody(lead: ColdLead): string {
 }
 
 const STATUS_META: Record<ColdLead['status'], { label: string; chip: string; accent: string }> = {
-  new:            { label: 'New',            chip: 'bg-sky-50 text-sky-700 border-sky-200',           accent: 'bg-sky-400' },
+  new:            { label: 'New',            chip: 'bg-sky-50 text-sky-700 border-sky-200',           accent: 'bg-emerald-400' },
   called:         { label: 'Called',         chip: 'bg-gray-100 text-gray-600 border-gray-200',       accent: 'bg-gray-300' },
   follow_up:      { label: 'Follow up',      chip: 'bg-amber-50 text-amber-700 border-amber-200',     accent: 'bg-amber-400' },
   walkthrough:    { label: 'Walk-through',   chip: 'bg-emerald-50 text-emerald-700 border-emerald-200', accent: 'bg-emerald-400' },
-  converted:      { label: 'Won',            chip: 'bg-[#1e3a5f] text-white border-[#1e3a5f]',        accent: 'bg-[#1e3a5f]' },
+  converted:      { label: 'Won',            chip: 'bg-[#00250e] text-white border-[#00250e]',        accent: 'bg-[#00250e]' },
   not_interested: { label: 'Not interested', chip: 'bg-red-50 text-red-500 border-red-200',           accent: 'bg-red-300' },
 }
 
@@ -82,7 +82,7 @@ function Detail({ icon: Icon, children, href, muted }: {
   icon: React.ElementType; children: React.ReactNode; href?: string; muted?: boolean
 }) {
   const body = (
-    <span className={`inline-flex items-center gap-1.5 text-[13px] ${muted ? 'text-gray-400' : 'text-gray-700'} ${href ? 'hover:text-[#1e3a5f]' : ''}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[13px] ${muted ? 'text-gray-400' : 'text-gray-700'} ${href ? 'hover:text-[#00250e]' : ''}`}>
       <Icon className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
       <span className="truncate">{children}</span>
     </span>
@@ -235,7 +235,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className={`inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5 tabular-nums border ${
-              lead.call_count === 0 ? 'text-gray-400 bg-white border-gray-200' : 'text-[#1e3a5f] bg-[#1e3a5f]/5 border-[#1e3a5f]/15'
+              lead.call_count === 0 ? 'text-gray-400 bg-white border-gray-200' : 'text-[#00250e] bg-[#00250e]/5 border-[#00250e]/15'
             }`}>
               <PhoneCall className="w-3 h-3" />
               {lead.call_count} {lead.call_count === 1 ? 'call' : 'calls'}
@@ -293,7 +293,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
             )}
             {lead.lead_id && (
               <a href={`/leads/${lead.lead_id}`} target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e3a5f] bg-[#1e3a5f]/5 border border-[#1e3a5f]/20 rounded-md px-1.5 py-0.5 hover:bg-[#1e3a5f]/10">
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00250e] bg-[#00250e]/5 border border-[#00250e]/20 rounded-md px-1.5 py-0.5 hover:bg-[#00250e]/10">
                 <TrendingUp className="w-3 h-3" /> In pipeline
               </a>
             )}
@@ -311,7 +311,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
               placeholder="Notes — gatekeeper name, best time to call, what they said…"
               className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
             <div className="flex gap-2 mt-1.5">
-              <button onClick={saveNotes} disabled={busy === 'notes'} className="text-xs font-semibold bg-[#1e3a5f] text-white rounded-lg px-3 py-1.5 disabled:opacity-50">
+              <button onClick={saveNotes} disabled={busy === 'notes'} className="text-xs font-semibold bg-[#00250e] text-white rounded-lg px-3 py-1.5 disabled:opacity-50">
                 {busy === 'notes' ? 'Saving…' : 'Save note'}
               </button>
               <button onClick={() => { setEditNotes(false); setNotesText(lead.notes ?? '') }} className="text-xs text-gray-400 hover:text-gray-600 px-2">Cancel</button>
@@ -331,7 +331,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
           <div className="flex items-center gap-2 mt-4">
             {lead.phone ? (
               <a href={`tel:${cleanPhone(lead.phone)}`} onClick={() => setLogging(true)}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-[#003314] hover:bg-[#00250e] active:scale-[0.98] text-white text-sm font-semibold rounded-xl py-3 shadow-[0_4px_12px_rgba(30,58,95,0.25)] transition-all">
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-[#003314] hover:bg-[#00250e] active:scale-[0.98] text-white text-sm font-semibold rounded-xl py-3 shadow-[0_4px_12px_rgba(0,37,14,0.25)] transition-all">
                 <Phone className="w-4 h-4" /> Call {lead.contact_name ? lead.contact_name.split(' ')[0] : ''}
               </a>
             ) : (
@@ -398,7 +398,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
                 <PhoneMissed className="w-3.5 h-3.5" /> No answer
               </button>
               <button onClick={() => outcome('spoke')} disabled={!!busy}
-                className="flex items-center justify-center gap-1.5 text-xs font-semibold py-2.5 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-400 active:scale-[0.98] transition-all">
+                className="flex items-center justify-center gap-1.5 text-xs font-semibold py-2.5 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:border-emerald-400 active:scale-[0.98] transition-all">
                 <PhoneCall className="w-3.5 h-3.5" /> Spoke
               </button>
               <button onClick={() => { setPickDate('follow_up'); setDate('') }} disabled={!!busy}
@@ -431,7 +431,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
               className="w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-3 text-[16px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
             <div className="flex gap-2">
               <button onClick={outcomeWithDate} disabled={!date || (pickDate === 'follow_up' && !note.trim()) || !!busy}
-                className="flex-1 bg-[#1e3a5f] text-white text-sm font-semibold rounded-xl py-2.5 disabled:opacity-40 active:scale-[0.98] transition-all">
+                className="flex-1 bg-[#00250e] text-white text-sm font-semibold rounded-xl py-2.5 disabled:opacity-40 active:scale-[0.98] transition-all">
                 {busy ? 'Saving…' : 'Save'}
               </button>
               <button onClick={() => setPickDate(null)} className="px-4 text-sm text-gray-400 hover:text-gray-600">Back</button>
@@ -455,7 +455,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
             </div>
             {emailPreview.kind === 'intro' && (
               <label className="flex items-start gap-2 mt-2 px-1 cursor-pointer select-none">
-                <input type="checkbox" checked={includeFollowUp} onChange={(e) => setIncludeFollowUp(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#1e3a5f] flex-shrink-0" />
+                <input type="checkbox" checked={includeFollowUp} onChange={(e) => setIncludeFollowUp(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#00250e] flex-shrink-0" />
                 <span className="text-[13px] text-gray-600">Also send a 5-day follow-up if they don’t reply <span className="text-gray-400">(automatic, skips weekends)</span></span>
               </label>
             )}
@@ -602,7 +602,7 @@ function ImportPanel({ onClose, onDone }: { onClose: () => void; onDone: (msg: s
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
               className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-10 px-4 cursor-pointer transition-colors text-center ${
-                dragOver ? 'border-[#1e3a5f] bg-[#1e3a5f]/5' : csv ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-300 hover:border-[#1e3a5f]/50 hover:bg-gray-50'
+                dragOver ? 'border-[#00250e] bg-[#00250e]/5' : csv ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-300 hover:border-[#00250e]/50 hover:bg-gray-50'
               }`}
             >
               {csv ? (
@@ -613,7 +613,7 @@ function ImportPanel({ onClose, onDone }: { onClose: () => void; onDone: (msg: s
                 </>
               ) : (
                 <>
-                  <Upload className={`w-6 h-6 ${dragOver ? 'text-[#1e3a5f]' : 'text-gray-400'}`} />
+                  <Upload className={`w-6 h-6 ${dragOver ? 'text-[#00250e]' : 'text-gray-400'}`} />
                   <p className="text-sm font-semibold text-gray-700">Drag & drop your CSV here</p>
                   <p className="text-xs text-gray-400">or tap to choose a file</p>
                 </>
@@ -730,8 +730,8 @@ export function CallDeck({ initialLeads }: { initialLeads: ColdLead[] }) {
       </div>
 
       {/* Scoreboard */}
-      <div className="relative overflow-hidden bg-[#0b1320] rounded-2xl p-5 mb-5">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 90% at 85% -20%, rgba(30,58,95,0.95), transparent 60%)' }} />
+      <div className="relative overflow-hidden bg-[#00250e] rounded-2xl p-5 mb-5">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 90% at 85% -20%, rgba(0,37,14,0.95), transparent 60%)' }} />
         <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <p className="text-slate-400 text-[11px] font-semibold uppercase tracking-[0.14em]">Calls today</p>
@@ -760,7 +760,7 @@ export function CallDeck({ initialLeads }: { initialLeads: ColdLead[] }) {
           {TABS.map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)}
               className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border transition-colors ${
-                tab === key ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300'
+                tab === key ? 'bg-[#00250e] text-white border-[#00250e]' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300'
               }`}>
               {label}
               <span className={`tabular-nums ${tab === key ? 'text-sky-200' : 'text-gray-400'}`}>{counts[key]}</span>
@@ -772,7 +772,7 @@ export function CallDeck({ initialLeads }: { initialLeads: ColdLead[] }) {
               className="w-full pl-8 pr-3 py-2 text-[16px] sm:text-sm bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
           </div>
           <button onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-2 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl px-3.5 py-2 shadow-[0_4px_12px_rgba(30,58,95,0.25)] active:scale-[0.98] transition-all flex-shrink-0">
+            className="inline-flex items-center gap-2 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl px-3.5 py-2 shadow-[0_4px_12px_rgba(0,37,14,0.25)] active:scale-[0.98] transition-all flex-shrink-0">
             <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Import</span>
           </button>
         </div>
@@ -790,7 +790,7 @@ export function CallDeck({ initialLeads }: { initialLeads: ColdLead[] }) {
             {tab === 'to_call' && leads.length > 0 ? 'No new leads left to call — nice work' : leads.length === 0 ? 'No leads yet' : 'Nothing here'}
           </p>
           {leads.length === 0 && (
-            <button onClick={() => setShowImport(true)} className="text-xs text-[#1e3a5f] font-semibold hover:underline mt-1">Import your first batch →</button>
+            <button onClick={() => setShowImport(true)} className="text-xs text-[#00250e] font-semibold hover:underline mt-1">Import your first batch →</button>
           )}
         </div>
       ) : (

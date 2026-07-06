@@ -88,7 +88,7 @@ export function ImportToPortalButton({ clientId, clientName, contactEmail }: Pro
                   <button onClick={() => setOpen(false)} className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg py-2.5 hover:bg-gray-50 transition-colors">
                     Cancel
                   </button>
-                  <button onClick={handleCreate} disabled={submitting} className="flex-1 bg-[#1e3a5f] text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-[#162d4a] disabled:opacity-50 transition-colors">
+                  <button onClick={handleCreate} disabled={submitting} className="flex-1 bg-[#00250e] text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-[#001a09] disabled:opacity-50 transition-colors">
                     {submitting ? 'Creating…' : 'Create Access'}
                   </button>
                 </div>

@@ -80,7 +80,7 @@ export default async function InspectionsPage() {
                       <span>{auDate(i.inspected_at)}</span>
                       {i.inspector && <span>· {i.inspector}</span>}
                       {fixes > 0 && <span className="inline-flex items-center gap-1 text-amber-600"><AlertTriangle className="w-3 h-3" />{fixes} to fix</span>}
-                      {i.shared_with_client && <span className="inline-flex items-center gap-1 text-[#1e3a5f]"><Share2 className="w-3 h-3" />Shared</span>}
+                      {i.shared_with_client && <span className="inline-flex items-center gap-1 text-[#00250e]"><Share2 className="w-3 h-3" />Shared</span>}
                     </p>
                   </div>
                   <span className={`text-xs font-bold border rounded-full px-2.5 py-1 flex-shrink-0 ${BAND_PILL[band]}`}>{i.score != null ? `${i.score}%` : 'Draft'}</span>

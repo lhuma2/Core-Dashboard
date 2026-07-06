@@ -77,7 +77,7 @@ export async function POST(req: Request) {
   <p style="margin-top: 22px;">
     ${contactName}<br/>
     Core Cleaning · Brisbane<br/>
-    <a href="mailto:${contactEmail}" style="color:#1e3a5f;">${contactEmail}</a>
+    <a href="mailto:${contactEmail}" style="color:#00250e;">${contactEmail}</a>
   </p>
 </div>`
 

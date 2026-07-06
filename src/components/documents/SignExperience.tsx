@@ -77,7 +77,7 @@ export function SignExperience({
   const asideCls = 'sticky bottom-0 z-10 bg-white border-t border-gray-200 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] lg:self-start lg:sticky lg:top-6 lg:bottom-auto lg:w-[380px] lg:flex-shrink-0 lg:border lg:rounded-2xl lg:shadow-xl'
 
   return (
-    <div className="min-h-[100dvh] bg-[#0b1320]">
+    <div className="min-h-[100dvh] bg-[#00250e]">
       {/* ── Header ── */}
       <header className="px-5 pt-8 pb-6 text-center">
         <img src={WORDMARK_WHITE} alt="Core Cleaning" className="h-6 w-auto mx-auto mb-5 opacity-95" />
@@ -91,7 +91,7 @@ export function SignExperience({
               Your service agreement with Core Cleaning is signed and saved. A copy is below — keep it for your records.
             </p>
             <a href={`/sign/${token}/pdf`} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-2 mt-5 bg-white text-[#0b1320] text-sm font-bold rounded-xl px-5 py-3 active:scale-[0.98] transition-transform">
+              className="inline-flex items-center gap-2 mt-5 bg-white text-[#00250e] text-sm font-bold rounded-xl px-5 py-3 active:scale-[0.98] transition-transform">
               <Download className="w-4 h-4" /> Save a copy (PDF)
             </a>
           </>
@@ -151,7 +151,7 @@ export function SignExperience({
                 </div>
               </div>
               <label className="flex items-start gap-2.5 mt-4 cursor-pointer select-none">
-                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#0b1320] flex-shrink-0" />
+                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#00250e] flex-shrink-0" />
                 <span className="text-[13px] leading-snug text-gray-600">
                   I have read and agree to the terms of this Service Agreement, and I am authorised to sign on behalf of {data.clientName}.
                 </span>
@@ -160,7 +160,7 @@ export function SignExperience({
               <button
                 onClick={sign}
                 disabled={!hasName || !agreed || busy}
-                className="w-full mt-4 inline-flex items-center justify-center gap-2 bg-[#0b1320] text-white text-[15px] font-bold rounded-xl py-4 disabled:opacity-40 active:scale-[0.99] transition-all"
+                className="w-full mt-4 inline-flex items-center justify-center gap-2 bg-[#00250e] text-white text-[15px] font-bold rounded-xl py-4 disabled:opacity-40 active:scale-[0.99] transition-all"
               >
                 {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing…</> : <><ShieldCheck className="w-4 h-4" /> Sign &amp; onboard</>}
               </button>
@@ -193,7 +193,7 @@ export function SignExperience({
               <button
                 onClick={() => finish(false)}
                 disabled={busy}
-                className="w-full mt-4 inline-flex items-center justify-center gap-2 bg-[#0b1320] text-white text-[15px] font-bold rounded-xl py-4 disabled:opacity-40 active:scale-[0.99] transition-all"
+                className="w-full mt-4 inline-flex items-center justify-center gap-2 bg-[#00250e] text-white text-[15px] font-bold rounded-xl py-4 disabled:opacity-40 active:scale-[0.99] transition-all"
               >
                 {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Check className="w-4 h-4" /> Finish</>}
               </button>

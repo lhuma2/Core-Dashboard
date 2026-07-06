@@ -92,7 +92,7 @@ export function ClientOnboardingModal() {
             <div
               key={i}
               className="flex-1 transition-colors duration-300"
-              style={{ background: i <= step ? '#1e3a5f' : 'transparent' }}
+              style={{ background: i <= step ? '#00250e' : 'transparent' }}
             />
           ))}
         </div>
@@ -121,7 +121,7 @@ export function ClientOnboardingModal() {
             <ul className="space-y-2.5 mb-4">
               {screen.bullets.map((b, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
-                  <span className="mt-[5px] w-1.5 h-1.5 rounded-full bg-[#1e3a5f] flex-shrink-0" />
+                  <span className="mt-[5px] w-1.5 h-1.5 rounded-full bg-[#00250e] flex-shrink-0" />
                   {b}
                 </li>
               ))}
@@ -133,7 +133,7 @@ export function ClientOnboardingModal() {
         <div className="px-8 pb-8 flex flex-col gap-3">
           <button
             onClick={next}
-            className="w-full py-3 rounded-xl bg-[#1e3a5f] text-white text-sm font-semibold hover:bg-[#162d4a] transition-colors"
+            className="w-full py-3 rounded-xl bg-[#00250e] text-white text-sm font-semibold hover:bg-[#001a09] transition-colors"
           >
             {isLast ? 'Get started' : 'Next'}
           </button>

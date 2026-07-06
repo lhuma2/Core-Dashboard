@@ -57,7 +57,7 @@ export async function sendDocumentEmail(
       subject: `Document Ready: ${documentTitle}`,
       html: `
         <div style="font-family: Inter, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <div style="background: #1e3a5f; padding: 24px; border-radius: 8px 8px 0 0;">
+          <div style="background: #00250e; padding: 24px; border-radius: 8px 8px 0 0;">
             <h1 style="color: white; margin: 0; font-size: 24px;">Δ Core Cleaning</h1>
           </div>
           <div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
@@ -65,13 +65,13 @@ export async function sendDocumentEmail(
             <p style="font-size: 16px; color: #374151;">
               Please find your document ready for review:
             </p>
-            <h2 style="font-size: 20px; color: #1e3a5f; margin: 24px 0 16px;">${documentTitle}</h2>
+            <h2 style="font-size: 20px; color: #00250e; margin: 24px 0 16px;">${documentTitle}</h2>
             <p style="font-size: 14px; color: #6b7280;">
               You can view and sign your document using the link below.
             </p>
             <div style="margin: 32px 0;">
               <a href="${appUrl}/documents/${documentId}"
-                 style="background: #1e3a5f; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-size: 16px; font-weight: 600;">
+                 style="background: #00250e; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-size: 16px; font-weight: 600;">
                 View Document
               </a>
             </div>

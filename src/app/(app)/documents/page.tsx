@@ -25,7 +25,7 @@ const STATUS_STYLE: Record<string, string> = {
   accepted:          'bg-emerald-50 text-emerald-700 border-emerald-200',
   declined:          'bg-red-50 text-red-600 border-red-200',
   out_for_signature: 'bg-amber-50 text-amber-700 border-amber-200',
-  signed:            'bg-[#1e3a5f] text-white border-[#1e3a5f]',
+  signed:            'bg-[#00250e] text-white border-[#00250e]',
 }
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', sent: 'Sent', accepted: 'Accepted', declined: 'Declined',
@@ -77,8 +77,8 @@ export default async function DocumentsPage() {
             return (
               <div key={d.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
                 <Link href={`/documents/${d.id}`} className="flex items-center gap-4 min-w-0 flex-1">
-                  <div className="w-9 h-9 rounded-lg bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-4 h-4 text-[#1e3a5f]" />
+                  <div className="w-9 h-9 rounded-lg bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4 text-[#00250e]" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-gray-900 truncate">{d.client_name || 'Untitled'}</p>
@@ -101,15 +101,15 @@ export default async function DocumentsPage() {
         <div className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden divide-y divide-gray-100">
           {COMPANY_DOCS.map((d) => (
             <div key={d.file} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-              <div className="w-9 h-9 rounded-lg bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-[#1e3a5f]" />
+              <div className="w-9 h-9 rounded-lg bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-[#00250e]" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
                 <p className="text-xs text-gray-400 mt-0.5">PDF · standard document</p>
               </div>
               <a href={d.file} target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1e3a5f] border border-[#1e3a5f]/20 rounded-full px-4 py-1.5 hover:bg-[#1e3a5f] hover:text-white transition-colors flex-shrink-0">
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-4 py-1.5 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">
                 <FileDown className="w-3.5 h-3.5" /> View
               </a>
             </div>
@@ -125,8 +125,8 @@ export default async function DocumentsPage() {
               const client = clientMap.get(c.client_id) as any
               return (
                 <div key={c.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                  <div className="w-9 h-9 rounded-lg bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 flex items-center justify-center flex-shrink-0">
-                    <FilePen className="w-4 h-4 text-[#1e3a5f]" />
+                  <div className="w-9 h-9 rounded-lg bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0">
+                    <FilePen className="w-4 h-4 text-[#00250e]" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-gray-900 truncate">{client?.business_name ?? 'Unknown client'}</p>
@@ -134,7 +134,7 @@ export default async function DocumentsPage() {
                   </div>
                   {c.file_url && (
                     <a href={`/api/file?url=${Buffer.from(c.file_url).toString('base64url')}`} target="_blank" rel="noreferrer"
-                      className="text-[11px] font-semibold text-[#1e3a5f] border border-[#1e3a5f]/20 rounded-full px-4 py-1.5 hover:bg-[#1e3a5f] hover:text-white transition-colors flex-shrink-0">
+                      className="text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-4 py-1.5 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">
                       View
                     </a>
                   )}

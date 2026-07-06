@@ -30,7 +30,7 @@ export function SectionNav() {
             key={t.href}
             href={t.href}
             className={`inline-flex items-center px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px whitespace-nowrap transition-colors ${
-              active ? 'border-[#1e3a5f] text-[#1e3a5f]' : 'border-transparent text-gray-400 hover:text-gray-700'
+              active ? 'border-[#00250e] text-[#00250e]' : 'border-transparent text-gray-400 hover:text-gray-700'
             }`}
           >
             {t.label}

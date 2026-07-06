@@ -37,8 +37,8 @@ export function MoMGrowthChart({ data }: MoMGrowthChartProps) {
       <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
         <defs>
           <linearGradient id="momFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#1e3a5f" stopOpacity={0.18} />
-            <stop offset="100%" stopColor="#1e3a5f" stopOpacity={0} />
+            <stop offset="0%" stopColor="#00250e" stopOpacity={0.18} />
+            <stop offset="100%" stopColor="#00250e" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -66,10 +66,10 @@ export function MoMGrowthChart({ data }: MoMGrowthChartProps) {
         <Area
           type="monotone"
           dataKey="revenue"
-          stroke="#1e3a5f"
+          stroke="#00250e"
           strokeWidth={2}
           fill="url(#momFill)"
-          dot={{ r: 2.5, fill: '#1e3a5f' }}
+          dot={{ r: 2.5, fill: '#00250e' }}
           activeDot={{ r: 4 }}
         />
       </AreaChart>

@@ -59,7 +59,7 @@ export function SiteSelector({ sites, selectedSiteId }: Props) {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-1.5 text-sm font-medium text-slate-200 hover:text-white focus:outline-none transition-colors max-w-[180px]"
       >
-        <MapPin className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+        <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
         <span className="truncate">{selected?.label ?? 'All sites'}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>

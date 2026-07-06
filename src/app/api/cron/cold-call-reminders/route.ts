@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     <tr>
       <td style="padding:8px 12px;border-bottom:1px solid #eee;font-weight:600;">${l.business_name}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #eee;">${[l.contact_name, l.suburb].filter(Boolean).join(' · ') || '—'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #eee;">${l.phone ? `<a href="tel:${l.phone.replace(/[^\d+]/g, '')}" style="color:#1e3a5f;">${l.phone}</a>` : '—'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;">${l.phone ? `<a href="tel:${l.phone.replace(/[^\d+]/g, '')}" style="color:#00250e;">${l.phone}</a>` : '—'}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #eee;color:#888;">${l.follow_up_note || ''}</td>
     </tr>`
 
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   ${followUps.length > 0 ? `<h3 style="font-size:14px;margin:18px 0 6px;">Follow-ups due (${followUps.length})</h3>${table(followUps)}` : ''}
   ${retries.length > 0 ? `<h3 style="font-size:14px;margin:18px 0 6px;">Try again today (${retries.length})</h3>${table(retries)}` : ''}
   <p style="margin-top:20px;font-size:14px;">
-    <a href="https://portal.corecleaning.services/calls" style="color:#1e3a5f;font-weight:600;">Open the call deck →</a>
+    <a href="https://portal.corecleaning.services/calls" style="color:#00250e;font-weight:600;">Open the call deck →</a>
   </p>
 </div>`
 

@@ -77,7 +77,7 @@ export function CreatePortalUserForm({ clients }: { clients: Client[] }) {
               onClick={() => setRole(r)}
               className={`text-xs font-semibold py-2 rounded-lg border capitalize transition-all ${
                 role === r
-                  ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white'
+                  ? 'bg-[#00250e] border-[#00250e] text-white'
                   : 'border-gray-200 text-gray-500 hover:border-gray-400'
               }`}
             >

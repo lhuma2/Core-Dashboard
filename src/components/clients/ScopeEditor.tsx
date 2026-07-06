@@ -67,7 +67,7 @@ export function ScopeEditor({
           {title ?? 'Cleaning schedule & scope'}
         </h3>
         <button onClick={save} disabled={saving}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#1e3a5f] text-white hover:bg-[#16304f] disabled:opacity-50 transition-colors">
+          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#00250e] text-white hover:bg-[#16304f] disabled:opacity-50 transition-colors">
           {saved ? <><Check className="w-3.5 h-3.5" /> Saved</> : saving ? 'Saving…' : 'Save schedule'}
         </button>
       </div>
@@ -108,16 +108,16 @@ export function ScopeEditor({
         {tasks.map(t => (
           <div key={t.id} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-gray-50 sm:bg-transparent rounded-lg p-2 sm:p-0">
             <input value={t.area} onChange={e => updateTask(t.id, { area: e.target.value })} placeholder="Office"
-              className="w-28 px-2.5 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#1e3a5f] focus:ring-0 outline-none" />
+              className="w-28 px-2.5 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#00250e] focus:ring-0 outline-none" />
             <input value={t.task} onChange={e => updateTask(t.id, { task: e.target.value })} placeholder="Vacuum carpets and traffic lanes"
-              className="flex-1 min-w-[180px] px-2.5 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#1e3a5f] focus:ring-0 outline-none" />
+              className="flex-1 min-w-[180px] px-2.5 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#00250e] focus:ring-0 outline-none" />
             <select value={t.frequency} onChange={e => updateTask(t.id, { frequency: e.target.value as ScopeFrequency })}
-              className="w-32 px-2 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:border-[#1e3a5f] outline-none">
+              className="w-32 px-2 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:border-[#00250e] outline-none">
               {FREQ_ORDER.map(f => <option key={f} value={f}>{FREQ_LABEL[f]}</option>)}
             </select>
             <select value={t.day ?? ''} onChange={e => updateTask(t.id, { day: e.target.value || undefined })}
               disabled={t.frequency === 'visit'}
-              className="w-20 px-2 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:border-[#1e3a5f] outline-none disabled:bg-gray-100 disabled:text-gray-300">
+              className="w-20 px-2 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:border-[#00250e] outline-none disabled:bg-gray-100 disabled:text-gray-300">
               <option value="">—</option>
               {(cleanDays.length ? WEEKDAY_KEYS.filter(d => cleanDays.includes(d)) : WEEKDAY_KEYS).map(d => <option key={d} value={d}>{d}</option>)}
             </select>
@@ -129,7 +129,7 @@ export function ScopeEditor({
       </div>
 
       <button onClick={addTask}
-        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f] hover:text-[#16304f] transition-colors">
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#00250e] hover:text-[#16304f] transition-colors">
         <Plus className="w-4 h-4" /> Add task
       </button>
 

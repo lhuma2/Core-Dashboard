@@ -18,7 +18,7 @@ export default async function OnboardPage({ params }: { params: { code: string }
 
   if (!sub) {
     return (
-      <div className="min-h-[100dvh] bg-[#0b1320] flex items-center justify-center px-6 text-center">
+      <div className="min-h-[100dvh] bg-[#00250e] flex items-center justify-center px-6 text-center">
         <div>
           <h1 className="text-white text-xl font-bold mb-2">This onboarding link isn&apos;t valid</h1>
           <p className="text-slate-400 text-sm max-w-xs mx-auto">The link may be mistyped or no longer active. Please contact Core Cleaning.</p>
