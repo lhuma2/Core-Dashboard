@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Loader2, Check, PenLine } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { Loader2, Check, PenLine, GripVertical } from 'lucide-react'
 import { submitCompanyDocSignatureAction } from '@/actions/signing'
 
 const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
@@ -31,6 +31,33 @@ export function CompanyDocSignExperience({
   const [err, setErr] = useState<string | null>(null)
   const [done, setDone] = useState(alreadySigned)
   const firstSigRef = useRef<HTMLInputElement>(null)
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([])
+  const dragging = useRef<null | { id: string }>(null)
+
+  const onMove = useCallback((e: MouseEvent) => {
+    const d = dragging.current
+    if (!d) return
+    setPlacements((prev) => prev.map((pl) => {
+      if (pl.id !== d.id) return pl
+      const wrap = pageRefs.current[pl.page - 1]
+      if (!wrap) return pl
+      const r = wrap.getBoundingClientRect()
+      const x = Math.min(97, Math.max(1, ((e.clientX - r.left) / r.width) * 100))
+      const y = Math.min(99, Math.max(1, ((e.clientY - r.top) / r.height) * 100))
+      return { ...pl, x, y }
+    }))
+  }, [])
+  const stopMove = useCallback(() => {
+    dragging.current = null
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', stopMove)
+  }, [onMove])
+  const startMove = (pid: string) => (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    dragging.current = { id: pid }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', stopMove)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -112,7 +139,7 @@ export function CompanyDocSignExperience({
               {pages.map((pg, i) => {
                 const pageNum = i + 1
                 return (
-                  <div key={i} className="relative bg-white shadow-md w-full" style={{ aspectRatio: `1 / ${pg.aspect}` }}>
+                  <div key={i} ref={(el) => { pageRefs.current[i] = el }} className="relative bg-white shadow-md w-full" style={{ aspectRatio: `1 / ${pg.aspect}` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={pg.src} alt={`Page ${pageNum}`} className="absolute inset-0 w-full h-full" draggable={false} />
                     {placements.filter((pl) => pl.page === pageNum).map((pl) => {
@@ -121,7 +148,14 @@ export function CompanyDocSignExperience({
                       if (pl.type === 'signature') {
                         const isFirst = sigIndex++ === 0
                         return (
-                          <div key={pl.id} style={{ left: `${pl.x}%`, top: `${pl.y}%` }} className="absolute -translate-y-1/2">
+                          <div key={pl.id} style={{ left: `${pl.x}%`, top: `${pl.y}%` }} className="absolute -translate-y-1/2 inline-flex items-center gap-0.5">
+                            <button
+                              onMouseDown={startMove(pl.id)}
+                              className="cursor-move text-amber-600 hover:text-amber-700 bg-yellow-100/80 rounded-l px-0.5 py-1 outline outline-1 outline-amber-400"
+                              aria-label="Drag to move signature" title="Drag to move"
+                            >
+                              <GripVertical className="w-3.5 h-3.5" />
+                            </button>
                             <input
                               ref={isFirst ? firstSigRef : undefined}
                               value={pl.text ?? ''}
@@ -129,7 +163,7 @@ export function CompanyDocSignExperience({
                               placeholder="Sign here"
                               size={Math.max(8, (pl.text ?? '').length)}
                               style={{ fontFamily: SIGN_FONT, fontSize: size, color: '#111827' }}
-                              className="bg-yellow-100/70 outline outline-1 outline-amber-400 rounded px-1 min-w-[7rem]"
+                              className="bg-yellow-100/70 outline outline-1 outline-amber-400 rounded-r px-1 min-w-[7rem]"
                             />
                           </div>
                         )
@@ -150,7 +184,7 @@ export function CompanyDocSignExperience({
           <div className="flex-shrink-0 bg-white border-t border-gray-200 px-5 py-3 flex items-center justify-between gap-3">
             <p className="text-xs text-gray-500 inline-flex items-center gap-1.5">
               <PenLine className="w-4 h-4 text-[#00250e]" />
-              {hasSignature ? 'Ready to submit.' : 'Type your name in the highlighted signature box.'}
+              {hasSignature ? 'Ready to submit — drag the handle to reposition if needed.' : 'Type your name in the highlighted signature box; drag the handle to move it.'}
               {err && <span className="text-red-500 ml-2">{err}</span>}
             </p>
             <button onClick={submit} disabled={busy}
