@@ -7,6 +7,7 @@ import { NewProposalButton } from '@/components/documents/NewProposalButton'
 import { DeleteDocButton } from '@/components/documents/DeleteDocButton'
 import { UploadCompanyDocButton } from '@/components/documents/UploadCompanyDocButton'
 import { DeleteCompanyDocButton } from '@/components/documents/DeleteCompanyDocButton'
+import { SignedDocsFolders } from '@/components/documents/SignedDocsFolders'
 import { FileText, FilePen, ChevronRight, FileDown } from 'lucide-react'
 
 const KIND_LABEL: Record<string, string> = {
@@ -32,7 +33,22 @@ export default async function DocumentsPage() {
     .select('id, kind, status, ref_number, client_name, updated_at')
     .order('updated_at', { ascending: false })
 
-  const list: any[] = docs ?? []
+  const all: any[] = docs ?? []
+  // Active documents up top; signed ones live in the folders section below.
+  const list: any[] = all.filter((d) => d.status !== 'signed')
+
+  // Signed documents + their folders
+  const { data: signedRows } = await db
+    .from('proposal_documents')
+    .select('id, kind, client_name, folder_id, signed_at')
+    .eq('status', 'signed')
+    .order('signed_at', { ascending: false })
+  const signedDocs: any[] = signedRows ?? []
+  const { data: folderRows } = await db
+    .from('document_folders')
+    .select('id, name')
+    .order('name')
+  const folders: any[] = folderRows ?? []
 
   // All saved contract PDFs across clients (stored per client, surfaced here too).
   const { data: contractRows } = await db
@@ -98,6 +114,8 @@ export default async function DocumentsPage() {
           })}
         </div>
       )}
+
+      <SignedDocsFolders folders={folders} signed={signedDocs} />
 
       <div className="pt-2">
         <div className="flex items-center justify-between mb-3">
