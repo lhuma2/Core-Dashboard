@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Minus, Plus, Palette, PenLine, Send } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Palette, PenLine, Send } from 'lucide-react'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
 
@@ -146,8 +146,31 @@ export function CompanyDocEditor({
   const cycleBg = (pid: string) =>
     setPlacements((p) => p.map((x) => x.id === pid
       ? { ...x, bg: BG_CYCLE[(BG_CYCLE.indexOf(x.bg ?? 'white') + 1) % BG_CYCLE.length] } : x))
-  const changeSize = (pid: string, delta: number) =>
-    setPlacements((p) => p.map((x) => x.id === pid ? { ...x, size: Math.min(48, Math.max(8, (x.size ?? 15) + delta)) } : x))
+
+  // ── Corner-handle resize (scales font size from the box centre) ──────────
+  const resizing = useRef<null | { id: string; cx: number; cy: number; startDist: number; startSize: number }>(null)
+  const onResize = useCallback((e: MouseEvent) => {
+    const r = resizing.current
+    if (!r) return
+    const dist = Math.hypot(e.clientX - r.cx, e.clientY - r.cy)
+    const next = Math.min(72, Math.max(8, Math.round(r.startSize * (dist / (r.startDist || 1)))))
+    setPlacements((prev) => prev.map((pl) => (pl.id === r.id ? { ...pl, size: next } : pl)))
+  }, [])
+  const stopResize = useCallback(() => {
+    resizing.current = null
+    window.removeEventListener('mousemove', onResize)
+    window.removeEventListener('mouseup', stopResize)
+  }, [onResize])
+  const startResize = (pid: string, startSize: number) => (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    const box = (e.currentTarget as HTMLElement).parentElement as HTMLElement
+    const rect = box.getBoundingClientRect()
+    const cx = rect.left + rect.width / 2
+    const cy = rect.top + rect.height / 2
+    resizing.current = { id: pid, cx, cy, startDist: Math.hypot(e.clientX - cx, e.clientY - cy) || 1, startSize }
+    window.addEventListener('mousemove', onResize)
+    window.addEventListener('mouseup', stopResize)
+  }
 
   return (
     <div className="h-[calc(100dvh-3.5rem)] flex flex-col -m-4 lg:-m-8">
@@ -213,8 +236,9 @@ export function CompanyDocEditor({
           })}
           <p className="text-[11px] text-gray-400 leading-relaxed border-t border-gray-100 pt-3">
             Drag a field onto the document — it drops as a white box so it <span className="font-semibold text-gray-500">covers</span> printed
-            placeholders like <span className="font-semibold text-gray-500">$0.00</span>. Click a placed field to keep its
-            controls open (move, background, font size, remove) until you click elsewhere. Changes save automatically.
+            placeholders like <span className="font-semibold text-gray-500">$0.00</span>. Click a placed field to select it,
+            then drag its <span className="font-semibold text-gray-500">corner handles</span> to resize, or use the toolbar to
+            move, change background, or remove. Changes save automatically.
           </p>
         </div>
 
@@ -256,15 +280,13 @@ export function CompanyDocEditor({
                         <div className={`absolute -top-6 left-0 items-center gap-0.5 bg-gray-900 text-white rounded px-1 py-0.5 shadow-lg z-10 whitespace-nowrap ${selected ? 'flex' : 'hidden group-hover:flex'}`}>
                           <button onMouseDown={startMove(pl.id)} className="p-0.5 cursor-move hover:text-emerald-300" aria-label="Move" title="Drag to move"><GripVertical className="w-3 h-3" /></button>
                           <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); cycleBg(pl.id) }} className="p-0.5 hover:text-emerald-300" aria-label="Background" title="Background: white / dark / none"><Palette className="w-3 h-3" /></button>
-                          <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); changeSize(pl.id, -1) }} className="p-0.5 hover:text-emerald-300" aria-label="Smaller" title="Smaller"><Minus className="w-3 h-3" /></button>
-                          <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); changeSize(pl.id, 1) }} className="p-0.5 hover:text-emerald-300" aria-label="Larger" title="Larger"><Plus className="w-3 h-3" /></button>
                           <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); removePlacement(pl.id) }} className="p-0.5 hover:text-red-400" aria-label="Remove" title="Remove"><X className="w-3 h-3" /></button>
                         </div>
                         {/* The value box that covers the underlying text */}
                         <div
                           onMouseDown={editable ? undefined : startMove(pl.id)}
                           style={boxStyle(bg, size, font)}
-                          className={`inline-flex items-center whitespace-nowrap ring-1 ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move'}`}
+                          className={`relative inline-flex items-center whitespace-nowrap ring-1 ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move'}`}
                         >
                           {editable ? (
                             <input
@@ -279,6 +301,15 @@ export function CompanyDocEditor({
                           ) : (
                             values[pl.type as 'clientName' | 'quotedPrice'] || FIELD_META[pl.type].label
                           )}
+                          {selected && [
+                            '-top-1 -left-1 cursor-nwse-resize',
+                            '-top-1 -right-1 cursor-nesw-resize',
+                            '-bottom-1 -left-1 cursor-nesw-resize',
+                            '-bottom-1 -right-1 cursor-nwse-resize',
+                          ].map((c, idx) => (
+                            <span key={idx} onMouseDown={startResize(pl.id, size)}
+                              className={`absolute ${c} w-2 h-2 bg-emerald-500 border border-white rounded-sm z-10`} />
+                          ))}
                         </div>
                       </div>
                     )
