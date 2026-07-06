@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addCompanyDocumentAction } from '@/actions/company-docs'
 import { Plus, Loader2 } from 'lucide-react'
 
-export function UploadCompanyDocButton() {
+export function UploadCompanyDocButton({ kind = 'document' }: { kind?: 'document' | 'sop' }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -29,7 +29,7 @@ export function UploadCompanyDocButton() {
       if (upErr) { setErr(upErr.message); setBusy(false); return }
       const { data } = supabase.storage.from('job-photos').getPublicUrl(path)
       const displayName = file.name.replace(/\.[^.]+$/, '')
-      const res = await addCompanyDocumentAction(displayName, data.publicUrl)
+      const res = await addCompanyDocumentAction(displayName, data.publicUrl, kind)
       if (res?.error) { setErr(res.error); setBusy(false); return }
       router.refresh()
     } catch {

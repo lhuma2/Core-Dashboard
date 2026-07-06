@@ -72,6 +72,7 @@ export default async function DocumentsPage() {
   const { data: uploadedRows } = await db
     .from('company_documents')
     .select('id, name, file_url, created_at')
+    .eq('kind', 'document')
     .order('created_at', { ascending: false })
   const uploadedDocs: any[] = uploadedRows ?? []
 

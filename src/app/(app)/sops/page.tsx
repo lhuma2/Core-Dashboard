@@ -1,16 +1,16 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { SOPTable } from '@/components/sops/SOPTable'
 import { SOPCategoryFilter } from '@/components/sops/SOPCategoryFilter'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { UploadCompanyDocButton } from '@/components/documents/UploadCompanyDocButton'
+import { DeleteCompanyDocButton } from '@/components/documents/DeleteCompanyDocButton'
 import { Plus, FileText, FileDown } from 'lucide-react'
 
-// Company SOP documents bundled as PDFs in /public/documents.
-const COMPANY_SOPS = [
-  { name: 'Bond Clean SOP', file: '/documents/bond-clean-sop.pdf' },
-]
+export const dynamic = 'force-dynamic'
 
 export default async function SOPsPage({
   searchParams,
@@ -26,6 +26,15 @@ export default async function SOPsPage({
     .order('title')
 
   let sops = allSOPs || []
+
+  // Company SOP PDFs (uploaded / bundled) — managed like company documents.
+  const adminDb = createAdminClient() as any
+  const { data: companySopRows } = await adminDb
+    .from('company_documents')
+    .select('id, name, file_url')
+    .eq('kind', 'sop')
+    .order('created_at', { ascending: false })
+  const companySops: any[] = companySopRows ?? []
 
   if (!searchParams.archived) {
     sops = sops.filter((s) => s.active)
@@ -75,10 +84,16 @@ export default async function SOPsPage({
       </Card>
 
       <div className="pt-1">
-        <p className="text-sm text-gray-500 mb-3">Company SOPs · {COMPANY_SOPS.length}</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm text-gray-500">Company SOPs · {companySops.length}</p>
+          <UploadCompanyDocButton kind="sop" />
+        </div>
         <div className="bg-white rounded-2xl border border-gray-200/70 shadow-[0_1px_2px_rgba(16,24,40,0.05)] overflow-hidden divide-y divide-gray-100">
-          {COMPANY_SOPS.map((d) => (
-            <div key={d.file} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+          {companySops.length === 0 && (
+            <p className="px-5 py-6 text-sm text-gray-400 text-center">No company SOPs. Use the + button to upload a PDF.</p>
+          )}
+          {companySops.map((d) => (
+            <div key={d.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
               <div className="w-9 h-9 rounded-lg bg-[#003314]/5 border border-[#003314]/10 flex items-center justify-center flex-shrink-0">
                 <FileText className="w-4 h-4 text-[#003314]" />
               </div>
@@ -86,10 +101,11 @@ export default async function SOPsPage({
                 <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
                 <p className="text-xs text-gray-400 mt-0.5">PDF · standard procedure</p>
               </div>
-              <a href={d.file} target="_blank" rel="noreferrer"
+              <a href={d.file_url} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#003314] border border-[#003314]/20 rounded-full px-4 py-1.5 hover:bg-[#003314] hover:text-white transition-colors flex-shrink-0">
                 <FileDown className="w-3.5 h-3.5" /> View
               </a>
+              <DeleteCompanyDocButton id={d.id} />
             </div>
           ))}
         </div>
