@@ -47,6 +47,7 @@ export function CompanyDocEditor({
   const [loadingMsg, setLoadingMsg] = useState('Loading document…')
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('saved')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [showSend, setShowSend] = useState(false)
   const [activePage, setActivePage] = useState(1)
   const [zoom, setZoom] = useState(1)
@@ -361,6 +362,7 @@ export function CompanyDocEditor({
                         {/* The value box that covers the underlying text */}
                         <div
                           onPointerDown={editable ? undefined : startMove(pl.id)}
+                          onDoubleClick={editable ? undefined : (e) => { e.stopPropagation(); setEditingId(pl.id) }}
                           style={{ ...boxStyle(bg, size, font), ...(sized ? { width: '100%', height: '100%', display: 'flex', alignItems: 'center', overflow: 'hidden' } : {}) }}
                           className={`relative items-center whitespace-nowrap ring-1 ${sized ? 'flex' : 'inline-flex'} ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move touch-none'}`}
                         >
@@ -371,6 +373,19 @@ export function CompanyDocEditor({
                               onPointerDown={(e) => e.stopPropagation()}
                               placeholder={pl.type === 'signature' ? 'Signature…' : 'Type…'}
                               size={Math.max(4, (pl.text ?? '').length)}
+                              style={{ fontFamily: font, fontSize: size, fontWeight: 400, color: 'inherit' }}
+                              className="bg-transparent outline-none min-w-[2rem]"
+                            />
+                          ) : editingId === pl.id ? (
+                            <input
+                              autoFocus
+                              value={values[pl.type as keyof FieldValues]}
+                              onChange={(e) => setValues((v) => ({ ...v, [pl.type]: e.target.value }))}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onBlur={() => setEditingId(null)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') setEditingId(null) }}
+                              placeholder={FIELD_META[pl.type].placeholder}
+                              size={Math.max(4, values[pl.type as keyof FieldValues].length)}
                               style={{ fontFamily: font, fontSize: size, fontWeight: 400, color: 'inherit' }}
                               className="bg-transparent outline-none min-w-[2rem]"
                             />
