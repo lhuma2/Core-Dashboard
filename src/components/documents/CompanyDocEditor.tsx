@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Palette, PenLine, Send, Plus, Calendar } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Palette, PenLine, Send, Plus, Calendar, ZoomIn, ZoomOut } from 'lucide-react'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
 
@@ -49,6 +49,8 @@ export function CompanyDocEditor({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showSend, setShowSend] = useState(false)
   const [activePage, setActivePage] = useState(1)
+  const [zoom, setZoom] = useState(1)
+  const pinch = useRef<null | { d0: number; z0: number }>(null)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -140,6 +142,15 @@ export function CompanyDocEditor({
     })
     setActivePage(best)
   }
+
+  // Pinch-to-zoom (two fingers) on the document — plus the +/- buttons.
+  const clampZoom = (z: number) => Math.min(3, Math.max(0.5, Math.round(z * 100) / 100))
+  const touchDist = (t: React.TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
+  const onTouchStart = (e: React.TouchEvent) => { if (e.touches.length === 2) pinch.current = { d0: touchDist(e.touches), z0: zoom } }
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinch.current) setZoom(clampZoom(pinch.current.z0 * (touchDist(e.touches) / (pinch.current.d0 || 1))))
+  }
+  const onTouchEnd = () => { pinch.current = null }
 
   // ── Reposition an EXISTING placement (mouse drag) ────────────────────────
   const onMove = useCallback((e: MouseEvent) => {
@@ -304,14 +315,16 @@ export function CompanyDocEditor({
           </p>
         </div>
 
-        {/* Right: full scrollable PDF with drop targets */}
-        <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto bg-[#E6E8EB] p-4" onPointerDown={() => setSelectedId(null)}>
+        {/* Right: full scrollable + zoomable PDF with drop targets */}
+        <div className="flex-1 relative min-h-0">
+        <div ref={scrollRef} onScroll={onScroll} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+          className="absolute inset-0 overflow-auto bg-[#E6E8EB] p-4" onPointerDown={() => setSelectedId(null)}>
           {pages.length === 0 && (
             <div className="h-full flex items-center justify-center text-sm text-gray-500">
               <Loader2 className="w-4 h-4 animate-spin mr-2" /> {loadingMsg}
             </div>
           )}
-          <div className="max-w-[720px] mx-auto space-y-4">
+          <div className="mx-auto space-y-4" style={{ width: `${zoom * 100}%`, maxWidth: zoom > 1 ? 'none' : 720 }}>
             {pages.map((pg, i) => {
               const pageNum = i + 1
               return (
@@ -389,6 +402,13 @@ export function CompanyDocEditor({
               )
             })}
           </div>
+        </div>
+        {/* Zoom control — tap +/- (works on iOS) or pinch with two fingers */}
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-0.5 bg-white rounded-full shadow-lg border border-gray-200 px-1 py-1">
+          <button onClick={() => setZoom((z) => clampZoom(z - 0.25))} aria-label="Zoom out" className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><ZoomOut className="w-4 h-4" /></button>
+          <button onClick={() => setZoom(1)} className="px-2 text-xs font-semibold text-gray-600 tabular-nums min-w-[3.2rem]">{Math.round(zoom * 100)}%</button>
+          <button onClick={() => setZoom((z) => clampZoom(z + 0.25))} aria-label="Zoom in" className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><ZoomIn className="w-4 h-4" /></button>
+        </div>
         </div>
       </div>
     </div>
