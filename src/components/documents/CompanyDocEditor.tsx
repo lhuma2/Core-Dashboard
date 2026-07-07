@@ -27,21 +27,36 @@ function fontForType(type: FieldType): string {
   if (type === 'clientName') return NAME_FONT
   return DOC_FONT
 }
-// When a box has been given an explicit width/height (via the wall handles), the text should
-// scale to fill that box as it's resized rather than staying pinned to the manual corner-drag
-// size. Container query units (cqh/cqw) do this live, in CSS, with no re-render needed.
-// NOTE: cqh/cqw only resolve on a *descendant* of the container-type element — an element
-// can't query its own containment box — so this must be applied to the text node/input
-// inside the sized box, never to the box that carries `containerType` itself.
-function fitFontSize(sized: boolean, size: number): string {
-  return sized ? 'min(72cqh, 22cqw)' : `${size}px`
-}
-// Layout/background only — font sizing lives on the inner text element (see fitFontSize).
+// Layout/background only — font sizing is measured live per-box (see FitBox below).
 function boxStyle(bg: BgStyle): React.CSSProperties {
   const base: React.CSSProperties = { lineHeight: 1.15, fontWeight: 400, padding: '2px 6px', borderRadius: 4 }
   if (bg === 'white') return { ...base, background: '#ffffff', color: '#111827' }
   if (bg === 'dark')  return { ...base, background: '#00250e', color: '#ffffff' }
   return { ...base, background: 'transparent', color: '#111827', textShadow: '0 1px 4px rgba(255,255,255,0.9)' }
+}
+// When a box has an explicit width/height (from dragging the wall handles), the text should
+// scale to fill it as it's resized. Uses ResizeObserver + plain JS math instead of CSS
+// container-query units (cqh/cqw) — cqh/cqw need iOS 16+/recent WebKit and have had inconsistent
+// support across browsers/versions, while ResizeObserver has worked in Safari since iOS 13.4,
+// so this measures and fits identically on iOS, Android, and desktop.
+function FitBox({ sized, size, children }: { sized: boolean; size: number; children: (fontPx: number) => React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [fit, setFit] = useState(size)
+  useEffect(() => {
+    if (!sized) return
+    const el = ref.current
+    if (!el) return
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) setFit(Math.max(6, Math.min(r.height * 0.72, r.width * 0.22)))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [sized])
+  if (!sized) return <>{children(size)}</>
+  return <div ref={ref} className="w-full h-full flex items-center justify-center overflow-hidden">{children(fit)}</div>
 }
 type FieldValues = { clientName: string; quotedPrice: string; date: string }
 type PageImg = { src: string; aspect: number } // aspect = height / width
@@ -395,37 +410,39 @@ export function CompanyDocEditor({
                         <div
                           onPointerDown={editable ? undefined : startMove(pl.id)}
                           onDoubleClick={editable ? undefined : (e) => { e.stopPropagation(); setEditingId(pl.id) }}
-                          style={{ ...boxStyle(bg), ...(sized ? { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', containerType: 'size' } as React.CSSProperties : {}) }}
+                          style={{ ...boxStyle(bg), ...(sized ? { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' } as React.CSSProperties : {}) }}
                           className={`relative items-center whitespace-nowrap ring-1 ${sized ? 'flex' : 'inline-flex'} ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move touch-none'}`}
                         >
-                          {editable ? (
-                            <input
-                              value={pl.text ?? ''}
-                              onChange={(e) => updateText(pl.id, e.target.value)}
-                              onPointerDown={(e) => e.stopPropagation()}
-                              placeholder={pl.type === 'signature' ? 'Signature…' : 'Type…'}
-                              size={Math.max(4, (pl.text ?? '').length)}
-                              style={{ fontFamily: font, fontSize: fitFontSize(sized, size), fontWeight: 400, color: 'inherit', ...(sized ? { width: '100%', textAlign: 'center' } : {}) }}
-                              className="bg-transparent outline-none min-w-[2rem]"
-                            />
-                          ) : editingId === pl.id ? (
-                            <input
-                              autoFocus
-                              value={values[pl.type as keyof FieldValues]}
-                              onChange={(e) => setValues((v) => ({ ...v, [pl.type]: e.target.value }))}
-                              onPointerDown={(e) => e.stopPropagation()}
-                              onBlur={() => setEditingId(null)}
-                              onKeyDown={(e) => { if (e.key === 'Enter') setEditingId(null) }}
-                              placeholder={FIELD_META[pl.type].placeholder}
-                              size={Math.max(4, values[pl.type as keyof FieldValues].length)}
-                              style={{ fontFamily: font, fontSize: fitFontSize(sized, size), fontWeight: 400, color: 'inherit', ...(sized ? { width: '100%', textAlign: 'center' } : {}) }}
-                              className="bg-transparent outline-none min-w-[2rem]"
-                            />
-                          ) : (
-                            <span style={{ fontFamily: font, fontSize: fitFontSize(sized, size), fontWeight: 400, color: 'inherit', whiteSpace: 'nowrap' }}>
-                              {values[pl.type as keyof FieldValues] || FIELD_META[pl.type].label}
-                            </span>
-                          )}
+                          <FitBox sized={sized} size={size}>
+                            {(fontPx) => editable ? (
+                              <input
+                                value={pl.text ?? ''}
+                                onChange={(e) => updateText(pl.id, e.target.value)}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                placeholder={pl.type === 'signature' ? 'Signature…' : 'Type…'}
+                                size={Math.max(4, (pl.text ?? '').length)}
+                                style={{ fontFamily: font, fontSize: fontPx, fontWeight: 400, color: 'inherit', ...(sized ? { width: '100%', textAlign: 'center' } : {}) }}
+                                className="bg-transparent outline-none min-w-[2rem]"
+                              />
+                            ) : editingId === pl.id ? (
+                              <input
+                                autoFocus
+                                value={values[pl.type as keyof FieldValues]}
+                                onChange={(e) => setValues((v) => ({ ...v, [pl.type]: e.target.value }))}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onBlur={() => setEditingId(null)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') setEditingId(null) }}
+                                placeholder={FIELD_META[pl.type].placeholder}
+                                size={Math.max(4, values[pl.type as keyof FieldValues].length)}
+                                style={{ fontFamily: font, fontSize: fontPx, fontWeight: 400, color: 'inherit', ...(sized ? { width: '100%', textAlign: 'center' } : {}) }}
+                                className="bg-transparent outline-none min-w-[2rem]"
+                              />
+                            ) : (
+                              <span style={{ fontFamily: font, fontSize: fontPx, fontWeight: 400, color: 'inherit', whiteSpace: 'nowrap' }}>
+                                {values[pl.type as keyof FieldValues] || FIELD_META[pl.type].label}
+                              </span>
+                            )}
+                          </FitBox>
                           {selected && [
                             '-top-3 -left-3 cursor-nwse-resize',
                             '-top-3 -right-3 cursor-nesw-resize',
