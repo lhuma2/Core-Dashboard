@@ -34,12 +34,22 @@ function boxStyle(bg: BgStyle): React.CSSProperties {
   if (bg === 'dark')  return { ...base, background: '#00250e', color: '#ffffff' }
   return { ...base, background: 'transparent', color: '#111827', textShadow: '0 1px 4px rgba(255,255,255,0.9)' }
 }
+// Measures actual pixel text width for a given font, so long content (e.g. a typed-out
+// signature) shrinks to fit a fixed-size box instead of just overflowing it.
+let measureCanvasCtx: CanvasRenderingContext2D | null | undefined
+function measureTextWidth(text: string, font: string, px: number): number {
+  if (measureCanvasCtx === undefined) measureCanvasCtx = document.createElement('canvas').getContext('2d')
+  if (!measureCanvasCtx) return text.length * px * 0.6
+  measureCanvasCtx.font = `${px}px ${font}`
+  return measureCanvasCtx.measureText(text).width
+}
 // When a box has an explicit width/height (from dragging the wall handles), the text should
-// scale to fill it as it's resized. Uses ResizeObserver + plain JS math instead of CSS
-// container-query units (cqh/cqw) — cqh/cqw need iOS 16+/recent WebKit and have had inconsistent
-// support across browsers/versions, while ResizeObserver has worked in Safari since iOS 13.4,
-// so this measures and fits identically on iOS, Android, and desktop.
-function FitBox({ sized, size, children }: { sized: boolean; size: number; children: (fontPx: number) => React.ReactNode }) {
+// scale to fill it as it's resized — and shrink further if the actual content (e.g. a long
+// signature) is too wide to fit at that size. Uses ResizeObserver + canvas text measurement
+// instead of CSS container-query units (cqh/cqw), which need iOS 16+/recent WebKit and have
+// had inconsistent support — ResizeObserver has worked in Safari since iOS 13.4, so this
+// measures and fits identically on iOS, Android, and desktop.
+function FitBox({ sized, size, font, text, children }: { sized: boolean; size: number; font: string; text: string; children: (fontPx: number) => React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const [fit, setFit] = useState(size)
   useEffect(() => {
@@ -48,13 +58,17 @@ function FitBox({ sized, size, children }: { sized: boolean; size: number; child
     if (!el) return
     const measure = () => {
       const r = el.getBoundingClientRect()
-      if (r.width > 0 && r.height > 0) setFit(Math.max(6, Math.min(r.height * 0.72, r.width * 0.22)))
+      if (r.width <= 0 || r.height <= 0) return
+      let fontPx = Math.min(r.height * 0.72, r.width * 0.22)
+      const contentWidth = measureTextWidth(text || ' ', font, fontPx)
+      if (contentWidth > r.width) fontPx *= (r.width / contentWidth) * 0.94
+      setFit(Math.max(6, fontPx))
     }
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [sized])
+  }, [sized, text, font])
   if (!sized) return <>{children(size)}</>
   return <div ref={ref} className="w-full h-full flex items-center justify-center overflow-hidden">{children(fit)}</div>
 }
@@ -393,6 +407,8 @@ export function CompanyDocEditor({
                     const font = fontForType(pl.type)
                     const selected = selectedId === pl.id
                     const sized = pl.w != null || pl.h != null
+                    const displayText = editable ? (pl.text || (pl.type === 'signature' ? 'Signature…' : 'Type…'))
+                      : (values[pl.type as keyof FieldValues] || FIELD_META[pl.type].label)
                     return (
                       <div
                         key={pl.id}
@@ -413,7 +429,7 @@ export function CompanyDocEditor({
                           style={{ ...boxStyle(bg), ...(sized ? { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' } as React.CSSProperties : {}) }}
                           className={`relative items-center whitespace-nowrap ring-1 ${sized ? 'flex' : 'inline-flex'} ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move touch-none'}`}
                         >
-                          <FitBox sized={sized} size={size}>
+                          <FitBox sized={sized} size={size} font={font} text={displayText}>
                             {(fontPx) => editable ? (
                               <input
                                 value={pl.text ?? ''}
