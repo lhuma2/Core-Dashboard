@@ -30,14 +30,15 @@ function fontForType(type: FieldType): string {
 // When a box has been given an explicit width/height (via the wall handles), the text should
 // scale to fill that box as it's resized rather than staying pinned to the manual corner-drag
 // size. Container query units (cqh/cqw) do this live, in CSS, with no re-render needed.
+// NOTE: cqh/cqw only resolve on a *descendant* of the container-type element — an element
+// can't query its own containment box — so this must be applied to the text node/input
+// inside the sized box, never to the box that carries `containerType` itself.
 function fitFontSize(sized: boolean, size: number): string {
   return sized ? 'min(72cqh, 22cqw)' : `${size}px`
 }
-function boxStyle(bg: BgStyle, size: number, font: string, sized: boolean): React.CSSProperties {
-  const base: React.CSSProperties = {
-    fontFamily: font, fontSize: fitFontSize(sized, size), lineHeight: 1.15, fontWeight: 400,
-    padding: '2px 6px', borderRadius: 4,
-  }
+// Layout/background only — font sizing lives on the inner text element (see fitFontSize).
+function boxStyle(bg: BgStyle): React.CSSProperties {
+  const base: React.CSSProperties = { lineHeight: 1.15, fontWeight: 400, padding: '2px 6px', borderRadius: 4 }
   if (bg === 'white') return { ...base, background: '#ffffff', color: '#111827' }
   if (bg === 'dark')  return { ...base, background: '#00250e', color: '#ffffff' }
   return { ...base, background: 'transparent', color: '#111827', textShadow: '0 1px 4px rgba(255,255,255,0.9)' }
@@ -394,7 +395,7 @@ export function CompanyDocEditor({
                         <div
                           onPointerDown={editable ? undefined : startMove(pl.id)}
                           onDoubleClick={editable ? undefined : (e) => { e.stopPropagation(); setEditingId(pl.id) }}
-                          style={{ ...boxStyle(bg, size, font, sized), ...(sized ? { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', containerType: 'size' } as React.CSSProperties : {}) }}
+                          style={{ ...boxStyle(bg), ...(sized ? { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', containerType: 'size' } as React.CSSProperties : {}) }}
                           className={`relative items-center whitespace-nowrap ring-1 ${sized ? 'flex' : 'inline-flex'} ${selected ? 'ring-emerald-400' : 'ring-transparent group-hover:ring-emerald-400/70'} ${editable ? '' : 'cursor-move touch-none'}`}
                         >
                           {editable ? (
@@ -421,7 +422,9 @@ export function CompanyDocEditor({
                               className="bg-transparent outline-none min-w-[2rem]"
                             />
                           ) : (
-                            values[pl.type as keyof FieldValues] || FIELD_META[pl.type].label
+                            <span style={{ fontFamily: font, fontSize: fitFontSize(sized, size), fontWeight: 400, color: 'inherit', whiteSpace: 'nowrap' }}>
+                              {values[pl.type as keyof FieldValues] || FIELD_META[pl.type].label}
+                            </span>
                           )}
                           {selected && [
                             '-top-3 -left-3 cursor-nwse-resize',
