@@ -306,6 +306,98 @@ export const SWMS_LIST: Swms[] = [
       },
     ],
   },
+  {
+    code: 'SWMS 008',
+    title: 'Bond Cleaning Operations',
+    scope: 'End-of-lease bond cleans of vacant properties, including kitchens, bathrooms, ovens, carpets and fixtures, to inspection-ready standard.',
+    chemicals: ['Oven degreaser', 'Mould & mildew remover', 'Kuranda Disinfectant', 'pH 7 Detergent'],
+    rows: [
+      {
+        hazard: 'Oven and rangehood degreasing (confined space, strong chemicals)',
+        risk: 'Skin/eye burns, respiratory irritation from concentrated degreaser',
+        controls: ['Follow the SDS for the degreaser in use', 'Ventilate the kitchen — open windows/doors before starting', 'Apply in a well-lit area and avoid contact with skin', 'Never mix degreaser with other chemicals'],
+        ppe: ['Chemical-resistant gloves', 'Safety glasses', 'Face mask'],
+        emergency: 'Flush skin/eyes with water for 15 minutes; move to fresh air for fume exposure; seek medical help if symptoms persist.',
+      },
+      {
+        hazard: 'Mould and mildew in bathrooms/wet areas',
+        risk: 'Respiratory irritation, skin contact with mould spores and remover',
+        controls: ['Ventilate the room before and during treatment', 'Follow the SDS dilution for mould/mildew remover', 'Avoid dry-brushing mould — dampen first to limit airborne spores', 'Do not mix mould remover with other chemicals'],
+        ppe: ['Chemical-resistant gloves', 'Face mask', 'Safety glasses'],
+        emergency: 'Move to fresh air if affected; flush skin/eyes with water; follow SDS first aid.',
+      },
+      {
+        hazard: 'Unfamiliar / vacant property (no power, unknown layout, exposed hazards)',
+        risk: 'Trips, falls, working in the dark, electrical hazards',
+        controls: ['Confirm power/lighting is connected before starting; use a torch if not', 'Do a walkthrough first to identify hazards, damage or exposed wiring', 'Report any exposed wiring, gas smell or structural damage before working — do not proceed', 'Be alert for items left behind (sharps, broken glass)'],
+        ppe: ['Enclosed footwear', 'Gloves'],
+        emergency: 'Stop work and evacuate for a suspected gas leak or exposed live wiring; call 000/the relevant utility; notify Core Cleaning.',
+      },
+      {
+        hazard: 'Older properties — pre-1990 renovations (potential asbestos-containing materials)',
+        risk: 'Asbestos fibre exposure from damaged sheeting, tiles or textured surfaces',
+        controls: ['Do not drill, sand, scrape or forcefully clean any damaged or friable wall/ceiling sheeting', 'If suspected asbestos-containing material is identified, stop work in that area and notify Core Cleaning and the property manager', 'Clean intact surfaces only with a damp cloth — never dry-sweep or use high pressure on suspect surfaces', 'Never attempt removal or disturbance of suspected ACM'],
+        ppe: ['Gloves', 'Face mask where dust is present'],
+        emergency: 'Stop work immediately, leave the area, and notify Core Cleaning management; do not disturb the material further.',
+      },
+      {
+        hazard: 'Carpet steam cleaning (hot water, electrical equipment)',
+        risk: 'Scalds, electric shock, slips on wet carpet',
+        controls: ['Check leads and machine before use; use an RCD/safety switch', 'Keep the hot water hose and wand away from skin', 'Work from the back of the room to the exit to avoid re-walking wet carpet', 'Allow adequate drying time before the property is walked through'],
+        ppe: ['Enclosed waterproof footwear', 'Gloves'],
+        emergency: 'Isolate power before assisting a shock victim; run scalds under cool water; call 000 for serious injury.',
+      },
+      {
+        hazard: 'Time pressure to meet agent/inspection deadlines',
+        risk: 'Rushed work leading to slips, strains or missed hazards',
+        controls: ['Plan the job realistically before booking; allow time for drying/curing', 'Do not skip PPE or SDS steps to save time', 'Ask for help or reschedule rather than rushing a hazardous task', 'Communicate delays to the client/agent early'],
+        ppe: ['As required per task above'],
+        emergency: 'Stop and address any injury before continuing; report near-misses caused by time pressure.',
+      },
+    ],
+  },
+  {
+    code: 'SWMS 009',
+    title: 'Residential Cleaning Operations',
+    scope: 'Routine and deep cleaning of occupied private homes, including kitchens, bathrooms, living areas and bedrooms, while residents, children or pets may be present.',
+    rows: [
+      {
+        hazard: 'Occupied home — residents, children and visitors present',
+        risk: 'Slips/collisions in shared spaces, privacy concerns, disruption to the household',
+        controls: ['Confirm the cleaning schedule and any areas to avoid with the client beforehand', 'Keep work areas tidy and clear as you go to avoid trip hazards for residents', 'Respect private/off-limits rooms and personal belongings', 'Pause chemical use in a room if a child is present until it is ventilated'],
+        ppe: ['Enclosed footwear'],
+        emergency: 'If a resident is injured due to the clean, apply first aid where appropriate and notify Core Cleaning immediately.',
+      },
+      {
+        hazard: 'Pets in the home',
+        risk: 'Bites, scratches, tripping over animals, chemical exposure to pets',
+        controls: ['Ask the client to secure pets before the clean where possible', 'Keep chemicals, mop buckets and cords out of reach of pets', 'Move calmly around animals; do not corner or startle them', 'Close doors/gates behind you to keep pets out of wet or chemical-treated areas'],
+        ppe: ['Gloves'],
+        emergency: 'For a bite or scratch, wash the wound thoroughly and seek medical advice if it breaks the skin; report the incident.',
+      },
+      {
+        hazard: 'Unknown household hazards (clutter, stairs, uneven surfaces, pests)',
+        risk: 'Slips, trips and falls',
+        controls: ['Do a quick visual check of each room before starting', 'Ask the client to clear valuable/fragile clutter from work areas beforehand', 'Take extra care on stairs and with loose rugs/cords', 'Report any pest activity or hazardous conditions to Core Cleaning'],
+        ppe: ['Enclosed, slip-resistant footwear'],
+        emergency: 'Assist anyone who falls; call 000 for serious injury; record and report the incident.',
+      },
+      {
+        hazard: 'Kitchen and bathroom chemical use in a lived-in home',
+        risk: 'Skin/eye irritation, accidental exposure to residents or pets',
+        controls: ['Follow the SDS for every product used', 'Never leave chemicals unattended or within reach of children/pets', 'Ventilate the room during and after use', 'Store and transport chemicals securely between homes'],
+        ppe: ['Chemical-resistant gloves', 'Safety glasses'],
+        emergency: 'Flush skin/eyes with water for 15 minutes; follow SDS first aid; seek medical help if symptoms persist.',
+      },
+      {
+        hazard: 'Working alone in a private residence',
+        risk: 'Delayed help if injured, personal security',
+        controls: ['Keep a charged phone on you at all times', 'Advise Core Cleaning or a contact of the address and expected finish time', 'Trust your judgement — leave and report if a situation feels unsafe', 'Confirm identity/access with the client or agent before entering'],
+        ppe: ['As required per task'],
+        emergency: 'Call 000 in an emergency; then notify Core Cleaning on ' + COMPANY.phone + '.',
+      },
+    ],
+  },
 ]
 
 export const MODERN_SLAVERY = {
