@@ -378,13 +378,15 @@ export function CompanyDocEditor({
                             values[pl.type as keyof FieldValues] || FIELD_META[pl.type].label
                           )}
                           {selected && [
-                            '-top-1 -left-1 cursor-nwse-resize',
-                            '-top-1 -right-1 cursor-nesw-resize',
-                            '-bottom-1 -left-1 cursor-nesw-resize',
-                            '-bottom-1 -right-1 cursor-nwse-resize',
+                            '-top-3 -left-3 cursor-nwse-resize',
+                            '-top-3 -right-3 cursor-nesw-resize',
+                            '-bottom-3 -left-3 cursor-nesw-resize',
+                            '-bottom-3 -right-3 cursor-nwse-resize',
                           ].map((c, idx) => (
                             <span key={idx} onPointerDown={startResize(pl.id, size)}
-                              className={`absolute ${c} w-3 h-3 bg-emerald-500 border border-white rounded-sm z-10 touch-none`} />
+                              className={`absolute ${c} w-7 h-7 z-10 touch-none flex items-center justify-center`}>
+                              <span className="w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow" />
+                            </span>
                           ))}
                           {selected && (
                             <>
