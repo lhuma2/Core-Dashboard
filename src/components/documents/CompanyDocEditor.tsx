@@ -231,7 +231,13 @@ export function CompanyDocEditor({
   }
 
   // ── Edge (wall) resize — width via left/right, height via top/bottom ─────
-  const edgeResizing = useRef<null | { id: string; edge: 'l' | 'r' | 't' | 'b'; pageRect: DOMRect; x: number; y: number; rightPct: number }>(null)
+  // A box needs BOTH w and h defined before CSS container-query sizing (used to fit the
+  // text) can measure it — leaving one axis undefined makes that axis (and the fitted
+  // font) collapse to 0, which is what caused fields to vanish or snap to a sliver.
+  // So the very first edge drag seeds whichever dimension isn't set yet from the box's
+  // current rendered size, and every subsequent drag keeps both dimensions in the update.
+  const MIN_PCT = 6
+  const edgeResizing = useRef<null | { id: string; edge: 'l' | 'r' | 't' | 'b'; pageRect: DOMRect; x: number; y: number; rightPct: number; seedH: number }>(null)
   const onEdge = useCallback((e: MouseEvent) => {
     const r = edgeResizing.current
     if (!r) return
@@ -239,10 +245,12 @@ export function CompanyDocEditor({
     const my = ((e.clientY - r.pageRect.top) / r.pageRect.height) * 100
     setPlacements((prev) => prev.map((pl) => {
       if (pl.id !== r.id) return pl
-      if (r.edge === 'r') return { ...pl, w: Math.min(100, Math.max(1, mx - r.x)) }
-      if (r.edge === 'l') { const nx = Math.min(r.rightPct - 1, Math.max(0, mx)); return { ...pl, x: nx, w: Math.max(1, r.rightPct - nx) } }
-      if (r.edge === 'b') return { ...pl, h: Math.min(100, Math.max(1, 2 * (my - r.y))) }
-      return { ...pl, h: Math.min(100, Math.max(1, 2 * (r.y - my))) }
+      const h = pl.h ?? r.seedH
+      if (r.edge === 'r') return { ...pl, w: Math.min(100, Math.max(MIN_PCT, mx - r.x)), h }
+      if (r.edge === 'l') { const nx = Math.min(r.rightPct - MIN_PCT, Math.max(0, mx)); return { ...pl, x: nx, w: Math.max(MIN_PCT, r.rightPct - nx), h } }
+      const w = pl.w ?? (r.rightPct - r.x)
+      if (r.edge === 'b') return { ...pl, w, h: Math.min(100, Math.max(MIN_PCT, 2 * (my - r.y))) }
+      return { ...pl, w, h: Math.min(100, Math.max(MIN_PCT, 2 * (r.y - my))) }
     }))
   }, [])
   const stopEdge = useCallback(() => {
@@ -256,8 +264,12 @@ export function CompanyDocEditor({
     if (!pageRect) return
     const box = (e.currentTarget as HTMLElement).parentElement as HTMLElement
     const brect = box.getBoundingClientRect()
-    const startWpct = pl.w ?? (brect.width / pageRect.width) * 100
-    edgeResizing.current = { id: pl.id, edge, pageRect, x: pl.x, y: pl.y, rightPct: pl.x + startWpct }
+    const startWpct = pl.w ?? Math.max(MIN_PCT, (brect.width / pageRect.width) * 100)
+    const startHpct = pl.h ?? Math.max(MIN_PCT, (brect.height / pageRect.height) * 100)
+    edgeResizing.current = { id: pl.id, edge, pageRect, x: pl.x, y: pl.y, rightPct: pl.x + startWpct, seedH: startHpct }
+    // Seed the placement with both dimensions immediately so the box never renders
+    // with only one axis defined, even before the pointer moves.
+    setPlacements((prev) => prev.map((p) => (p.id === pl.id ? { ...p, w: p.w ?? startWpct, h: p.h ?? startHpct } : p)))
     window.addEventListener('pointermove', onEdge)
     window.addEventListener('pointerup', stopEdge)
   }
