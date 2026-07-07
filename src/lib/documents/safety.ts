@@ -29,7 +29,7 @@ export const DOC_CONTROL = {
 
 export const COMPANY = {
   name: 'Core Cleaning',
-  abn: '',
+  abn: '45 344 135 153',
   location: 'Brisbane, QLD',
   email: 'contact@corecleaning.services',
   web: 'www.corecleaning.services',

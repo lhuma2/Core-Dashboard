@@ -386,7 +386,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
       </div>
     </div>
     <p style="font-size:11px;color:#94a3b8;margin:18px auto 0;text-align:center;max-width:560px;line-height:1.7;">
-      Core Cleaning &middot; ABN  &middot; Brisbane QLD<br/>
+      Core Cleaning &middot; ABN 45 344 135 153 &middot; Brisbane QLD<br/>
       This signing link is unique to you &mdash; please don&rsquo;t forward it.
     </p>
   </div>`
