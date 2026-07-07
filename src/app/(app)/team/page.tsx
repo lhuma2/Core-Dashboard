@@ -52,40 +52,40 @@ export default async function TeamPage() {
   const clientUsers = users.filter((u) => u.role === 'client')
 
   function UserRow({ u, href }: { u: any; href?: string }) {
-    const inner = (
-      <div className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-            <UserCircle className="w-5 h-5 text-gray-500" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{u.full_name ?? '—'}</p>
-            {u.clientName && <p className="text-xs text-gray-500 mt-0.5 truncate">{u.clientName}</p>}
-            {u.role === 'cleaner' && (
-              <p className="text-xs text-gray-400 mt-0.5">{u.completedJobs} job{u.completedJobs === 1 ? '' : 's'} completed</p>
-            )}
-          </div>
+    const left = (
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <UserCircle className="w-5 h-5 text-gray-500" />
         </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{u.full_name ?? '—'}</p>
+          {u.clientName && <p className="text-xs text-gray-500 mt-0.5 truncate">{u.clientName}</p>}
+          {u.role === 'cleaner' && (
+            <p className="text-xs text-gray-400 mt-0.5">{u.completedJobs} job{u.completedJobs === 1 ? '' : 's'} completed</p>
+          )}
+        </div>
+      </div>
+    )
+    return (
+      <div className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
+        {href ? <Link href={href} className="min-w-0 flex-1">{left}</Link> : left}
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ROLE_COLORS[u.role] ?? ROLE_COLORS.admin}`}>
             {ROLE_LABELS[u.role] ?? u.role}
           </span>
           {href ? (
-            <ChevronRight className="w-4 h-4 text-gray-300" />
+            <Link href={href} className="text-gray-300 hover:text-gray-500"><ChevronRight className="w-4 h-4" /></Link>
           ) : (
-            <>
-              <EditPortalUserModal
-                profileId={u.id} userId={u.user_id} fullName={u.full_name ?? ''}
-                email={u.email ?? ''} role={u.role} linkedClientId={u.linked_client_id}
-                clients={clients ?? []}
-              />
-              <DeletePortalUserButton userId={u.user_id} userName={u.full_name} />
-            </>
+            <EditPortalUserModal
+              profileId={u.id} userId={u.user_id} fullName={u.full_name ?? ''}
+              email={u.email ?? ''} role={u.role} linkedClientId={u.linked_client_id}
+              clients={clients ?? []}
+            />
           )}
+          <DeletePortalUserButton userId={u.user_id} userName={u.full_name} />
         </div>
       </div>
     )
-    return href ? <Link href={href} className="block">{inner}</Link> : inner
   }
 
   function Section({ title, icon: Icon, list, linkCleaners }: { title: string; icon: any; list: any[]; linkCleaners?: boolean }) {
