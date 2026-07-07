@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, X, User, DollarSign, Type, Palette, PenLine, Send, Plus, Calendar, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Palette, PenLine, Send, Plus, Calendar, ZoomIn, ZoomOut } from 'lucide-react'
 import { saveProposalDocAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
 
@@ -47,17 +47,10 @@ export function CompanyDocEditor({
   const [loadingMsg, setLoadingMsg] = useState('Loading document…')
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('saved')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [showSend, setShowSend] = useState(false)
   const [activePage, setActivePage] = useState(1)
   const [zoom, setZoom] = useState(1)
   const pinch = useRef<null | { d0: number; z0: number }>(null)
-  // iOS gets its own resize-handle + toolbar treatment below — desktop/Android are untouched.
-  const [isIOS, setIsIOS] = useState(false)
-  useEffect(() => {
-    const ua = navigator.userAgent
-    setIsIOS(/iPad|iPhone|iPod/.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1))
-  }, [])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -359,13 +352,12 @@ export function CompanyDocEditor({
                         style={{ left: `${pl.x}%`, top: `${pl.y}%`, width: pl.w != null ? `${pl.w}%` : undefined, height: pl.h != null ? `${pl.h}%` : undefined }}
                         className="absolute -translate-y-1/2 group"
                       >
-                        {/* Control toolbar — stays while selected, or on hover (desktop/Android) */}
-                        {!isIOS && (
-                          <div className={`absolute -top-6 left-0 items-center gap-0.5 bg-gray-900 text-white rounded px-1 py-0.5 shadow-lg z-10 whitespace-nowrap ${selected ? 'flex' : 'hidden group-hover:flex'}`}>
-                            <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); cycleBg(pl.id) }} className="p-0.5 hover:text-emerald-300" aria-label="Background" title="Background: white / dark / none"><Palette className="w-3 h-3" /></button>
-                            <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); removePlacement(pl.id) }} className="p-0.5 hover:text-red-400" aria-label="Remove" title="Remove"><X className="w-3 h-3" /></button>
-                          </div>
-                        )}
+                        {/* Control toolbar — stays while selected, or on hover */}
+                        <div className={`absolute -top-6 left-0 items-center gap-0.5 bg-gray-900 text-white rounded px-1 py-0.5 shadow-lg z-10 whitespace-nowrap ${selected ? 'flex' : 'hidden group-hover:flex'}`}>
+                          <button onPointerDown={startMove(pl.id)} className="p-0.5 cursor-move hover:text-emerald-300 touch-none" aria-label="Move" title="Drag to move"><GripVertical className="w-3.5 h-3.5" /></button>
+                          <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); cycleBg(pl.id) }} className="p-0.5 hover:text-emerald-300" aria-label="Background" title="Background: white / dark / none"><Palette className="w-3 h-3" /></button>
+                          <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); removePlacement(pl.id) }} className="p-0.5 hover:text-red-400" aria-label="Remove" title="Remove"><X className="w-3 h-3" /></button>
+                        </div>
                         {/* The value box that covers the underlying text */}
                         <div
                           onPointerDown={editable ? undefined : startMove(pl.id)}
@@ -385,7 +377,7 @@ export function CompanyDocEditor({
                           ) : (
                             values[pl.type as keyof FieldValues] || FIELD_META[pl.type].label
                           )}
-                          {selected && !isIOS && [
+                          {selected && [
                             '-top-1 -left-1 cursor-nwse-resize',
                             '-top-1 -right-1 cursor-nesw-resize',
                             '-bottom-1 -left-1 cursor-nesw-resize',
@@ -394,33 +386,12 @@ export function CompanyDocEditor({
                             <span key={idx} onPointerDown={startResize(pl.id, size)}
                               className={`absolute ${c} w-3 h-3 bg-emerald-500 border border-white rounded-sm z-10 touch-none`} />
                           ))}
-                          {selected && !isIOS && (
+                          {selected && (
                             <>
                               <span onPointerDown={startEdge(pl, 'l')} title="Drag to widen / narrow" className="absolute top-1 bottom-1 -left-1.5 w-3 cursor-ew-resize hover:bg-emerald-400/50 rounded touch-none" />
                               <span onPointerDown={startEdge(pl, 'r')} title="Drag to widen / narrow" className="absolute top-1 bottom-1 -right-1.5 w-3 cursor-ew-resize hover:bg-emerald-400/50 rounded touch-none" />
                               <span onPointerDown={startEdge(pl, 't')} title="Drag to heighten / shorten" className="absolute left-1 right-1 -top-1.5 h-3 cursor-ns-resize hover:bg-emerald-400/50 rounded touch-none" />
                               <span onPointerDown={startEdge(pl, 'b')} title="Drag to heighten / shorten" className="absolute left-1 right-1 -bottom-1.5 h-3 cursor-ns-resize hover:bg-emerald-400/50 rounded touch-none" />
-                            </>
-                          )}
-                          {/* iOS: much larger invisible touch targets (44px+) centred on the same corners/walls,
-                              so a fingertip can grab them reliably — visuals stay a small dot/strip like desktop. */}
-                          {selected && isIOS && [
-                            { pos: '-top-5 -left-5', cursor: 'nwse-resize' },
-                            { pos: '-top-5 -right-5', cursor: 'nesw-resize' },
-                            { pos: '-bottom-5 -left-5', cursor: 'nesw-resize' },
-                            { pos: '-bottom-5 -right-5', cursor: 'nwse-resize' },
-                          ].map((h, idx) => (
-                            <span key={idx} onPointerDown={startResize(pl.id, size)}
-                              className={`absolute ${h.pos} w-11 h-11 z-20 touch-none flex items-center justify-center`}>
-                              <span className="w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow" />
-                            </span>
-                          ))}
-                          {selected && isIOS && (
-                            <>
-                              <span onPointerDown={startEdge(pl, 'l')} title="Drag to widen / narrow" className="absolute top-0 bottom-0 -left-4 w-8 cursor-ew-resize touch-none z-10" />
-                              <span onPointerDown={startEdge(pl, 'r')} title="Drag to widen / narrow" className="absolute top-0 bottom-0 -right-4 w-8 cursor-ew-resize touch-none z-10" />
-                              <span onPointerDown={startEdge(pl, 't')} title="Drag to heighten / shorten" className="absolute left-0 right-0 -top-4 h-8 cursor-ns-resize touch-none z-10" />
-                              <span onPointerDown={startEdge(pl, 'b')} title="Drag to heighten / shorten" className="absolute left-0 right-0 -bottom-4 h-8 cursor-ns-resize touch-none z-10" />
                             </>
                           )}
                         </div>
@@ -432,15 +403,6 @@ export function CompanyDocEditor({
             })}
           </div>
         </div>
-        {/* iOS: selected field's actions move to a fixed bottom bar — big, thumb-reachable,
-            never clipped by the viewport edge like the floating toolbar can be. */}
-        {isIOS && selectedId && (
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-3 z-30 flex items-center gap-2 bg-gray-900 text-white rounded-full shadow-lg px-2 py-2">
-            <button onClick={() => cycleBg(selectedId)} className="w-11 h-11 rounded-full hover:bg-white/10 flex items-center justify-center" aria-label="Background" title="Background: white / dark / none"><Palette className="w-4 h-4" /></button>
-            <button onClick={() => removePlacement(selectedId)} className="w-11 h-11 rounded-full hover:bg-white/10 flex items-center justify-center text-red-400" aria-label="Remove" title="Remove"><X className="w-4 h-4" /></button>
-            <button onClick={() => setSelectedId(null)} className="w-11 h-11 rounded-full hover:bg-white/10 flex items-center justify-center" aria-label="Done" title="Done"><Check className="w-4 h-4" /></button>
-          </div>
-        )}
         {/* Zoom control — tap +/- (works on iOS) or pinch with two fingers */}
         <div className="absolute bottom-3 right-3 z-20 flex items-center gap-0.5 bg-white rounded-full shadow-lg border border-gray-200 px-1 py-1">
           <button onClick={() => setZoom((z) => clampZoom(z - 0.25))} aria-label="Zoom out" className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><ZoomOut className="w-4 h-4" /></button>
