@@ -665,8 +665,8 @@ export function CallDeck({ initialLeads }: { initialLeads: ColdLead[] }) {
 
   const counts = {
     to_call:    remaining,
-    follow_ups: leads.filter(l => l.status === 'follow_up' || l.next_follow_up).length,
-    contacted:  leads.filter(l => l.status === 'called' || l.status === 'follow_up').length,
+    follow_ups: leads.filter(l => l.status === 'follow_up').length,
+    contacted:  leads.filter(l => l.status === 'called').length,
     booked:     leads.filter(l => l.status === 'walkthrough' || l.status === 'converted').length,
     all:        leads.length,
   }
@@ -676,8 +676,8 @@ export function CallDeck({ initialLeads }: { initialLeads: ColdLead[] }) {
     if (tab === 'to_call') {
       list = leads.filter(l => l.status === 'new').sort((a, b) => a.business_name.localeCompare(b.business_name))
     } else if (tab === 'follow_ups') {
-      // Every lead awaiting a follow-up — overdue/due first, then by soonest follow-up date
-      list = leads.filter(l => l.status === 'follow_up' || l.next_follow_up).sort((a, b) => {
+      // Leads whose last logged outcome was a follow-up — overdue/due first, then soonest date
+      list = leads.filter(l => l.status === 'follow_up').sort((a, b) => {
         const aDue = isDue(a, today) ? 0 : 1
         const bDue = isDue(b, today) ? 0 : 1
         if (aDue !== bDue) return aDue - bDue
@@ -686,8 +686,8 @@ export function CallDeck({ initialLeads }: { initialLeads: ColdLead[] }) {
         return aNext < bNext ? -1 : aNext > bNext ? 1 : 0
       })
     } else if (tab === 'contacted') {
-      // Called or in follow-up — due items first, then soonest scheduled, then oldest contact
-      list = leads.filter(l => l.status === 'called' || l.status === 'follow_up').sort((a, b) => {
+      // Spoke / no-answer (follow-ups live under their own tab) — due first, then oldest contact
+      list = leads.filter(l => l.status === 'called').sort((a, b) => {
         const aDue = isDue(a, today) ? 0 : 1
         const bDue = isDue(b, today) ? 0 : 1
         if (aDue !== bDue) return aDue - bDue
