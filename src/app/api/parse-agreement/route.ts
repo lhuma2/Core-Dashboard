@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const EXTRACTION_PROMPT = `You are extracting structured data from a commercial cleaning service contract or proposal.
 
-Extract the following fields from the text. Return ONLY valid JSON, no explanation.
+Extract the following fields from the text.
 If a field is not found, use null for that field.
 
 Fields to extract:
@@ -85,6 +85,35 @@ async function extractWithClaude(text: string, apiKey: string): Promise<Record<s
     body: JSON.stringify({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
+      output_config: {
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              business_name: { type: ['string', 'null'] },
+              contact_name: { type: ['string', 'null'] },
+              contact_email: { type: ['string', 'null'] },
+              contact_phone: { type: ['string', 'null'] },
+              address: { type: ['string', 'null'] },
+              suburb: { type: ['string', 'null'] },
+              state: { type: ['string', 'null'] },
+              postcode: { type: ['string', 'null'] },
+              service_type: { type: 'array', items: { type: 'string' } },
+              frequency: { type: ['string', 'null'] },
+              rate_per_visit: { type: ['number', 'null'] },
+              contract_start_date: { type: ['string', 'null'] },
+              contract_expiry_date: { type: ['string', 'null'] },
+            },
+            required: [
+              'business_name', 'contact_name', 'contact_email', 'contact_phone',
+              'address', 'suburb', 'state', 'postcode', 'service_type',
+              'frequency', 'rate_per_visit', 'contract_start_date', 'contract_expiry_date',
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
       messages: [
         {
           role: 'user',
@@ -101,11 +130,8 @@ async function extractWithClaude(text: string, apiKey: string): Promise<Record<s
   const data = await response.json()
   const content = data.content?.[0]?.text ?? ''
 
-  // Extract JSON from response
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('No JSON found in AI response')
-
-  const extracted = JSON.parse(jsonMatch[0])
+  // output_config.format guarantees the text block is valid JSON matching the schema
+  const extracted = JSON.parse(content)
 
   // Normalise service_type to ensure it's an array
   if (!Array.isArray(extracted.service_type)) {

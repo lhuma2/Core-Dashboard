@@ -62,29 +62,9 @@ export async function POST(req: NextRequest) {
 const AI_PROMPT = `You are extracting structured data from a commercial cleaning subcontractor invoice.
 The invoice lists hours worked at each client/site for a given month.
 
-Extract the following and return ONLY valid JSON, no explanation:
-
-{
-  "invoice_number": "string or null",
-  "invoice_date": "YYYY-MM-DD or null",
-  "billing_month": "YYYY-MM — the month the services were performed, not the invoice date",
-  "total_ex_gst": number or null,
-  "total_gst": number or null,
-  "total_incl_gst": number or null,
-  "raw_text_preview": "first 300 chars of any text you can read from the invoice",
-  "lines": [
-    {
-      "line_number": 1,
-      "description": "full line description",
-      "client_name_raw": "exact client/site name as written on invoice",
-      "hours": number or null,
-      "rate_per_hour": number or null,
-      "cost_ex_gst": number or null,
-      "gst": number or null,
-      "cost_incl_gst": number or null
-    }
-  ]
-}
+Extract the invoice header fields, totals, a raw_text_preview (first 300 chars of any
+text you can read from the invoice), and one entry per line item. For each line item,
+capture the full description and client_name_raw (exact client/site name as written).
 
 Rules for billing_month (critical):
 - Look for text like "Monthly Invoice - March", "Invoice for March 2025", "Reference: Monthly Invoice - March", "For the month of April", "Billing period: May 2025".
@@ -109,7 +89,52 @@ async function extractWithClaude(base64Pdf: string, apiKey: string): Promise<Par
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5',
-      max_tokens: 2048,
+      // Generous headroom — a long invoice's JSON could exceed 2048 and truncate.
+      // Unused headroom costs nothing (billing is per generated token).
+      max_tokens: 4096,
+      output_config: {
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              invoice_number: { type: ['string', 'null'] },
+              invoice_date: { type: ['string', 'null'] },
+              billing_month: { type: ['string', 'null'] },
+              total_ex_gst: { type: ['number', 'null'] },
+              total_gst: { type: ['number', 'null'] },
+              total_incl_gst: { type: ['number', 'null'] },
+              raw_text_preview: { type: 'string' },
+              lines: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    line_number: { type: 'integer' },
+                    description: { type: ['string', 'null'] },
+                    client_name_raw: { type: ['string', 'null'] },
+                    hours: { type: ['number', 'null'] },
+                    rate_per_hour: { type: ['number', 'null'] },
+                    cost_ex_gst: { type: ['number', 'null'] },
+                    gst: { type: ['number', 'null'] },
+                    cost_incl_gst: { type: ['number', 'null'] },
+                  },
+                  required: [
+                    'line_number', 'description', 'client_name_raw', 'hours',
+                    'rate_per_hour', 'cost_ex_gst', 'gst', 'cost_incl_gst',
+                  ],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: [
+              'invoice_number', 'invoice_date', 'billing_month', 'total_ex_gst',
+              'total_gst', 'total_incl_gst', 'raw_text_preview', 'lines',
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
       messages: [
         {
           role: 'user',
@@ -138,13 +163,13 @@ async function extractWithClaude(base64Pdf: string, apiKey: string): Promise<Par
   }
 
   const data = await response.json()
+  if (data.stop_reason === 'max_tokens') {
+    throw new Error('Invoice too long — Claude output was truncated')
+  }
   const content: string = data.content?.[0]?.text ?? ''
 
-  // Extract JSON from the response
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Claude did not return valid JSON')
-
-  const extracted = JSON.parse(jsonMatch[0])
+  // output_config.format guarantees the text block is valid JSON matching the schema
+  const extracted = JSON.parse(content)
 
   // Normalise and type-check lines
   if (!Array.isArray(extracted.lines)) extracted.lines = []
