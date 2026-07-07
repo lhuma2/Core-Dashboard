@@ -17,6 +17,16 @@ const BG_CYCLE: BgStyle[] = ['white', 'dark', 'none']
 // Matches the contract PDFs, which are set in Arial (ArialMT).
 const DOC_FONT = 'Arial, "Helvetica Neue", Helvetica, "Liberation Sans", Arimo, sans-serif'
 const SIGN_FONT = '"Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive'
+// Matches the printed placeholders on the Bond Cleaning Service Agreement: the "$0.00"
+// quote is a high-contrast serif, "Name" is a bold geometric sans.
+const PRICE_FONT = '"Playfair Display", Georgia, "Times New Roman", serif'
+const NAME_FONT = 'Poppins, "Century Gothic", "Futura", sans-serif'
+function fontForType(type: FieldType): string {
+  if (type === 'signature') return SIGN_FONT
+  if (type === 'quotedPrice') return PRICE_FONT
+  if (type === 'clientName') return NAME_FONT
+  return DOC_FONT
+}
 function boxStyle(bg: BgStyle, size: number, font: string): React.CSSProperties {
   const base: React.CSSProperties = { fontFamily: font, fontSize: size, lineHeight: 1.15, fontWeight: 400, padding: '2px 6px', borderRadius: 4 }
   if (bg === 'white') return { ...base, background: '#ffffff', color: '#111827' }
@@ -343,7 +353,7 @@ export function CompanyDocEditor({
                     const bg = pl.bg ?? 'white'
                     const size = pl.size ?? 15
                     const editable = EDITABLE.includes(pl.type)
-                    const font = pl.type === 'signature' ? SIGN_FONT : DOC_FONT
+                    const font = fontForType(pl.type)
                     const selected = selectedId === pl.id
                     const sized = pl.w != null || pl.h != null
                     return (
