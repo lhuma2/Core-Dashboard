@@ -98,7 +98,7 @@ export default async function CleanerTimetable({
       .order('scheduled_date', { ascending: true }),
     (supabase as any)
       .from('bond_jobs')
-      .select('id, clean_date, client_name')
+      .select('id, clean_date, client_name, status')
       .eq('cleaner_id', profile.id)
       .gte('clean_date', gridStart)
       .lte('clean_date', gridEnd)
@@ -121,7 +121,7 @@ export default async function CleanerTimetable({
       id: `bond-${bondJob.id}`,
       href: `/cleaner/bond/${bondJob.id}`,
       label: bondJob.client_name,
-      statusKey: 'bond',
+      statusKey: bondJob.status === 'completed' ? 'completed' : 'bond',
     })
   }
 

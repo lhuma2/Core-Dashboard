@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { Table, type Column } from '@/components/ui/Table'
 import { Button } from '@/components/ui/Button'
 import { Trash2 } from 'lucide-react'
@@ -15,6 +16,18 @@ export interface BondJobRow {
   comments: string | null
   cleaner_id: string | null
   cleaner_name: string | null
+  status: string
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  not_started: 'bg-gray-100 text-gray-500',
+  in_progress: 'bg-blue-50 text-blue-600',
+  completed:   'bg-emerald-50 text-emerald-600',
+}
+const STATUS_LABELS: Record<string, string> = {
+  not_started: 'Not Started',
+  in_progress: 'In Progress',
+  completed:   'Completed',
 }
 
 interface BondJobTableProps {
@@ -54,10 +67,19 @@ export function BondJobTable({ jobs, deleteAction }: BondJobTableProps) {
       key: 'client_name',
       header: 'Client',
       render: (j) => (
-        <div>
-          <p className="font-medium text-gray-900">{j.client_name}</p>
+        <Link href={`/clients/bond/${j.id}`} className="block">
+          <p className="font-medium text-gray-900 hover:underline">{j.client_name}</p>
           <p className="text-xs text-gray-500">{j.address}</p>
-        </div>
+        </Link>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (j) => (
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_STYLES[j.status] ?? STATUS_STYLES.not_started}`}>
+          {STATUS_LABELS[j.status] ?? j.status}
+        </span>
       ),
     },
     {

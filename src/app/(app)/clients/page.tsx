@@ -154,7 +154,7 @@ async function BondClientsTab() {
   const supabase = createClient()
   const { data: rawJobs } = await (supabase as any)
     .from('bond_jobs')
-    .select('id, client_name, address, contact_phone, clean_date, clean_time, comments, cleaner_id, profiles!bond_jobs_cleaner_id_fkey(full_name)')
+    .select('id, client_name, address, contact_phone, clean_date, clean_time, comments, cleaner_id, status, profiles!bond_jobs_cleaner_id_fkey(full_name)')
     .order('clean_date', { ascending: true })
 
   const jobs: BondJobRow[] = (rawJobs ?? []).map((j: any) => ({
@@ -167,6 +167,7 @@ async function BondClientsTab() {
     comments:      j.comments,
     cleaner_id:    j.cleaner_id,
     cleaner_name:  j.profiles?.full_name ?? null,
+    status:        j.status ?? 'not_started',
   }))
 
   return (

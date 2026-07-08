@@ -298,6 +298,7 @@ export async function uploadJobPhotoAction(
   jobId: string,
   formData: FormData,
   phase: 'before' | 'after' = 'after',
+  jobKind: 'job_assignment' | 'bond_job' = 'job_assignment',
 ) {
   const supabase = createClient()
   const profile = await getCurrentProfile()
@@ -307,7 +308,7 @@ export async function uploadJobPhotoAction(
   if (!file) return { error: 'No file provided' }
 
   const ext   = file.name.split('.').pop() ?? 'jpg'
-  const path  = `${jobId}/${phase}/${Date.now()}.${ext}`
+  const path  = `${jobKind}/${jobId}/${phase}/${Date.now()}.${ext}`
 
   const { error: upErr } = await (supabase as any).storage
     .from('job-photos')
@@ -320,6 +321,7 @@ export async function uploadJobPhotoAction(
   // safely stored, and we still return its URL to the caller.
   await (supabase as any).from('job_photos').insert({
     job_id:       jobId,
+    job_kind:     jobKind,
     phase,
     storage_path: path,
     uploaded_by:  profile.id,

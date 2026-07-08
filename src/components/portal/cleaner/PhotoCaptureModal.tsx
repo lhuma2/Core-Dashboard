@@ -18,6 +18,8 @@ interface PhotoEntry {
 interface PhotoCaptureModalProps {
   jobId: string
   phase: Phase
+  /** Which table jobId points at — job_assignments' jobs, or a bond_jobs clean */
+  jobKind?: 'job_assignment' | 'bond_job'
   /** Called once the cleaner is done (Submit or Skip) */
   onClose: () => void
 }
@@ -33,13 +35,13 @@ const PHASE_COPY: Record<Phase, { title: string; hint: string }> = {
   },
 }
 
-async function uploadFile(jobId: string, phase: Phase, file: File) {
+async function uploadFile(jobId: string, phase: Phase, file: File, jobKind: 'job_assignment' | 'bond_job') {
   const fd = new FormData()
   fd.append('photo', file)
-  return uploadJobPhotoAction(jobId, fd, phase)
+  return uploadJobPhotoAction(jobId, fd, phase, jobKind)
 }
 
-export function PhotoCaptureModal({ jobId, phase, onClose }: PhotoCaptureModalProps) {
+export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', onClose }: PhotoCaptureModalProps) {
   const cameraInputRef  = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PhotoEntry[]>([])
@@ -65,7 +67,7 @@ export function PhotoCaptureModal({ jobId, phase, onClose }: PhotoCaptureModalPr
 
   async function attemptUpload(entry: PhotoEntry) {
     try {
-      const result = await uploadFile(jobId, phase, entry.file)
+      const result = await uploadFile(jobId, phase, entry.file, jobKind)
       if (result.error) {
         setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: 'failed' } : x))
       } else {
@@ -78,6 +80,7 @@ export function PhotoCaptureModal({ jobId, phase, onClose }: PhotoCaptureModalPr
         const queued: QueuedPhoto = {
           id: entry.id,
           jobId,
+          jobKind,
           phase,
           blob: entry.file,
           fileName: entry.file.name,
@@ -96,7 +99,7 @@ export function PhotoCaptureModal({ jobId, phase, onClose }: PhotoCaptureModalPr
     // Retry anything queued in IndexedDB from this or a previous session
     await flushPhotoQueue(jobId, async (entry) => {
       const file = new File([entry.blob], entry.fileName, { type: entry.contentType })
-      return uploadFile(entry.jobId, entry.phase, file)
+      return uploadFile(entry.jobId, entry.phase, file, entry.jobKind)
     })
     // Retry anything marked failed/queued in this modal's current state
     const stuck = photos.filter((p) => p.status === 'failed' || p.status === 'queued')
