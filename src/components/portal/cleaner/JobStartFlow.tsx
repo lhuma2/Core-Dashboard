@@ -40,7 +40,6 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
   const [err, setErr] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState(initialStartedAt)
   const [finishedAt, setFinishedAt] = useState(initialFinishedAt ?? null)
-  const [showBeforePrompt, setShowBeforePrompt] = useState(false)
   const [showAfterPrompt, setShowAfterPrompt] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [finishing, setFinishing] = useState(false)
@@ -68,7 +67,6 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
       }
       setStartedAt(new Date().toISOString())
       setStatus('in_progress')
-      setShowBeforePrompt(true)
       router.refresh()
     } catch {
       setErr('Could not start the job. Check your connection and try again.')
@@ -120,10 +118,6 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
         >
           {loading ? 'Starting…' : 'Start Job'}
         </button>
-
-        {showBeforePrompt && (
-          <PhotoCaptureModal jobId={jobId} phase="before" jobKind={kind} onClose={() => setShowBeforePrompt(false)} />
-        )}
       </div>
     )
   }
@@ -158,9 +152,6 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
           {cancelling ? 'Cancelling…' : 'Accidentally started? Cancel'}
         </button>
 
-        {showBeforePrompt && (
-          <PhotoCaptureModal jobId={jobId} phase="before" jobKind={kind} onClose={() => setShowBeforePrompt(false)} />
-        )}
         {showAfterPrompt && (
           <PhotoCaptureModal jobId={jobId} phase="after" jobKind={kind} onClose={() => setShowAfterPrompt(false)} />
         )}
