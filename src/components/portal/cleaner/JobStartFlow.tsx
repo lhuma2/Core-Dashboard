@@ -15,6 +15,7 @@ interface Props {
   jobId: string
   status: string
   startedAt: string | null
+  finishedAt?: string | null
   /** job_assignments (the regular commercial job flow) or a bond_jobs clean.
    *  Bond cleans have no separate checklist/notes "submit" page, so Finish is
    *  handled right here instead of linking out. */
@@ -32,12 +33,13 @@ const ACTIONS: Record<Kind, {
 
 /** Owns the not_started → in_progress transition, the live timer, and the
  *  "before"/"after" photo prompts that fire on Start/Finish. */
-export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, kind = 'job_assignment' }: Props) {
+export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finishedAt: initialFinishedAt, kind = 'job_assignment' }: Props) {
   const router = useRouter()
   const actions = ACTIONS[kind]
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState(initialStartedAt)
+  const [finishedAt, setFinishedAt] = useState(initialFinishedAt ?? null)
   const [showBeforePrompt, setShowBeforePrompt] = useState(false)
   const [showAfterPrompt, setShowAfterPrompt] = useState(false)
   const [cancelling, setCancelling] = useState(false)
@@ -96,6 +98,7 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, kind 
       setFinishing(false)
       return
     }
+    setFinishedAt(new Date().toISOString())
     setStatus('completed')
     setShowAfterPrompt(true)
     router.refresh()
@@ -166,9 +169,23 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, kind 
   }
 
   if (status_ === 'completed') {
-    return showAfterPrompt ? (
-      <PhotoCaptureModal jobId={jobId} phase="after" jobKind={kind} onClose={() => setShowAfterPrompt(false)} />
-    ) : null
+    return (
+      <div className="space-y-2">
+        {kind === 'bond_job' && (
+          <div className="text-center py-4">
+            <p className="text-sm font-medium text-black">✓ Clean completed</p>
+            {finishedAt && (
+              <p className="text-xs text-gray-400 mt-1">
+                Finished at {new Date(finishedAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+          </div>
+        )}
+        {showAfterPrompt && (
+          <PhotoCaptureModal jobId={jobId} phase="after" jobKind={kind} onClose={() => setShowAfterPrompt(false)} />
+        )}
+      </div>
+    )
   }
 
   return null

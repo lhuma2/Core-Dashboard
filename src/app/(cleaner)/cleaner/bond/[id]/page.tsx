@@ -94,18 +94,16 @@ export default async function CleanerBondJobPage({ params }: { params: { id: str
         )}
       </div>
 
-      {job.status !== 'completed' ? (
-        <JobStartFlow jobId={job.id} status={job.status} startedAt={job.started_at} kind="bond_job" />
-      ) : (
-        <div className="text-center py-4">
-          <p className="text-sm font-medium text-black">✓ Clean completed</p>
-          {job.finished_at && (
-            <p className="text-xs text-gray-400 mt-1">
-              Finished at {new Date(job.finished_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          )}
-        </div>
-      )}
+      {/* Always mounted — JobStartFlow owns its own "completed" state internally
+          (including the after-photo prompt), so a server refresh that flips
+          job.status to 'completed' must not unmount it mid-prompt. */}
+      <JobStartFlow
+        jobId={job.id}
+        status={job.status}
+        startedAt={job.started_at}
+        kind="bond_job"
+        finishedAt={job.finished_at}
+      />
     </PortalShell>
   )
 }
