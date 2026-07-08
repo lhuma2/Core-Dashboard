@@ -113,10 +113,17 @@ export default async function CleanerDashboard() {
     <PortalShell userName={profile.full_name} subtitle="Cleaner Portal">
 
       {/* Greeting */}
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-black tracking-tight">
           {greeting}, {firstName}.
         </h1>
+        <Link
+          href="/cleaner/timetable"
+          className="flex-shrink-0 flex items-center gap-1.5 bg-brand-navy text-white text-xs font-semibold px-3 py-2 rounded-xl active:opacity-80 transition-opacity"
+        >
+          <Calendar className="w-3.5 h-3.5" />
+          Timetable
+        </Link>
       </div>
 
       {/* ── 1. JOB IN PROGRESS (only when active) ── */}
