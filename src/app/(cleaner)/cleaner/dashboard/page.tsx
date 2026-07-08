@@ -7,8 +7,33 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { AcceptClientButton } from '@/components/portal/cleaner/AcceptClientButton'
-import { buildSchedule, actionableDates, brisbaneTodayStr } from '@/lib/schedule'
-import { ChevronRight, Briefcase, Calendar, AlertCircle, XCircle } from 'lucide-react'
+import { actionableDates, brisbaneTodayStr } from '@/lib/schedule'
+import { ChevronRight, ChevronLeft, Briefcase, Calendar, AlertCircle, XCircle } from 'lucide-react'
+
+function pad(n: number) { return n.toString().padStart(2, '0') }
+function toDateStr(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` }
+
+/** Monday of the week containing dateStr (YYYY-MM-DD, no timezone conversion). */
+function mondayOf(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  const offset = (d.getDay() + 6) % 7 // Mon=0 ... Sun=6
+  d.setDate(d.getDate() - offset)
+  return toDateStr(d)
+}
+
+function addDays(dateStr: string, n: number): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setDate(d.getDate() + n)
+  return toDateStr(d)
+}
+
+interface WeekEntry {
+  id: string
+  href: string
+  clientName: string
+  address: string | null
+  statusKey: string
+}
 
 const DAY_LABELS: Record<string, string> = {
   monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed',
@@ -33,7 +58,11 @@ function dateLabel(dateStr: string): string {
   })
 }
 
-export default async function CleanerDashboard() {
+export default async function CleanerDashboard({
+  searchParams,
+}: {
+  searchParams: { week?: string }
+}) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -45,10 +74,22 @@ export default async function CleanerDashboard() {
   const today = brisbaneTodayStr()
   const dates = actionableDates(today)   // today + Saturday when it's Sunday
 
+  const weekStart = searchParams.week && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.week)
+    ? mondayOf(searchParams.week)
+    : mondayOf(today)
+  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+  const weekEnd = weekDates[6]
+  const prevWeek = addDays(weekStart, -7)
+  const nextWeek = addDays(weekStart, 7)
+
   const pastFrom = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0]
 
-  // Fetch clients + active jobs (weekend-aware) + past not-started jobs in parallel
-  const [{ data: clients }, { data: activeJobs }, { data: missedJobsRaw }] = await Promise.all([
+  // Fetch clients + active jobs (weekend-aware) + past not-started jobs + this week's
+  // real jobs (both regular and bond cleans) in parallel
+  const [
+    { data: clients }, { data: activeJobs }, { data: missedJobsRaw },
+    { data: weekJobs }, { data: weekBondJobs },
+  ] = await Promise.all([
     (supabase as any)
       .from('clients')
       .select('id, business_name, address, suburb, frequency, service_days, start_date, assignment_accepted')
@@ -69,7 +110,41 @@ export default async function CleanerDashboard() {
       .lt('scheduled_date', today)
       .eq('status', 'not_started')
       .order('scheduled_date', { ascending: false }),
+    (supabase as any)
+      .from('job_assignments')
+      .select('id, scheduled_date, status, address, clients(business_name, address, suburb)')
+      .eq('cleaner_id', profile.id)
+      .gte('scheduled_date', weekStart)
+      .lte('scheduled_date', weekEnd),
+    (supabase as any)
+      .from('bond_jobs')
+      .select('id, clean_date, status, client_name, address')
+      .eq('cleaner_id', profile.id)
+      .gte('clean_date', weekStart)
+      .lte('clean_date', weekEnd),
   ])
+
+  const weekByDate: Record<string, WeekEntry[]> = {}
+  for (const d of weekDates) weekByDate[d] = []
+  for (const job of weekJobs ?? []) {
+    const addr = job.address || [job.clients?.address, job.clients?.suburb].filter(Boolean).join(', ') || null
+    weekByDate[job.scheduled_date]?.push({
+      id: `job-${job.id}`,
+      href: `/cleaner/jobs/${job.id}`,
+      clientName: job.clients?.business_name ?? 'Job',
+      address: addr,
+      statusKey: job.status,
+    })
+  }
+  for (const bond of weekBondJobs ?? []) {
+    weekByDate[bond.clean_date]?.push({
+      id: `bond-${bond.id}`,
+      href: `/cleaner/bond/${bond.id}`,
+      clientName: bond.client_name,
+      address: bond.address,
+      statusKey: bond.status === 'completed' ? 'completed' : 'bond',
+    })
+  }
 
   const allClients: any[] = clients ?? []
   const pending  = allClients.filter((c) => !c.assignment_accepted)
@@ -91,17 +166,9 @@ export default async function CleanerDashboard() {
   const dueWeekend: any[] = pastNotStarted.filter((j) => dates.includes(j.scheduled_date))
   const missedJobs: any[]  = pastNotStarted.filter((j) => !dates.includes(j.scheduled_date))
 
-  // Build upcoming schedule (next 14 days) from accepted clients
-  const schedule = buildSchedule(accepted, 14)
-
-  // Group by date label, skip today if job already in progress
-  const grouped: Record<string, typeof schedule> = {}
-  for (const event of schedule) {
-    const label = dateLabel(event.dateStr)
-    // If there's already an active job for this client today, mark it handled
-    if (!grouped[label]) grouped[label] = []
-    grouped[label].push(event)
-  }
+  const weekLabel = weekStart === mondayOf(today)
+    ? 'This Week'
+    : `${new Date(weekStart + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(weekEnd + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
 
   const firstName = (profile.full_name ?? user.email ?? '').split(' ')[0]
   const hour = parseInt(
@@ -113,17 +180,10 @@ export default async function CleanerDashboard() {
     <PortalShell userName={profile.full_name} subtitle="Cleaner Portal">
 
       {/* Greeting */}
-      <div className="mb-6 flex items-center justify-between gap-3">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-black tracking-tight">
           {greeting}, {firstName}.
         </h1>
-        <Link
-          href="/cleaner/timetable"
-          className="flex-shrink-0 flex items-center gap-1.5 bg-brand-navy text-white text-xs font-semibold px-3 py-2 rounded-xl active:opacity-80 transition-opacity"
-        >
-          <Calendar className="w-3.5 h-3.5" />
-          Timetable
-        </Link>
       </div>
 
       {/* ── 1. JOB IN PROGRESS (only when active) ── */}
@@ -238,40 +298,67 @@ export default async function CleanerDashboard() {
         </section>
       )}
 
-      {/* ── 3. UPCOMING CLEANS (shown when no job in progress) ── */}
-      {!inProgressJob && Object.keys(grouped).length > 0 && (
-        <section className="mb-6">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5" />
-            Upcoming Cleans
+      {/* ── 3. THIS WEEK'S TIMETABLE (the front-page timetable itself) ── */}
+      <section className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <Link
+            href={`/cleaner/dashboard?week=${prevWeek}`}
+            className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center active:bg-gray-50 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 text-gray-500" />
+          </Link>
+          <p className="text-sm font-semibold text-black flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-brand-navy" />
+            {weekLabel}
           </p>
-          <div className="space-y-3">
-            {Object.entries(grouped).map(([label, events]) => (
-              <div key={label}>
-                <p className="text-xs font-semibold text-gray-500 mb-1.5 ml-1">{label}</p>
-                {events.map((ev) => (
-                  <Link key={`${ev.dateStr}-${ev.client.id}`} href={`/cleaner/clients/${ev.client.id}`} className="block mb-2">
-                    <div className="bg-white rounded-2xl px-5 py-3.5 flex items-center justify-between gap-3 active:bg-gray-50 transition-colors">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-black truncate">{ev.client.business_name}</p>
-                        {ev.client.suburb && (
-                          <p className="text-xs text-gray-400 mt-0.5">{ev.client.suburb}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-[11px] font-medium text-gray-400">
-                          {FREQ_LABELS[ev.client.frequency ?? ''] ?? ev.client.frequency}
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-gray-300" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+          <Link
+            href={`/cleaner/dashboard?week=${nextWeek}`}
+            className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center active:bg-gray-50 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4 text-gray-500" />
+          </Link>
+        </div>
+
+        <div className="space-y-4">
+          {weekDates.map((d) => {
+            const entries = weekByDate[d] ?? []
+            const isToday = d === today
+            return (
+              <div key={d}>
+                <p className={`text-xs font-semibold mb-1.5 ml-1 ${isToday ? 'text-brand-warning' : 'text-gray-400'}`}>
+                  {dateLabel(d)}
+                </p>
+                {entries.length === 0 ? (
+                  <p className="text-xs text-gray-300 ml-1">No cleans scheduled</p>
+                ) : (
+                  <div className="space-y-2">
+                    {entries.map((ev) => {
+                      const outstandingToday = isToday && ev.statusKey !== 'completed'
+                      return (
+                        <Link key={ev.id} href={ev.href} className="block">
+                          <div
+                            className={`rounded-2xl px-5 py-5 flex items-center justify-between gap-3 active:opacity-80 transition-opacity ${
+                              outstandingToday ? 'bg-brand-warning/10 border-2 border-brand-warning' : 'bg-white'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <p className="text-base font-bold text-black truncate">{ev.clientName}</p>
+                              {ev.address && (
+                                <p className="text-sm text-gray-500 mt-1 truncate">{ev.address}</p>
+                              )}
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            )
+          })}
+        </div>
+      </section>
 
       {/* ── MY SITES (individually-assigned sites of multi-site clients) ── */}
       {assignedSites.length > 0 && (
