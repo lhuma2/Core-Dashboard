@@ -5,6 +5,8 @@ import { getSettings } from '@/actions/settings'
 import { computeClientHealth } from '@/lib/health'
 import { ClientTable } from '@/components/clients/ClientTable'
 import { ClientFilters } from '@/components/clients/ClientFilters'
+import { BondJobTable, type BondJobRow } from '@/components/clients/BondJobTable'
+import { deleteBondJobAction } from '@/actions/bondJobs'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Plus } from 'lucide-react'
@@ -15,9 +17,16 @@ interface SearchParams {
   status?:  string
   service?: string
   health?:  string
+  tab?:     string
 }
 
 export default async function ClientsPage({ searchParams }: { searchParams: SearchParams }) {
+  const isBondTab = searchParams.tab === 'bond'
+
+  if (isBondTab) {
+    return <BondClientsTab />
+  }
+
   const supabase = createClient()
   const settings = await getSettings()
 
@@ -86,6 +95,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
 
   return (
     <div className="space-y-5">
+      <ClientsTabBar active="commercial" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
@@ -121,6 +132,62 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
           <Link href="/clients" className="text-blue-600 hover:underline">Clear filters</Link>
         </p>
       )}
+    </div>
+  )
+}
+
+function ClientsTabBar({ active }: { active: 'commercial' | 'bond' }) {
+  const tabClass = (tab: 'commercial' | 'bond') =>
+    `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+      active === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+    }`
+
+  return (
+    <div className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+      <Link href="/clients" className={tabClass('commercial')}>Commercial</Link>
+      <Link href="/clients?tab=bond" className={tabClass('bond')}>Bond</Link>
+    </div>
+  )
+}
+
+async function BondClientsTab() {
+  const supabase = createClient()
+  const { data: rawJobs } = await (supabase as any)
+    .from('bond_jobs')
+    .select('id, client_name, address, contact_phone, clean_date, clean_time, comments, cleaner_id, profiles(full_name)')
+    .order('clean_date', { ascending: true })
+
+  const jobs: BondJobRow[] = (rawJobs ?? []).map((j: any) => ({
+    id:            j.id,
+    client_name:   j.client_name,
+    address:       j.address,
+    contact_phone: j.contact_phone,
+    clean_date:    j.clean_date,
+    clean_time:    j.clean_time,
+    comments:      j.comments,
+    cleaner_id:    j.cleaner_id,
+    cleaner_name:  j.profiles?.full_name ?? null,
+  }))
+
+  return (
+    <div className="space-y-5">
+      <ClientsTabBar active="bond" />
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">
+          Bond / end-of-lease cleans · {jobs.length} scheduled
+        </p>
+        <Link href="/clients/bond/new">
+          <Button>
+            <Plus className="w-4 h-4" />
+            Add Bond Clean
+          </Button>
+        </Link>
+      </div>
+
+      <Card padding={false}>
+        <BondJobTable jobs={jobs} deleteAction={deleteBondJobAction} />
+      </Card>
     </div>
   )
 }

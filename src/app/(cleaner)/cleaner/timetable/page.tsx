@@ -50,6 +50,14 @@ const STATUS_STYLES: Record<string, string> = {
   in_progress: 'bg-brand-navy-light text-white',
   completed:   'bg-brand-navy-muted text-white',
   flagged:     'bg-red-600 text-white',
+  bond:        'bg-amber-500 text-white',
+}
+
+interface CalendarChip {
+  id: string
+  href: string
+  label: string
+  statusKey: string
 }
 
 export default async function CleanerTimetable({
@@ -79,18 +87,41 @@ export default async function CleanerTimetable({
   const gridStart = grid[0][0].dateStr
   const gridEnd = grid[grid.length - 1][6].dateStr
 
-  const { data: jobs } = await (supabase as any)
-    .from('job_assignments')
-    .select('id, scheduled_date, status, client_id, clients(business_name, suburb)')
-    .eq('cleaner_id', profile.id)
-    .gte('scheduled_date', gridStart)
-    .lte('scheduled_date', gridEnd)
-    .order('scheduled_date', { ascending: true })
+  const [{ data: jobs }, { data: bondJobs }] = await Promise.all([
+    (supabase as any)
+      .from('job_assignments')
+      .select('id, scheduled_date, status, client_id, clients(business_name, suburb)')
+      .eq('cleaner_id', profile.id)
+      .gte('scheduled_date', gridStart)
+      .lte('scheduled_date', gridEnd)
+      .order('scheduled_date', { ascending: true }),
+    (supabase as any)
+      .from('bond_jobs')
+      .select('id, clean_date, client_name')
+      .eq('cleaner_id', profile.id)
+      .gte('clean_date', gridStart)
+      .lte('clean_date', gridEnd)
+      .order('clean_date', { ascending: true }),
+  ])
 
-  const jobsByDate: Record<string, any[]> = {}
+  const jobsByDate: Record<string, CalendarChip[]> = {}
   for (const job of jobs ?? []) {
     if (!jobsByDate[job.scheduled_date]) jobsByDate[job.scheduled_date] = []
-    jobsByDate[job.scheduled_date].push(job)
+    jobsByDate[job.scheduled_date].push({
+      id: `job-${job.id}`,
+      href: `/cleaner/jobs/${job.id}`,
+      label: job.clients?.business_name ?? 'Job',
+      statusKey: job.status,
+    })
+  }
+  for (const bondJob of bondJobs ?? []) {
+    if (!jobsByDate[bondJob.clean_date]) jobsByDate[bondJob.clean_date] = []
+    jobsByDate[bondJob.clean_date].push({
+      id: `bond-${bondJob.id}`,
+      href: `/cleaner/bond/${bondJob.id}`,
+      label: bondJob.client_name,
+      statusKey: 'bond',
+    })
   }
 
   const monthLabel = new Date(year, month, 1).toLocaleDateString('en-AU', {
@@ -154,16 +185,16 @@ export default async function CleanerTimetable({
                   {cell.day}
                 </span>
                 <div className="flex flex-col gap-0.5 w-full">
-                  {cellJobs.slice(0, 2).map((job) => (
+                  {cellJobs.slice(0, 2).map((chip) => (
                     <Link
-                      key={job.id}
-                      href={`/cleaner/jobs/${job.id}`}
+                      key={chip.id}
+                      href={chip.href}
                       className={`block rounded px-1 py-0.5 text-[9px] font-medium leading-tight truncate ${
-                        STATUS_STYLES[job.status] ?? STATUS_STYLES.not_started
+                        STATUS_STYLES[chip.statusKey] ?? STATUS_STYLES.not_started
                       }`}
-                      title={job.clients?.business_name}
+                      title={chip.label}
                     >
-                      {job.clients?.business_name ?? 'Job'}
+                      {chip.label}
                     </Link>
                   ))}
                   {cellJobs.length > 2 && (
@@ -188,6 +219,9 @@ export default async function CleanerTimetable({
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block" /> Flagged
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> Bond clean
         </span>
       </div>
     </PortalShell>
