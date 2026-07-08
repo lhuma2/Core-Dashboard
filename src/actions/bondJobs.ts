@@ -150,6 +150,7 @@ export async function startBondJobAction(jobId: string) {
 
   revalidatePath('/cleaner/timetable')
   revalidatePath(`/cleaner/bond/${jobId}`)
+  revalidatePath('/clients')
   return { success: true }
 }
 
@@ -180,6 +181,7 @@ export async function cancelStartBondJobAction(jobId: string) {
 
   revalidatePath('/cleaner/timetable')
   revalidatePath(`/cleaner/bond/${jobId}`)
+  revalidatePath('/clients')
   return { success: true }
 }
 
