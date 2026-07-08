@@ -177,7 +177,7 @@ async function BondClientsTab() {
     <div className="space-y-5">
       <ClientsTabBar active="bond" />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-gray-500">
           Bond / end-of-lease cleans · {jobs.length} scheduled
         </p>

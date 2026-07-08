@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Table, type Column } from '@/components/ui/Table'
 import { Button } from '@/components/ui/Button'
-import { Trash2 } from 'lucide-react'
+import { Trash2, ChevronRight } from 'lucide-react'
 
 export interface BondJobRow {
   id: string
@@ -125,11 +125,53 @@ export function BondJobTable({ jobs, deleteAction }: BondJobTableProps) {
   ]
 
   return (
-    <Table
-      data={jobs}
-      columns={columns}
-      keyExtractor={(j) => j.id}
-      emptyMessage="No bond cleans scheduled yet."
-    />
+    <>
+      {/* Desktop / tablet — full table, unchanged */}
+      <div className="hidden sm:block">
+        <Table
+          data={jobs}
+          columns={columns}
+          keyExtractor={(j) => j.id}
+          emptyMessage="No bond cleans scheduled yet."
+        />
+      </div>
+
+      {/* Phone — a table here would need horizontal scrolling to see status,
+          cleaner, or the delete button, so it's a stacked card list instead.
+          Same data, same actions (tap to open, tap trash to delete). */}
+      <div className="sm:hidden divide-y divide-gray-100">
+        {jobs.length === 0 ? (
+          <p className="text-center text-sm text-gray-400 py-10">No bond cleans scheduled yet.</p>
+        ) : (
+          jobs.map((j) => (
+            <div key={j.id} className="flex items-center gap-2 px-4 py-4">
+              <Link href={`/clients/bond/${j.id}`} className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-medium text-gray-900 truncate">{j.client_name}</p>
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${STATUS_STYLES[j.status] ?? STATUS_STYLES.not_started}`}>
+                    {STATUS_LABELS[j.status] ?? j.status}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 truncate">{j.address}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formatDate(j.clean_date)} · {formatTime(j.clean_time)}
+                  {' · '}
+                  <span className={j.cleaner_name ? '' : 'text-gray-400'}>{j.cleaner_name || 'Unassigned'}</span>
+                </p>
+              </Link>
+              <button
+                type="button"
+                disabled={isPending && deletingId === j.id}
+                onClick={() => handleDelete(j.id)}
+                className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-gray-400 active:bg-gray-100 disabled:opacity-40"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+            </div>
+          ))
+        )}
+      </div>
+    </>
   )
 }
