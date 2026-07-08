@@ -5,8 +5,8 @@ import { getSettings } from '@/actions/settings'
 import { computeClientHealth } from '@/lib/health'
 import { ClientTable } from '@/components/clients/ClientTable'
 import { ClientFilters } from '@/components/clients/ClientFilters'
-import { BondJobTable, type BondJobRow } from '@/components/clients/BondJobTable'
-import { deleteBondJobAction } from '@/actions/bondJobs'
+import { BondJobBoard, type BondJobRow, type BondFolder } from '@/components/clients/BondJobBoard'
+import { deleteBondJobAction, createBondFolderAction, deleteBondFolderAction, moveBondJobToFolderAction } from '@/actions/bondJobs'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Plus } from 'lucide-react'
@@ -152,10 +152,16 @@ function ClientsTabBar({ active }: { active: 'commercial' | 'bond' }) {
 
 async function BondClientsTab() {
   const supabase = createClient()
-  const { data: rawJobs } = await (supabase as any)
-    .from('bond_jobs')
-    .select('id, client_name, address, contact_phone, clean_date, clean_time, comments, cleaner_id, status, profiles!bond_jobs_cleaner_id_fkey(full_name)')
-    .order('clean_date', { ascending: true })
+  const [{ data: rawJobs }, { data: rawFolders }] = await Promise.all([
+    (supabase as any)
+      .from('bond_jobs')
+      .select('id, client_name, address, contact_phone, clean_date, clean_time, cleaner_id, status, folder_id, profiles!bond_jobs_cleaner_id_fkey(full_name)')
+      .order('clean_date', { ascending: true }),
+    (supabase as any)
+      .from('bond_job_folders')
+      .select('id, name')
+      .order('created_at', { ascending: true }),
+  ])
 
   const jobs: BondJobRow[] = (rawJobs ?? []).map((j: any) => ({
     id:            j.id,
@@ -164,11 +170,12 @@ async function BondClientsTab() {
     contact_phone: j.contact_phone,
     clean_date:    j.clean_date,
     clean_time:    j.clean_time,
-    comments:      j.comments,
-    cleaner_id:    j.cleaner_id,
     cleaner_name:  j.profiles?.full_name ?? null,
     status:        j.status ?? 'not_started',
+    folder_id:     j.folder_id ?? null,
   }))
+
+  const folders: BondFolder[] = (rawFolders ?? []).map((f: any) => ({ id: f.id, name: f.name }))
 
   return (
     <div className="space-y-5">
@@ -186,9 +193,14 @@ async function BondClientsTab() {
         </Link>
       </div>
 
-      <Card padding={false}>
-        <BondJobTable jobs={jobs} deleteAction={deleteBondJobAction} />
-      </Card>
+      <BondJobBoard
+        jobs={jobs}
+        folders={folders}
+        createFolderAction={createBondFolderAction}
+        deleteFolderAction={deleteBondFolderAction}
+        deleteJobAction={deleteBondJobAction}
+        moveJobAction={moveBondJobToFolderAction}
+      />
     </div>
   )
 }
