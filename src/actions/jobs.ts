@@ -328,7 +328,20 @@ export async function uploadJobPhotoAction(
   })
 
   const { data } = (supabase as any).storage.from('job-photos').getPublicUrl(path)
-  return { success: true, url: data.publicUrl as string }
+  return { success: true, url: data.publicUrl as string, storagePath: path }
+}
+
+// ─── Remove an accidentally-attached photo (before it's needed) ─────────────
+
+export async function deleteJobPhotoAction(storagePath: string) {
+  const supabase = createClient()
+  const profile = await getCurrentProfile()
+  if (!profile) return { error: 'Not authenticated' }
+
+  await (supabase as any).storage.from('job-photos').remove([storagePath])
+  await (supabase as any).from('job_photos').delete().eq('storage_path', storagePath)
+
+  return { success: true }
 }
 
 // ─── Start a clean for a client (creates job + marks in_progress) ────────────

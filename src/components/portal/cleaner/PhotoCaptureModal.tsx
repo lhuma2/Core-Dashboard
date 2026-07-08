@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Camera, X, CheckCircle2, Loader2, RefreshCw, WifiOff } from 'lucide-react'
-import { uploadJobPhotoAction } from '@/actions/jobs'
+import { uploadJobPhotoAction, deleteJobPhotoAction } from '@/actions/jobs'
 import { queuePhoto, flushPhotoQueue, type QueuedPhoto } from '@/lib/photoQueue'
 
 type Phase = 'before' | 'after'
@@ -13,6 +13,7 @@ interface PhotoEntry {
   localUrl: string
   file: File
   status: PhotoStatus
+  storagePath: string | null
 }
 
 interface PhotoCaptureModalProps {
@@ -70,7 +71,7 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
       if (result.error) {
         setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: 'failed' } : x))
       } else {
-        setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: 'uploaded' } : x))
+        setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: 'uploaded', storagePath: result.storagePath ?? null } : x))
       }
     } catch {
       // Network failure (or genuinely offline) — queue to IndexedDB so it survives
@@ -113,7 +114,7 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
     if (!files.length) return
     for (const file of files) {
       const id = `${Date.now()}-${Math.random()}`
-      const entry: PhotoEntry = { id, localUrl: URL.createObjectURL(file), file, status: 'uploading' }
+      const entry: PhotoEntry = { id, localUrl: URL.createObjectURL(file), file, status: 'uploading', storagePath: null }
       setPhotos((p) => [...p, entry])
       attemptUpload(entry)
     }
@@ -124,6 +125,19 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
     if (!entry) return
     setPhotos((p) => p.map((x) => x.id === id ? { ...x, status: 'uploading' } : x))
     attemptUpload(entry)
+  }
+
+  function removePhoto(id: string) {
+    const entry = photos.find((p) => p.id === id)
+    if (!entry) return
+    URL.revokeObjectURL(entry.localUrl)
+    setPhotos((p) => p.filter((x) => x.id !== id))
+    // Already uploaded (or queued for upload) — clean up the stored copy too,
+    // not just the on-screen thumbnail, so an accidental shot doesn't linger
+    // for the admin to see.
+    if (entry.storagePath) {
+      deleteJobPhotoAction(entry.storagePath).catch(() => {})
+    }
   }
 
   const copy = PHASE_COPY[phase]
@@ -149,42 +163,58 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
         )}
 
         {photos.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {photos.map((p) => (
-              <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.localUrl} alt="" className="w-full h-full object-cover" />
-                {p.status === 'uploading' && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 text-white animate-spin" />
-                  </div>
-                )}
-                {p.status === 'uploaded' && (
-                  <div className="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-white" />
-                  </div>
-                )}
-                {p.status === 'queued' && (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-gray-500">Photos</p>
+              <span className="text-xs font-semibold bg-black text-white px-2.5 py-1 rounded-full">
+                {photos.length} taken
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {photos.map((p) => (
+                <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.localUrl} alt="" className="w-full h-full object-cover" />
+                  {p.status === 'uploading' && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    </div>
+                  )}
+                  {p.status === 'uploaded' && (
+                    <div className="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center">
+                      <CheckCircle2 className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                  {p.status === 'queued' && (
+                    <button
+                      onClick={() => retryOne(p.id)}
+                      className="absolute inset-0 bg-amber-500/70 flex flex-col items-center justify-center gap-0.5"
+                    >
+                      <WifiOff className="w-4 h-4 text-white" />
+                      <span className="text-white text-[9px] font-semibold">Pending upload</span>
+                    </button>
+                  )}
+                  {p.status === 'failed' && (
+                    <button
+                      onClick={() => retryOne(p.id)}
+                      className="absolute inset-0 bg-red-500/70 flex flex-col items-center justify-center gap-0.5"
+                    >
+                      <RefreshCw className="w-4 h-4 text-white" />
+                      <span className="text-white text-[9px] font-semibold">Retry</span>
+                    </button>
+                  )}
+                  {/* Remove — always available so an accidental shot can be undone */}
                   <button
-                    onClick={() => retryOne(p.id)}
-                    className="absolute inset-0 bg-amber-500/70 flex flex-col items-center justify-center gap-0.5"
+                    onClick={() => removePhoto(p.id)}
+                    aria-label="Remove photo"
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center active:scale-90 transition-transform"
                   >
-                    <WifiOff className="w-4 h-4 text-white" />
-                    <span className="text-white text-[9px] font-semibold">Pending upload</span>
+                    <X className="w-3 h-3 text-white" />
                   </button>
-                )}
-                {p.status === 'failed' && (
-                  <button
-                    onClick={() => retryOne(p.id)}
-                    className="absolute inset-0 bg-red-500/70 flex flex-col items-center justify-center gap-0.5"
-                  >
-                    <RefreshCw className="w-4 h-4 text-white" />
-                    <span className="text-white text-[9px] font-semibold">Retry</span>
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         <div className="mb-2">

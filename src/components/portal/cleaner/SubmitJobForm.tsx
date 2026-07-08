@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { submitJobAction, uploadJobPhotoAction } from '@/actions/jobs'
+import { submitJobAction, uploadJobPhotoAction, deleteJobPhotoAction } from '@/actions/jobs'
 import { Camera, Video, X, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -24,6 +24,7 @@ interface PhotoEntry {
   id: string          // local key
   localUrl: string    // blob URL — shown immediately
   remoteUrl: string | null  // Supabase URL — set after upload
+  storagePath: string | null
   uploading: boolean
   error: string | null
 }
@@ -139,7 +140,7 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
       // 1. Show instant local preview
       const localUrl = URL.createObjectURL(file)
       const id       = `${Date.now()}-${Math.random()}`
-      setPhotos((p) => [...p, { id, localUrl, remoteUrl: null, uploading: true, error: null }])
+      setPhotos((p) => [...p, { id, localUrl, remoteUrl: null, storagePath: null, uploading: true, error: null }])
 
       // 2. Stamp + upload in background
       try {
@@ -151,7 +152,7 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
         if (result.error) {
           setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: false, error: result.error! } : x))
         } else {
-          setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: false, remoteUrl: result.url! } : x))
+          setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: false, remoteUrl: result.url!, storagePath: result.storagePath ?? null } : x))
         }
       } catch {
         setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: false, error: 'Upload failed' } : x))
@@ -194,7 +195,11 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
   function removePhoto(id: string) {
     setPhotos((p) => {
       const entry = p.find((x) => x.id === id)
-      if (entry) URL.revokeObjectURL(entry.localUrl)
+      if (entry) {
+        URL.revokeObjectURL(entry.localUrl)
+        // Already uploaded — clean up the stored copy too, not just the thumbnail.
+        if (entry.storagePath) deleteJobPhotoAction(entry.storagePath).catch(() => {})
+      }
       return p.filter((x) => x.id !== id)
     })
   }
