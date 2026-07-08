@@ -15,6 +15,11 @@ const config: Config = {
           // ad-hoc elsewhere in the portal (weekend catch-up, bond cleans).
           warning:       '#f59e0b',
           'warning-tint': '#fef3c7',
+          // Light-green "today" tint, in the same family as brand.navy — used
+          // to mark the current day on the timetable without being as loud
+          // as the amber "needs attention" treatment.
+          mint:         '#eaf6ef',
+          'mint-border': '#bfe0cd',
         },
       },
       fontFamily: {

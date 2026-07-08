@@ -319,17 +319,25 @@ export default async function CleanerDashboard({
           </Link>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {weekDates.map((d) => {
             const entries = weekByDate[d] ?? []
             const isToday = d === today
             return (
-              <div key={d}>
-                <p className={`text-xs font-semibold mb-1.5 ml-1 ${isToday ? 'text-brand-warning' : 'text-gray-400'}`}>
-                  {dateLabel(d)}
-                </p>
+              <div
+                key={d}
+                className={`rounded-2xl border px-4 py-3.5 ${
+                  isToday ? 'bg-brand-mint border-brand-mint-border' : 'bg-white border-gray-100'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isToday ? 'bg-brand-navy' : 'bg-gray-300'}`} />
+                  <p className={`text-xs font-semibold tracking-wide ${isToday ? 'text-brand-navy' : 'text-gray-400'}`}>
+                    {dateLabel(d)}
+                  </p>
+                </div>
                 {entries.length === 0 ? (
-                  <p className="text-xs text-gray-300 ml-1">No cleans scheduled</p>
+                  <p className="text-xs text-gray-300">No cleans scheduled</p>
                 ) : (
                   <div className="space-y-2">
                     {entries.map((ev) => {
@@ -338,7 +346,9 @@ export default async function CleanerDashboard({
                         <Link key={ev.id} href={ev.href} className="block">
                           <div
                             className={`rounded-2xl px-5 py-5 flex items-center justify-between gap-3 active:opacity-80 transition-opacity ${
-                              outstandingToday ? 'bg-brand-warning/10 border-2 border-brand-warning' : 'bg-white'
+                              outstandingToday
+                                ? 'bg-brand-warning/10 border-2 border-brand-warning'
+                                : 'bg-white border border-gray-100'
                             }`}
                           >
                             <div className="min-w-0">
