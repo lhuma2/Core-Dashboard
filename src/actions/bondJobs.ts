@@ -59,46 +59,6 @@ export async function deleteBondJobAction(id: string) {
   revalidatePath('/clients')
 }
 
-// ─── Folders (organizational grouping only — no effect on scheduling) ───────
-
-export async function createBondFolderAction(formData: FormData) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const name = ((formData.get('name') as string) ?? '').trim()
-  if (!name) return { error: 'Folder name is required' }
-
-  const db = supabase as any
-  let createdBy: string | null = null
-  if (user) {
-    const { data: profile } = await db.from('profiles').select('id').eq('user_id', user.id).single()
-    createdBy = profile?.id ?? null
-  }
-
-  const { error } = await db.from('bond_job_folders').insert({ name, created_by: createdBy })
-  if (error) return { error: error.message }
-
-  revalidatePath('/clients')
-  return { success: true }
-}
-
-export async function deleteBondFolderAction(id: string) {
-  const supabase = createClient()
-  const db = supabase as any
-  // Jobs inside are unfiled, not deleted (folder_id FK is ON DELETE SET NULL).
-  await db.from('bond_job_folders').delete().eq('id', id)
-  revalidatePath('/clients')
-}
-
-export async function moveBondJobToFolderAction(jobId: string, folderId: string | null) {
-  const supabase = createClient()
-  const db = supabase as any
-  const { error } = await db.from('bond_jobs').update({ folder_id: folderId }).eq('id', jobId)
-  if (error) return { error: error.message }
-  revalidatePath('/clients')
-  return { success: true }
-}
-
 // ─── Real-time tracking for bond cleans (mirrors src/actions/jobs.ts) ────────
 
 async function getCurrentProfile(supabase: ReturnType<typeof createClient>) {
