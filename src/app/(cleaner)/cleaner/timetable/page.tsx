@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PortalShell } from '@/components/portal/PortalShell'
+import { brisbaneTodayStr } from '@/lib/schedule'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -134,7 +135,9 @@ export default async function CleanerTimetable({
   const prevMonth = `${prevDate.getFullYear()}-${pad(prevDate.getMonth() + 1)}`
   const nextMonth = `${nextDate.getFullYear()}-${pad(nextDate.getMonth() + 1)}`
 
-  const today = toDateStr(now)
+  // Use the business's local (Brisbane) date, not the server's — the server may
+  // run in UTC, which drifts from "today" for hours around midnight AEST.
+  const today = brisbaneTodayStr()
 
   return (
     <PortalShell userName={profile.full_name} subtitle="Cleaner Portal" backHref="/cleaner/dashboard" backLabel="Dashboard">
@@ -185,18 +188,24 @@ export default async function CleanerTimetable({
                   {cell.day}
                 </span>
                 <div className="flex flex-col gap-0.5 w-full">
-                  {cellJobs.slice(0, 2).map((chip) => (
-                    <Link
-                      key={chip.id}
-                      href={chip.href}
-                      className={`block rounded px-1 py-0.5 text-[9px] font-medium leading-tight truncate ${
-                        STATUS_STYLES[chip.statusKey] ?? STATUS_STYLES.not_started
-                      }`}
-                      title={chip.label}
-                    >
-                      {chip.label}
-                    </Link>
-                  ))}
+                  {cellJobs.slice(0, 2).map((chip) => {
+                    // Today's not-yet-finished cleans get the orange "needs
+                    // attention" treatment, overriding the normal per-status
+                    // colour — but only for today, never other days.
+                    const isOutstandingToday = isToday && chip.statusKey !== 'completed' && chip.statusKey !== 'bond'
+                    return (
+                      <Link
+                        key={chip.id}
+                        href={chip.href}
+                        className={`block rounded px-1 py-0.5 text-[9px] font-medium leading-tight truncate ${
+                          isOutstandingToday ? 'bg-brand-warning text-white' : (STATUS_STYLES[chip.statusKey] ?? STATUS_STYLES.not_started)
+                        }`}
+                        title={chip.label}
+                      >
+                        {chip.label}
+                      </Link>
+                    )
+                  })}
                   {cellJobs.length > 2 && (
                     <span className="text-[9px] text-gray-400 text-center">+{cellJobs.length - 2} more</span>
                   )}
@@ -208,6 +217,9 @@ export default async function CleanerTimetable({
       </div>
 
       <div className="flex items-center gap-4 flex-wrap text-[11px] text-gray-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-brand-warning inline-block" /> Due today
+        </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-brand-navy inline-block" /> Not started
         </span>

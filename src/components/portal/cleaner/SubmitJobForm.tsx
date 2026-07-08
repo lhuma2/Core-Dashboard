@@ -147,7 +147,7 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
         const stampedFile = new File([stamped], file.name, { type: 'image/jpeg' })
         const fd          = new FormData()
         fd.append('photo', stampedFile)
-        const result = await uploadJobPhotoAction(jobId, fd)
+        const result = await uploadJobPhotoAction(jobId, fd, 'after')
         if (result.error) {
           setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: false, error: result.error! } : x))
         } else {

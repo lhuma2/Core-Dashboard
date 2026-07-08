@@ -24,24 +24,100 @@ export async function startJobAction(jobId: string) {
   const profile = await getCurrentProfile()
   if (!profile) return { error: 'Not authenticated' }
 
-  // Update job status
-  const { error: jobErr } = await (supabase as any)
+  // Guard against a job being started twice (e.g. a reassigned job, or the
+  // cleaner double-tapping on a flaky connection) — only the row that is
+  // still `not_started` for THIS cleaner can transition, so a second
+  // concurrent start attempt (from this cleaner or another) is a no-op here.
+  const { data: current } = await (supabase as any)
     .from('job_assignments')
-    .update({ status: 'in_progress' })
+    .select('status, cleaner_id, started_at')
+    .eq('id', jobId)
+    .single()
+
+  if (!current) return { error: 'Job not found' }
+  if (current.cleaner_id !== profile.id) return { error: 'This job is not assigned to you.' }
+  if (current.status !== 'not_started') {
+    // Already started (by this cleaner reopening the app, or reassigned mid-clean) —
+    // treat as success so the UI just resumes rather than erroring.
+    return { success: true, alreadyStarted: true }
+  }
+
+  // Product decision: a cleaner can only have ONE clean in progress at a time.
+  // Mirrors the same rule already enforced in startCleanForClientAction.
+  const { data: activeElsewhere } = await (supabase as any)
+    .from('job_assignments')
+    .select('id, clients(business_name)')
+    .eq('cleaner_id', profile.id)
+    .in('status', ['in_progress', 'flagged'])
+    .neq('id', jobId)
+    .limit(1)
+    .maybeSingle()
+
+  if (activeElsewhere?.id) {
+    const name = activeElsewhere.clients?.business_name ?? 'another job'
+    return { error: `You already have an active job at ${name}. Finish that one first.` }
+  }
+
+  const now = new Date().toISOString()
+
+  const { data: updated, error: jobErr } = await (supabase as any)
+    .from('job_assignments')
+    .update({ status: 'in_progress', started_at: now })
     .eq('id', jobId)
     .eq('cleaner_id', profile.id)
+    .eq('status', 'not_started') // optimistic-concurrency: only wins if still not_started
+    .select('id')
+    .single()
 
   if (jobErr) return { error: jobErr.message }
+  if (!updated) return { success: true, alreadyStarted: true } // someone else won the race
 
-  // Upsert submission record with started_at
+  // Upsert submission record with started_at (kept for backward compatibility
+  // with the existing manager job-detail view and reporting)
   const { error: subErr } = await (supabase as any)
     .from('job_submissions')
     .upsert(
-      { job_id: jobId, cleaner_id: profile.id, started_at: new Date().toISOString() },
+      { job_id: jobId, cleaner_id: profile.id, started_at: now },
       { onConflict: 'job_id' }
     )
 
   if (subErr) return { error: subErr.message }
+
+  revalidatePath('/cleaner/dashboard')
+  revalidatePath(`/cleaner/jobs/${jobId}`)
+  return { success: true }
+}
+
+// ─── Cancel an accidental start (only before any progress is recorded) ───────
+
+export async function cancelStartAction(jobId: string) {
+  const supabase = createClient()
+  const profile = await getCurrentProfile()
+  if (!profile) return { error: 'Not authenticated' }
+
+  const { data: photos } = await (supabase as any)
+    .from('job_photos')
+    .select('id')
+    .eq('job_id', jobId)
+    .limit(1)
+
+  if (photos && photos.length > 0) {
+    return { error: 'Photos have already been attached — this clean can no longer be cancelled.' }
+  }
+
+  const { error: jobErr } = await (supabase as any)
+    .from('job_assignments')
+    .update({ status: 'not_started', started_at: null })
+    .eq('id', jobId)
+    .eq('cleaner_id', profile.id)
+    .eq('status', 'in_progress')
+
+  if (jobErr) return { error: jobErr.message }
+
+  await (supabase as any)
+    .from('job_submissions')
+    .update({ started_at: null })
+    .eq('job_id', jobId)
 
   revalidatePath('/cleaner/dashboard')
   revalidatePath(`/cleaner/jobs/${jobId}`)
@@ -84,7 +160,7 @@ export async function submitJobAction(input: {
   // Mark job completed
   const { error: jobErr } = await (supabase as any)
     .from('job_assignments')
-    .update({ status: 'completed' })
+    .update({ status: 'completed', finished_at: now })
     .eq('id', input.jobId)
     .eq('cleaner_id', profile.id)
 
@@ -218,7 +294,11 @@ export async function resolveClientIssueAction(issueId: string) {
 
 // ─── Upload job photo to Supabase storage ─────────────────────────────────────
 
-export async function uploadJobPhotoAction(jobId: string, formData: FormData) {
+export async function uploadJobPhotoAction(
+  jobId: string,
+  formData: FormData,
+  phase: 'before' | 'after' = 'after',
+) {
   const supabase = createClient()
   const profile = await getCurrentProfile()
   if (!profile) return { error: 'Not authenticated' }
@@ -227,13 +307,23 @@ export async function uploadJobPhotoAction(jobId: string, formData: FormData) {
   if (!file) return { error: 'No file provided' }
 
   const ext   = file.name.split('.').pop() ?? 'jpg'
-  const path  = `${jobId}/${Date.now()}.${ext}`
+  const path  = `${jobId}/${phase}/${Date.now()}.${ext}`
 
   const { error: upErr } = await (supabase as any).storage
     .from('job-photos')
     .upload(path, file, { contentType: file.type, upsert: false })
 
   if (upErr) return { error: upErr.message }
+
+  // Tag the photo with job/phase/uploader so the admin view can group and
+  // attribute it. Non-fatal if this insert fails — the file itself is already
+  // safely stored, and we still return its URL to the caller.
+  await (supabase as any).from('job_photos').insert({
+    job_id:       jobId,
+    phase,
+    storage_path: path,
+    uploaded_by:  profile.id,
+  })
 
   const { data } = (supabase as any).storage.from('job-photos').getPublicUrl(path)
   return { success: true, url: data.publicUrl as string }
@@ -271,7 +361,7 @@ export async function startCleanForClientAction(clientId: string, siteId?: strin
   // For multi-site clients, scope to the specific site so each site has its own job.
   let resumeQ = (supabase as any)
     .from('job_assignments')
-    .select('id, status, scheduled_date')
+    .select('id, status, scheduled_date, started_at')
     .eq('client_id', clientId)
     .eq('cleaner_id', profile.id)
     .in('scheduled_date', dates)
@@ -320,19 +410,24 @@ export async function startCleanForClientAction(clientId: string, siteId?: strin
     jobId = newJob.id
   }
 
-  // Mark in_progress
+  // Mark in_progress. Only stamp started_at the first time — resuming an
+  // already-started job (reopening the app) must not reset the timer.
+  const alreadyStarted = !!existing?.started_at
+  const now = new Date().toISOString()
+
   await (supabase as any)
     .from('job_assignments')
-    .update({ status: 'in_progress' })
+    .update(alreadyStarted ? { status: 'in_progress' } : { status: 'in_progress', started_at: now })
     .eq('id', jobId)
 
-  // Upsert submission with started_at
-  await (supabase as any)
-    .from('job_submissions')
-    .upsert(
-      { job_id: jobId, cleaner_id: profile.id, started_at: new Date().toISOString() },
-      { onConflict: 'job_id' }
-    )
+  if (!alreadyStarted) {
+    await (supabase as any)
+      .from('job_submissions')
+      .upsert(
+        { job_id: jobId, cleaner_id: profile.id, started_at: now },
+        { onConflict: 'job_id' }
+      )
+  }
 
   revalidatePath(`/cleaner/clients/${clientId}`)
   return { success: true, jobId }

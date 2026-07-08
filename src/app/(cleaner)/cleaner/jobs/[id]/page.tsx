@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PortalShell } from '@/components/portal/PortalShell'
-import { StartJobButton } from '@/components/portal/cleaner/StartJobButton'
+import { JobStartFlow } from '@/components/portal/cleaner/JobStartFlow'
 import { FlagModal } from '@/components/portal/cleaner/FlagModal'
 import { MapPin, Clock, Key, RefreshCw, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
@@ -139,8 +142,8 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
 
       {/* Actions */}
       <div className="space-y-3 mt-6">
-        {job.status === 'not_started' && (
-          <StartJobButton jobId={job.id} />
+        {(job.status === 'not_started' || job.status === 'in_progress') && (
+          <JobStartFlow jobId={job.id} status={job.status} startedAt={job.started_at ?? submission?.started_at ?? null} />
         )}
 
         {(job.status === 'in_progress' || job.status === 'not_started') && (
@@ -148,7 +151,7 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
             href={`/cleaner/jobs/${job.id}/submit`}
             className="flex items-center justify-center gap-2 w-full bg-black text-white font-semibold text-sm rounded-2xl py-4 active:scale-[0.98] transition-all"
           >
-            Complete Job
+            {job.status === 'in_progress' ? 'Finish Clean' : 'Complete Job'}
             <ChevronRight className="w-4 h-4" />
           </Link>
         )}

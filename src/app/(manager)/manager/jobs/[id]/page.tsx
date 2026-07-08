@@ -27,7 +27,7 @@ export default async function ManagerJobDetailPage({ params }: { params: { id: s
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: job }, { data: submission }, { data: flags }] = await Promise.all([
+  const [{ data: job }, { data: submission }, { data: flags }, { data: jobPhotos }] = await Promise.all([
     (supabase as any)
       .from('job_assignments')
       .select('*, clients(business_name, address, suburb), profiles(full_name)')
@@ -43,14 +43,28 @@ export default async function ManagerJobDetailPage({ params }: { params: { id: s
       .select('*')
       .eq('job_id', params.id)
       .order('created_at', { ascending: false }),
+    (supabase as any)
+      .from('job_photos')
+      .select('id, phase, storage_path, uploaded_at')
+      .eq('job_id', params.id)
+      .order('uploaded_at', { ascending: true }),
   ])
 
   if (!job) notFound()
 
   const checklist: { id: string; label: string }[] = job.checklist ?? []
   const completedMap: Record<string, boolean> = submission?.checklist_completed ?? {}
-  const photos: string[] = submission?.photo_urls ?? []
+  const legacyPhotos: string[] = submission?.photo_urls ?? []
   const videos: string[] = submission?.video_urls ?? []
+
+  // Tagged before/after photos (new job_photos table). Older jobs recorded
+  // before this table existed only have the legacy flat photo_urls list —
+  // shown as "After" so nothing that was already captured disappears.
+  const taggedPhotos: { phase: string; storage_path: string }[] = jobPhotos ?? []
+  const toPublicUrl = (path: string) => (supabase as any).storage.from('job-photos').getPublicUrl(path).data.publicUrl as string
+  const beforePhotos = taggedPhotos.filter((p) => p.phase === 'before').map((p) => toPublicUrl(p.storage_path))
+  const afterPhotos  = taggedPhotos.filter((p) => p.phase === 'after').map((p) => toPublicUrl(p.storage_path))
+  const photos = afterPhotos.length > 0 || beforePhotos.length > 0 ? afterPhotos : legacyPhotos
 
   const completedByRole: string | null = submission?.completed_by_role ?? null
   const cleanerCompleted =
@@ -58,9 +72,10 @@ export default async function ManagerJobDetailPage({ params }: { params: { id: s
     (completedByRole === 'cleaner' || completedByRole == null)
   const overrideCompleted = submission?.completed_at && (completedByRole === 'admin' || completedByRole === 'manager')
 
-  // Determine started_at: prefer submission.started_at, fallback to submitted_at
-  const startedAt = submission?.started_at ?? null
-  const completedAt = submission?.completed_at ?? submission?.submitted_at ?? null
+  // Prefer the job_assignments timestamps (source of truth going forward);
+  // fall back to job_submissions for jobs recorded before those columns existed.
+  const startedAt = job.started_at ?? submission?.started_at ?? null
+  const completedAt = job.finished_at ?? submission?.completed_at ?? submission?.submitted_at ?? null
 
   let durationMin: number | null = null
   if (startedAt && completedAt && cleanerCompleted) {
@@ -170,11 +185,21 @@ export default async function ManagerJobDetailPage({ params }: { params: { id: s
         </div>
       )}
 
-      {/* Photos */}
+      {/* Before photos */}
+      {beforePhotos.length > 0 && (
+        <div className="bg-white rounded-2xl px-5 py-4 mb-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            Before ({beforePhotos.length})
+          </p>
+          <PhotoGrid photos={beforePhotos} />
+        </div>
+      )}
+
+      {/* After / general photos */}
       {photos.length > 0 && (
         <div className="bg-white rounded-2xl px-5 py-4 mb-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-            Photos ({photos.length})
+            {beforePhotos.length > 0 ? `After (${photos.length})` : `Photos (${photos.length})`}
           </p>
           <PhotoGrid photos={photos} />
         </div>

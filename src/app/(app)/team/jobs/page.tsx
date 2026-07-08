@@ -63,9 +63,9 @@ export default async function AdminJobsPage() {
                   (sub?.completed_by_role === 'cleaner' || sub?.completed_by_role == null)
                 return (
                   <div key={job.id} className="px-5 py-3.5 space-y-2">
-                    <div className="flex items-center justify-between gap-3">
+                    <Link href={`/manager/jobs/${job.id}`} className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800">
+                        <p className="text-sm font-medium text-gray-800 hover:underline">
                           {job.clients?.business_name ?? '—'}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
@@ -78,7 +78,7 @@ export default async function AdminJobsPage() {
                       <span className={`text-xs font-semibold capitalize flex-shrink-0 ${STATUS_COLORS[job.status] ?? 'text-gray-500'}`}>
                         {job.status.replace('_', ' ')}
                       </span>
-                    </div>
+                    </Link>
                     <MarkJobCompleteButton
                       jobId={job.id}
                       currentStatus={job.status}
