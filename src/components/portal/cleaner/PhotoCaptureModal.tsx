@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Images, X, CheckCircle2, Loader2, RefreshCw, WifiOff } from 'lucide-react'
+import { Camera, X, CheckCircle2, Loader2, RefreshCw, WifiOff } from 'lucide-react'
 import { uploadJobPhotoAction } from '@/actions/jobs'
 import { queuePhoto, flushPhotoQueue, type QueuedPhoto } from '@/lib/photoQueue'
 
@@ -43,7 +43,6 @@ async function uploadFile(jobId: string, phase: Phase, file: File, jobKind: 'job
 
 export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', onClose }: PhotoCaptureModalProps) {
   const cameraInputRef  = useRef<HTMLInputElement>(null)
-  const libraryInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PhotoEntry[]>([])
   const [isOffline, setIsOffline] = useState(false)
 
@@ -188,36 +187,26 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
           </div>
         )}
 
-        <div className="flex gap-2 mb-2">
+        <div className="mb-2">
           <button
             onClick={() => cameraInputRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 bg-black text-white font-semibold text-sm rounded-2xl py-3.5 active:scale-[0.98] transition-all"
+            className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold text-sm rounded-2xl py-3.5 active:scale-[0.98] transition-all"
           >
             <Camera className="w-4 h-4" />
-            Take Photo
-          </button>
-          <button
-            onClick={() => libraryInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-semibold text-sm rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-all"
-          >
-            <Images className="w-4 h-4" />
+            Add Photos
           </button>
         </div>
         <p className="text-[11px] text-gray-400 mb-4">
+          Take as many as you need, then tap Done — no need to reopen this each time.
           Camera not opening? Enable it under Settings → Safari → Camera.
         </p>
 
+        {/* No `capture` attribute — that forces iOS into a single-shot camera
+            that closes after each photo. Without it, iOS opens its normal
+            picker (which itself offers a Camera button), letting the cleaner
+            snap several photos back-to-back before returning here once. */}
         <input
           ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          multiple
-          className="hidden"
-          onChange={(e) => { addFiles(e.target.files); e.target.value = '' }}
-        />
-        <input
-          ref={libraryInputRef}
           type="file"
           accept="image/*"
           multiple

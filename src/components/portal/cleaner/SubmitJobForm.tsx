@@ -304,11 +304,15 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
           )}
         </div>
 
+        {/* No `capture` attribute — on iOS that forces a single-shot camera that
+            closes after each photo. Without it, iOS's normal multi-select picker
+            (which itself offers a Camera button) lets the cleaner take several
+            photos back-to-back before returning here once. */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
+          multiple
           className="hidden"
           onChange={handlePhotoSelect}
         />
