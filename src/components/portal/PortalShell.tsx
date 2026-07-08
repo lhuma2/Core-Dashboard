@@ -46,10 +46,10 @@ export function PortalShell({
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src="/logo-mark-white.png"
+              src="/logo-black.png"
               alt="Core Cleaning"
               style={{ height: '32px', width: 'auto', flexShrink: 0 }}
-              className="invert block"
+              className="block"
             />
           )}
 
