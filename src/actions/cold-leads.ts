@@ -329,10 +329,15 @@ export async function deleteColdLeadAction(id: string) {
 // for something in writing. Plain, human copy. No dashes anywhere in the copy
 // or subject lines (deliberate house style for these messages).
 
+// Single source of truth for the sign-off on every cold-lead email (intro,
+// follow-up, capability statement) — plain-text and HTML versions kept in sync.
+const SIGNATURE_TEXT = 'Laith Humadi\nCore Cleaning\n0407 026 360\nadmin@corecleaning.services'
+
 const SIGNATURE = `
   <p style="margin-top: 24px;">
-    Laith<br/>
+    Laith Humadi<br/>
     Core Cleaning · Brisbane<br/>
+    0407 026 360<br/>
     <a href="mailto:admin@corecleaning.services" style="color: #00250e;">admin@corecleaning.services</a>
   </p>`
 
@@ -406,7 +411,7 @@ export async function sendIntroEmailAction(id: string, scheduleFollowUp = false)
     `${greeting}\n\n` +
     `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.\n\n` +
     `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
-    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nCore Cleaning`
+    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\n${SIGNATURE_TEXT}`
 
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
@@ -461,7 +466,7 @@ export async function sendFollowUpEmailAction(id: string) {
   const bodyText =
     `${greeting}\n\n` +
     `Just following up on my note below. I know things get busy.\n\n` +
-    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nCore Cleaning`
+    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\n${SIGNATURE_TEXT}`
 
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
@@ -502,7 +507,7 @@ export async function previewIntroEmailAction(id: string): Promise<{ to?: string
     `${greeting}\n\n` +
     `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.\n\n` +
     `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
-    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\nJackson\nCore Cleaning\n\n📎 Capability statement (PDF) attached`
+    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\n${SIGNATURE_TEXT}\n\n📎 Capability statement (PDF) attached`
   return { to: lead.email, subject, body }
 }
 
@@ -519,7 +524,7 @@ export async function previewFollowUpEmailAction(id: string): Promise<{ to?: str
   const body =
     `${greeting}\n\n` +
     `Just following up on my note below. I know things get busy.\n\n` +
-    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nCore Cleaning`
+    `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\n${SIGNATURE_TEXT}`
   return { to: lead.email, subject, body }
 }
 
@@ -534,7 +539,7 @@ function capabilityEmailContent(lead: ColdLead) {
   const subject = 'Core Cleaning Intro & Capability Statement'
   const bodyText =
     `${greeting}\n\n` +
-    `I've attached our Capability Statement for your review. I'm happy to visit any commercial space for a quick, no-obligation 15 minute quote.\n\nThanks,\nLaith\nCore Cleaning`
+    `I've attached our Capability Statement for your review. I'm happy to visit any commercial space for a quick, no-obligation 15 minute quote.\n\nThanks,\n${SIGNATURE_TEXT}`
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
   <p>I've attached our Capability Statement for your review. I'm happy to visit any commercial space for a quick, no-obligation 15 minute quote.</p>`)
