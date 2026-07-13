@@ -531,7 +531,7 @@ export async function previewFollowUpEmailAction(id: string): Promise<{ to?: str
 function capabilityEmailContent(lead: ColdLead) {
   const firstName = (lead.contact_name || '').split(' ')[0]
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
-  const subject = `Core Cleaning — Capability Statement for ${lead.business_name}`
+  const subject = 'Core Cleaning Intro & Capability Statement'
   const bodyText =
     `${greeting}\n\n` +
     `I've attached our Capability Statement for your review. I'm happy to visit any commercial space for a quick, no-obligation 15 minute quote.\n\nThanks,\nLaith\nCore Cleaning`
