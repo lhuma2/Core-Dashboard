@@ -172,6 +172,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
   const [capabilityModal, setCapabilityModal] = useState(false)
   const [sendingCapability, setSendingCapability] = useState(false)
   const [capabilityError, setCapabilityError] = useState<string | null>(null)
+  const [includeBondGuide, setIncludeBondGuide] = useState(false)
 
   const followUpDue = Boolean(lead.next_follow_up && lead.next_follow_up <= today && ACTIVE(lead))
   const retryDue    = Boolean(lead.next_attempt && lead.next_attempt <= today && ACTIVE(lead))
@@ -206,11 +207,11 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
   async function confirmSendCapabilityEmail() {
     setSendingCapability(true)
     setCapabilityError(null)
-    const res = await sendCapabilityEmailAction(lead.id)
+    const res = await sendCapabilityEmailAction(lead.id, includeBondGuide)
     setSendingCapability(false)
     if (res.error) { setCapabilityError(res.error); return }
     setCapabilityModal(false)
-    setFlash('Capability statement sent · moved to Follow-ups')
+    setFlash(includeBondGuide ? 'Capability statement + price guide sent · moved to Follow-ups' : 'Capability statement sent · moved to Follow-ups')
     setTimeout(() => setFlash(null), 3000)
     onChanged()
   }
@@ -508,6 +509,16 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
           {lead.phone && <Detail icon={Phone}>{lead.phone}</Detail>}
           {lead.email && <Detail icon={Mail}>{lead.email}</Detail>}
         </div>
+
+        <label className="flex items-start gap-2 mb-5 px-1 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={includeBondGuide}
+            onChange={(e) => setIncludeBondGuide(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-[#00250e] flex-shrink-0"
+          />
+          <span className="text-[13px] text-gray-600">Also attach the Bond Cleaning Price Guide (PDF)</span>
+        </label>
 
         {capabilityError && (
           <p className="text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{capabilityError}</p>

@@ -556,7 +556,7 @@ export async function previewCapabilityEmailAction(id: string): Promise<{ to?: s
   return { to: lead.email, subject, body: `${bodyText}\n\n📎 Capability Statement (PDF) attached` }
 }
 
-export async function sendCapabilityEmailAction(id: string) {
+export async function sendCapabilityEmailAction(id: string, includeBondGuide = false) {
   const db = createAdminClient() as any
   const { data: lead } = await db.from('cold_leads').select('*').eq('id', id).single()
   if (!lead) return { error: 'Lead not found' }
@@ -564,16 +564,26 @@ export async function sendCapabilityEmailAction(id: string) {
 
   const { subject, bodyText, html } = capabilityEmailContent(lead)
 
-  let attachments: { filename: string; content: Buffer }[] | undefined
-  try {
-    const { readFile } = await import('node:fs/promises')
-    const path = await import('node:path')
-    const pdfPath = path.join(process.cwd(), 'src/lib/documents/assets/capability-statement.pdf')
-    const pdf = await readFile(pdfPath)
-    attachments = [{ filename: 'Core Cleaning Capability Statement.pdf', content: pdf }]
-  } catch { /* still send if the file can't be read for some reason */ }
+  const toAttach: { filename: string; assetPath: string }[] = [
+    { filename: 'Core Cleaning Capability Statement.pdf', assetPath: 'src/lib/documents/assets/capability-statement.pdf' },
+  ]
+  if (includeBondGuide) {
+    toAttach.push({ filename: 'Core Cleaning Bond Cleaning Price Guide.pdf', assetPath: 'src/lib/documents/assets/bond-cleaning-price-guide.pdf' })
+  }
 
-  const result = await sendThreadedEmail({ to: lead.email, subject, html, attachments })
+  // Read each file independently — if one is missing/unreadable, still send
+  // with whichever attachments did load rather than dropping all of them.
+  const attachments: { filename: string; content: Buffer }[] = []
+  for (const a of toAttach) {
+    try {
+      const { readFile } = await import('node:fs/promises')
+      const path = await import('node:path')
+      const content = await readFile(path.join(process.cwd(), a.assetPath))
+      attachments.push({ filename: a.filename, content })
+    } catch { /* skip this one, still send with the rest */ }
+  }
+
+  const result = await sendThreadedEmail({ to: lead.email, subject, html, attachments: attachments.length ? attachments : undefined })
   if (!result.success) return { error: result.error || 'Email failed to send' }
 
   const now = new Date().toISOString()
