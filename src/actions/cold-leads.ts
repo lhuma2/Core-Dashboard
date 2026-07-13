@@ -16,6 +16,7 @@ export interface ColdLead {
   contact_name: string | null
   phone: string | null
   email: string | null
+  address: string | null
   suburb: string | null
   industry: string | null
   status: 'new' | 'called' | 'follow_up' | 'walkthrough' | 'converted' | 'not_interested'
@@ -520,6 +521,67 @@ export async function previewFollowUpEmailAction(id: string): Promise<{ to?: str
     `Just following up on my note below. I know things get busy.\n\n` +
     `The offer still stands: a free site visit of about fifteen minutes and a fixed monthly price, with no obligation. If you would like me to come past, just reply with a day that suits and I will make it work.\n\nThanks,\nJackson\nCore Cleaning`
   return { to: lead.email, subject, body }
+}
+
+// ─── Capability statement email — short note + the real static PDF ───────────
+// Distinct from sendIntroEmailAction above: no has_spoken gate, a short fixed
+// message, the actual Capability Statement.pdf (not the generated document),
+// and it moves the lead into the "Follow-ups" tab once sent.
+
+function capabilityEmailContent(lead: ColdLead) {
+  const firstName = (lead.contact_name || '').split(' ')[0]
+  const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
+  const subject = `Core Cleaning — Capability Statement for ${lead.business_name}`
+  const bodyText =
+    `${greeting}\n\n` +
+    `I've attached our Capability Statement for your review. I'm happy to visit any commercial space for a quick, no-obligation 15 minute quote.\n\nThanks,\nLaith\nCore Cleaning`
+  const html = EMAIL_WRAP(`
+  <p>${greeting}</p>
+  <p>I've attached our Capability Statement for your review. I'm happy to visit any commercial space for a quick, no-obligation 15 minute quote.</p>`)
+  return { subject, bodyText, html }
+}
+
+export async function previewCapabilityEmailAction(id: string): Promise<{ to?: string; subject?: string; body?: string; error?: string }> {
+  const db = createAdminClient() as any
+  const { data: lead } = await db.from('cold_leads').select('*').eq('id', id).single()
+  if (!lead) return { error: 'Lead not found' }
+  if (!lead.email) return { error: 'This lead has no email address.' }
+
+  const { subject, bodyText } = capabilityEmailContent(lead)
+  return { to: lead.email, subject, body: `${bodyText}\n\n📎 Capability Statement (PDF) attached` }
+}
+
+export async function sendCapabilityEmailAction(id: string) {
+  const db = createAdminClient() as any
+  const { data: lead } = await db.from('cold_leads').select('*').eq('id', id).single()
+  if (!lead) return { error: 'Lead not found' }
+  if (!lead.email) return { error: 'This lead has no email address.' }
+
+  const { subject, bodyText, html } = capabilityEmailContent(lead)
+
+  let attachments: { filename: string; content: Buffer }[] | undefined
+  try {
+    const { readFile } = await import('node:fs/promises')
+    const path = await import('node:path')
+    const pdfPath = path.join(process.cwd(), 'src/lib/documents/assets/capability-statement.pdf')
+    const pdf = await readFile(pdfPath)
+    attachments = [{ filename: 'Core Cleaning Capability Statement.pdf', content: pdf }]
+  } catch { /* still send if the file can't be read for some reason */ }
+
+  const result = await sendThreadedEmail({ to: lead.email, subject, html, attachments })
+  if (!result.success) return { error: result.error || 'Email failed to send' }
+
+  const now = new Date().toISOString()
+  const comms: CommsEntry[] = [...(lead.comms ?? []), { kind: 'email', at: now, subject, body: bodyText }]
+  // Move the lead into the Follow-ups tab now that they've been sent something to review.
+  await db.from('cold_leads').update({
+    comms,
+    status: 'follow_up',
+    next_follow_up: lead.next_follow_up ?? addDays(5),
+  }).eq('id', id)
+
+  revalidatePath('/calls')
+  return { success: true }
 }
 
 export async function markIntroSmsSentAction(id: string, body?: string) {

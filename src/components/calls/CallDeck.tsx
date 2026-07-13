@@ -6,14 +6,16 @@ import {
   Phone, PhoneCall, PhoneMissed, MessageSquare, Mail, MailCheck,
   CalendarClock, Footprints, Trash2, Plus, Search, X, Check,
   ThumbsDown, Flame, Upload, MapPin, Building2, User, Clock,
-  StickyNote, ChevronDown, RotateCcw, TrendingUp,
+  StickyNote, ChevronDown, RotateCcw, TrendingUp, Paperclip,
 } from 'lucide-react'
 import {
   importColdLeadsAction, previewColdLeadsCsvAction, logCallAction, deleteColdLeadAction,
   sendIntroEmailAction, sendFollowUpEmailAction, markIntroSmsSentAction,
   previewIntroEmailAction, previewFollowUpEmailAction,
+  sendCapabilityEmailAction,
   updateColdLeadAction, type ColdLead, type CommsEntry, type CallLogEntry, type ColumnMap,
 } from '@/actions/cold-leads'
+import { Modal } from '@/components/ui/Modal'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -167,6 +169,9 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
   const [notesText, setNotesText] = useState(lead.notes ?? '')
   const [emailPreview, setEmailPreview] = useState<{ kind: 'intro' | 'follow_up'; to: string; subject: string; body: string } | null>(null)
   const [includeFollowUp, setIncludeFollowUp] = useState(true)
+  const [capabilityModal, setCapabilityModal] = useState(false)
+  const [sendingCapability, setSendingCapability] = useState(false)
+  const [capabilityError, setCapabilityError] = useState<string | null>(null)
 
   const followUpDue = Boolean(lead.next_follow_up && lead.next_follow_up <= today && ACTIVE(lead))
   const retryDue    = Boolean(lead.next_attempt && lead.next_attempt <= today && ACTIVE(lead))
@@ -197,6 +202,17 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
     setBusy(null); setEmailPreview(null)
     setFlash(res.error ? res.error : (kind === 'intro' ? (includeFollowUp ? 'Intro email sent · 5-day follow-up scheduled' : 'Intro email sent') : 'Follow-up sent in the same thread'))
     setTimeout(() => setFlash(null), 3000); onChanged()
+  }
+  async function confirmSendCapabilityEmail() {
+    setSendingCapability(true)
+    setCapabilityError(null)
+    const res = await sendCapabilityEmailAction(lead.id)
+    setSendingCapability(false)
+    if (res.error) { setCapabilityError(res.error); return }
+    setCapabilityModal(false)
+    setFlash('Capability statement sent · moved to Follow-ups')
+    setTimeout(() => setFlash(null), 3000)
+    onChanged()
   }
   function openSms() {
     if (!lead.phone) return
@@ -360,6 +376,12 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
                 </button>
               )
             )}
+            {lead.email && (
+              <button onClick={() => { setCapabilityError(null); setCapabilityModal(true) }} title="Email the Capability Statement"
+                className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-colors bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300">
+                <Paperclip className="w-4 h-4" /> <span className="hidden md:inline">Capability</span>
+              </button>
+            )}
             <button onClick={() => setLogging(true)} title="Log a call outcome"
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl border bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors text-sm font-medium">
               <Plus className="w-4 h-4" /> <span className="hidden md:inline">Log</span>
@@ -470,6 +492,38 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
           </div>
         )}
       </div>
+
+      {/* Capability statement email — a real popup (not an inline panel), works
+          the same on iOS Safari as desktop via the shared Modal component. */}
+      <Modal
+        open={capabilityModal}
+        onOpenChange={(open) => { if (!sendingCapability) { setCapabilityModal(open); if (!open) setCapabilityError(null) } }}
+        title="Send Capability Statement"
+        description="A short email with our Capability Statement (PDF) attached."
+      >
+        <div className="space-y-3 mb-5">
+          {lead.business_name && <Detail icon={Building2}>{lead.business_name}</Detail>}
+          {lead.contact_name && <Detail icon={User}>{lead.contact_name}</Detail>}
+          {lead.address && <Detail icon={MapPin}>{lead.address}</Detail>}
+          {lead.phone && <Detail icon={Phone}>{lead.phone}</Detail>}
+          {lead.email && <Detail icon={Mail}>{lead.email}</Detail>}
+        </div>
+
+        {capabilityError && (
+          <p className="text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{capabilityError}</p>
+        )}
+
+        <div className="flex gap-2">
+          <button onClick={() => setCapabilityModal(false)} disabled={sendingCapability}
+            className="flex-1 text-sm font-semibold text-gray-500 hover:text-gray-700 rounded-xl py-3 disabled:opacity-50 transition-colors">
+            Cancel
+          </button>
+          <button onClick={confirmSendCapabilityEmail} disabled={sendingCapability}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-xl py-3 disabled:opacity-50 active:scale-[0.98] transition-all">
+            <Paperclip className="w-4 h-4" /> {sendingCapability ? 'Sending…' : 'Send'}
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }
