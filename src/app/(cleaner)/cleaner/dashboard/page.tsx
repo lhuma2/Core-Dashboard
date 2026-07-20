@@ -46,12 +46,10 @@ const FREQ_LABELS: Record<string, string> = {
   four_weekly: 'Every 4 weeks', adhoc: 'Ad hoc',
 }
 
-function dateLabel(dateStr: string): string {
-  const d     = new Date(dateStr + 'T00:00:00')
-  const today = new Date(); today.setHours(0,0,0,0)
-  const tom   = new Date(today); tom.setDate(tom.getDate() + 1)
-  if (d.toDateString() === today.toDateString()) return 'Today'
-  if (d.toDateString() === tom.toDateString())   return 'Tomorrow'
+function dateLabel(dateStr: string, todayStr: string): string {
+  if (dateStr === todayStr) return 'Today'
+  if (dateStr === addDays(todayStr, 1)) return 'Tomorrow'
+  const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('en-AU', {
     weekday: 'short', day: 'numeric', month: 'short',
     timeZone: 'Australia/Brisbane',
@@ -333,7 +331,7 @@ export default async function CleanerDashboard({
                 <div className="flex items-center gap-2 mb-2.5">
                   <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isToday ? 'bg-brand-navy' : 'bg-gray-300'}`} />
                   <p className={`text-xs font-semibold tracking-wide ${isToday ? 'text-brand-navy' : 'text-gray-400'}`}>
-                    {dateLabel(d)}
+                    {dateLabel(d, today)}
                   </p>
                 </div>
                 {entries.length === 0 ? (
