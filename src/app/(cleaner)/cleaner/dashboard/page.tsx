@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { AcceptClientButton } from '@/components/portal/cleaner/AcceptClientButton'
-import { actionableDates, brisbaneTodayStr } from '@/lib/schedule'
+import { actionableDates, brisbaneTodayStr, getUpcomingDates } from '@/lib/schedule'
 import { ChevronRight, ChevronLeft, Briefcase, Calendar, AlertCircle, XCircle } from 'lucide-react'
 
 function pad(n: number) { return n.toString().padStart(2, '0') }
@@ -110,7 +110,7 @@ export default async function CleanerDashboard({
       .order('scheduled_date', { ascending: false }),
     (supabase as any)
       .from('job_assignments')
-      .select('id, scheduled_date, status, address, clients(business_name, address, suburb)')
+      .select('id, scheduled_date, status, address, client_id, site_id, clients(business_name, address, suburb)')
       .eq('cleaner_id', profile.id)
       .gte('scheduled_date', weekStart)
       .lte('scheduled_date', weekEnd),
@@ -124,7 +124,13 @@ export default async function CleanerDashboard({
 
   const weekByDate: Record<string, WeekEntry[]> = {}
   for (const d of weekDates) weekByDate[d] = []
+
+  // Real job rows already created (started, or manually assigned) take priority —
+  // track which client/site + date pairs they cover so the schedule-derived
+  // entries below don't duplicate them.
+  const coveredScheduleKeys = new Set<string>()
   for (const job of weekJobs ?? []) {
+    coveredScheduleKeys.add(`${job.client_id}::${job.site_id ?? ''}::${job.scheduled_date}`)
     const addr = job.address || [job.clients?.address, job.clients?.suburb].filter(Boolean).join(', ') || null
     weekByDate[job.scheduled_date]?.push({
       id: `job-${job.id}`,
@@ -154,9 +160,55 @@ export default async function CleanerDashboard({
   const adminDb = createAdminClient() as any
   const { data: mySitesRaw } = await adminDb
     .from('client_sites')
-    .select('id, site_name, suburb, client_id, clients(business_name, active)')
+    .select('id, site_name, address, suburb, client_id, frequency, service_days, clients(business_name, active, start_date)')
     .eq('assigned_cleaner_id', profile.id)
   const assignedSites: any[] = (mySitesRaw ?? []).filter((s: any) => s.clients?.active !== false)
+
+  // ── Fold this week's recurring schedule into the timetable ──
+  // job_assignments rows only exist once a clean is started (or an admin manually
+  // assigns one), so without this a newly added client — single-site or a commercial
+  // (multi-site) one — would show nothing here until that happens. Compute the
+  // schedule-implied cleans for the week directly from each client/site's own
+  // frequency + service_days, same engine the client detail page already uses.
+  const weekStartDate = new Date(weekStart + 'T00:00:00')
+  type ScheduleSource = {
+    clientId: string; siteId: string | null; label: string
+    address: string | null; suburb: string | null
+    frequency: string | null; serviceDays: string[]; startDate: string | null
+  }
+  const scheduleSources: ScheduleSource[] = [
+    ...accepted.map((c: any): ScheduleSource => ({
+      clientId: c.id, siteId: null, label: c.business_name,
+      address: c.address ?? null, suburb: c.suburb ?? null,
+      frequency: c.frequency ?? null, serviceDays: c.service_days ?? [], startDate: c.start_date ?? null,
+    })),
+    ...assignedSites.map((s: any): ScheduleSource => ({
+      clientId: s.client_id, siteId: s.id,
+      label: s.clients?.business_name ? `${s.clients.business_name} — ${s.site_name}` : s.site_name,
+      address: s.address ?? null, suburb: s.suburb ?? null,
+      frequency: s.frequency ?? null, serviceDays: s.service_days ?? [], startDate: s.clients?.start_date ?? null,
+    })),
+  ]
+  for (const src of scheduleSources) {
+    if (!src.serviceDays.length || !src.frequency || src.frequency === 'adhoc') continue
+    const occurrences = getUpcomingDates({
+      id: src.clientId, business_name: src.label, address: src.address, suburb: src.suburb,
+      frequency: src.frequency, service_days: src.serviceDays, start_date: src.startDate,
+    }, 6, weekStartDate)
+    for (const d of occurrences) {
+      const dateStr = toDateStr(d)
+      if (dateStr < today) continue // don't fabricate history for days never actioned
+      const key = `${src.clientId}::${src.siteId ?? ''}::${dateStr}`
+      if (coveredScheduleKeys.has(key)) continue // a real job row already covers this day
+      weekByDate[dateStr]?.push({
+        id: `sched-${src.clientId}-${src.siteId ?? 'main'}-${dateStr}`,
+        href: `/cleaner/clients/${src.clientId}${src.siteId ? `?site=${src.siteId}` : ''}`,
+        clientName: src.label,
+        address: [src.address, src.suburb].filter(Boolean).join(', ') || null,
+        statusKey: 'not_started',
+      })
+    }
+  }
 
   // Split past not-started jobs: a Saturday job carried into Sunday is still due
   // (actionable), everything older is a genuine missed clean.
