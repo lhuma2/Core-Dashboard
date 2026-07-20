@@ -499,7 +499,7 @@ export default async function CleanerDashboard({
       )}
 
       {/* ── EMPTY STATE ── */}
-      {allClients.length === 0 && (
+      {allClients.length === 0 && assignedSites.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
             <Briefcase className="w-5 h-5 text-gray-400" />
