@@ -5,7 +5,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { JobStartFlow } from '@/components/portal/cleaner/JobStartFlow'
-import { MapPin, Phone, Clock, CalendarDays, MessageSquare } from 'lucide-react'
+import { MapPin, Phone, Clock, CalendarDays, MessageSquare, BedDouble, Droplets } from 'lucide-react'
 
 function formatDate(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-AU', {
@@ -84,6 +84,31 @@ export default async function CleanerBondJobPage({ params }: { params: { id: str
               <p className="text-sm font-medium text-black">{job.contact_phone}</p>
             </div>
           </a>
+        )}
+
+        {(job.bedrooms != null || job.bathrooms != null) && (
+          <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
+            <BedDouble className="w-4 h-4 text-brand-navy mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-black">
+              {job.bedrooms != null && `${job.bedrooms} bed${job.bedrooms === 1 ? '' : 's'}`}
+              {job.bedrooms != null && job.bathrooms != null && ' · '}
+              {job.bathrooms != null && `${job.bathrooms} bath${job.bathrooms === 1 ? '' : 's'}`}
+            </p>
+          </div>
+        )}
+
+        {(job.carpet_steam_rooms > 0 || job.carpet_steam_hallways > 0) && (
+          <div className="bg-white rounded-2xl px-5 py-4 flex items-start gap-3">
+            <Droplets className="w-4 h-4 text-brand-navy mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-black">Carpet Steam Cleaning</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {job.carpet_steam_rooms > 0 && `${job.carpet_steam_rooms} room${job.carpet_steam_rooms === 1 ? '' : 's'}`}
+                {job.carpet_steam_rooms > 0 && job.carpet_steam_hallways > 0 && ' · '}
+                {job.carpet_steam_hallways > 0 && `${job.carpet_steam_hallways} hallway${job.carpet_steam_hallways === 1 ? '' : 's'}`}
+              </p>
+            </div>
+          </div>
         )}
 
         {job.comments && (

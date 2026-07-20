@@ -25,6 +25,8 @@ export function BondJobForm({ action, cleaners }: BondJobFormProps) {
     ...cleaners.map((c) => ({ value: c.id, label: c.fullName })),
   ]
 
+  const countOptions = Array.from({ length: 8 }, (_, n) => ({ value: String(n), label: String(n) }))
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
@@ -96,6 +98,43 @@ export function BondJobForm({ action, cleaners }: BondJobFormProps) {
         options={cleanerOptions}
         defaultValue=""
       />
+
+      <div className="grid grid-cols-2 gap-4">
+        <Select
+          name="bedrooms"
+          label="Bedrooms"
+          options={countOptions}
+          defaultValue="0"
+          error={errors.bedrooms?.[0]}
+        />
+        <Select
+          name="bathrooms"
+          label="Bathrooms"
+          options={countOptions}
+          defaultValue="0"
+          error={errors.bathrooms?.[0]}
+        />
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-gray-700 mb-1.5">Carpet Steam Cleaning</p>
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            name="carpet_steam_rooms"
+            label="Rooms"
+            options={countOptions}
+            defaultValue="0"
+            error={errors.carpet_steam_rooms?.[0]}
+          />
+          <Select
+            name="carpet_steam_hallways"
+            label="Hallways"
+            options={countOptions}
+            defaultValue="0"
+            error={errors.carpet_steam_hallways?.[0]}
+          />
+        </div>
+      </div>
 
       <Textarea
         name="comments"
