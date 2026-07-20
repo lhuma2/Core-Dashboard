@@ -33,6 +33,21 @@ interface WeekEntry {
   clientName: string
   address: string | null
   statusKey: string
+  jobType: 'commercial' | 'bond'
+  time: string | null   // HH:MM, 24-hour
+}
+
+const JOB_TYPE_LABELS: Record<WeekEntry['jobType'], string> = {
+  commercial: 'Commercial',
+  bond: 'Bond',
+}
+
+/** "14:05:00" or "9:30" -> "14:05" / "09:30" (24-hour, no seconds). */
+function formatTime24(timeStr: string | null | undefined): string | null {
+  if (!timeStr) return null
+  const [h, m] = timeStr.split(':')
+  if (h === undefined || m === undefined) return null
+  return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`
 }
 
 const DAY_LABELS: Record<string, string> = {
@@ -116,7 +131,7 @@ export default async function CleanerDashboard({
       .lte('scheduled_date', weekEnd),
     (supabase as any)
       .from('bond_jobs')
-      .select('id, clean_date, status, client_name, address')
+      .select('id, clean_date, clean_time, status, client_name, address')
       .eq('cleaner_id', profile.id)
       .gte('clean_date', weekStart)
       .lte('clean_date', weekEnd),
@@ -138,6 +153,8 @@ export default async function CleanerDashboard({
       clientName: job.clients?.business_name ?? 'Job',
       address: addr,
       statusKey: job.status,
+      jobType: 'commercial',
+      time: null,
     })
   }
   for (const bond of weekBondJobs ?? []) {
@@ -147,6 +164,8 @@ export default async function CleanerDashboard({
       clientName: bond.client_name,
       address: bond.address,
       statusKey: bond.status === 'completed' ? 'completed' : 'bond',
+      jobType: 'bond',
+      time: formatTime24(bond.clean_time),
     })
   }
 
@@ -206,6 +225,8 @@ export default async function CleanerDashboard({
         clientName: src.label,
         address: [src.address, src.suburb].filter(Boolean).join(', ') || null,
         statusKey: 'not_started',
+        jobType: 'commercial',
+        time: null,
       })
     }
   }
@@ -402,6 +423,16 @@ export default async function CleanerDashboard({
                             }`}
                           >
                             <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                                  ev.jobType === 'bond' ? 'bg-amber-100 text-amber-700' : 'bg-brand-navy/10 text-brand-navy'
+                                }`}>
+                                  {JOB_TYPE_LABELS[ev.jobType]}
+                                </span>
+                                {ev.time && (
+                                  <span className="text-xs font-semibold text-gray-500">{ev.time}</span>
+                                )}
+                              </div>
                               <p className="text-base font-bold text-black truncate">{ev.clientName}</p>
                               {ev.address && (
                                 <p className="text-sm text-gray-500 mt-1 truncate">{ev.address}</p>
