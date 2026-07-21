@@ -409,28 +409,34 @@ export async function sendIntroEmailAction(id: string, scheduleFollowUp = false)
 
   const bodyText =
     `${greeting}\n\n` +
-    `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.\n\n` +
+    `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement and our bond cleaning price guide so you can see exactly what we do.\n\n` +
     `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
     `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\n${SIGNATURE_TEXT}`
 
   const html = EMAIL_WRAP(`
   <p>${greeting}</p>
-  <p>Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.</p>
+  <p>Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement and our bond cleaning price guide so you can see exactly what we do.</p>
   <p>We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.</p>
   <p>Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on <a href="tel:+61412844237">0407 026 360</a>, or just reply here and I'll set up a quick, free site visit.</p>`)
 
-  // Attach the capability statement (best-effort — still send if the PDF service is down)
-  let attachments: { filename: string; content: Buffer }[] | undefined
-  try {
-    const React = (await import('react')).default
-    const { renderDocumentPdf } = await import('@/lib/documents/pdf')
-    const { CapabilityDocument } = await import('@/components/documents/render/CapabilityDocument')
-    const { DEFAULT_CAPABILITY } = await import('@/lib/documents/capability')
-    const pdf = await renderDocumentPdf(React.createElement(CapabilityDocument, { data: DEFAULT_CAPABILITY as any }))
-    attachments = [{ filename: 'Core Cleaning Capability Statement.pdf', content: pdf }]
-  } catch { /* no attachment if the PDF service is unavailable */ }
+  // Attach the same uploaded PDFs the Capability Statement button uses — reading
+  // the static files directly is far more reliable than rendering a PDF component
+  // on the fly, which was silently dropping the attachment on any render hiccup.
+  const toAttach = [
+    { filename: 'Core Cleaning Capability Statement.pdf', assetPath: 'src/lib/documents/assets/capability-statement.pdf' },
+    { filename: 'Core Cleaning Bond Cleaning Price Guide.pdf', assetPath: 'src/lib/documents/assets/bond-cleaning-price-guide.pdf' },
+  ]
+  const attachments: { filename: string; content: Buffer }[] = []
+  for (const a of toAttach) {
+    try {
+      const { readFile } = await import('node:fs/promises')
+      const path = await import('node:path')
+      const content = await readFile(path.join(process.cwd(), a.assetPath))
+      attachments.push({ filename: a.filename, content })
+    } catch { /* skip this one, still send with whichever attachments did load */ }
+  }
 
-  const result = await sendThreadedEmail({ to: lead.email, subject, html, messageId, attachments })
+  const result = await sendThreadedEmail({ to: lead.email, subject, html, messageId, attachments: attachments.length ? attachments : undefined })
   if (!result.success) return { error: result.error || 'Email failed to send' }
 
   const now = new Date().toISOString()
@@ -505,9 +511,9 @@ export async function previewIntroEmailAction(id: string): Promise<{ to?: string
   const subject = `Core Cleaning — capability statement for ${lead.business_name}`
   const body =
     `${greeting}\n\n` +
-    `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement so you can see exactly what we do.\n\n` +
+    `Thanks for taking my call earlier — great to chat. As promised, I've attached Core Cleaning's capability statement and our bond cleaning price guide so you can see exactly what we do.\n\n` +
     `We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.\n\n` +
-    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\n${SIGNATURE_TEXT}\n\n📎 Capability statement (PDF) attached`
+    `Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on 0407 026 360, or just reply here and I'll set up a quick, free site visit.\n\nThanks,\n${SIGNATURE_TEXT}\n\n📎 Capability Statement + Bond Cleaning Price Guide (PDF) attached`
   return { to: lead.email, subject, body }
 }
 
