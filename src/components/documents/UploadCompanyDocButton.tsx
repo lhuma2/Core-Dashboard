@@ -16,6 +16,14 @@ export function UploadCompanyDocButton({ kind = 'document' }: { kind?: 'document
     const file = e.target.files?.[0]
     e.target.value = '' // allow re-selecting the same file later
     if (!file) return
+    if (file.size === 0) {
+      // Common cause: the file lives in a cloud-synced folder (OneDrive, Dropbox, ...)
+      // as an online-only placeholder that hasn't actually downloaded yet, so the
+      // browser reads zero bytes. Uploading it "succeeds" but produces a dead file
+      // that fails to render later with no clue why — catch it here instead.
+      setErr('That file is empty (0 bytes) — if it’s in OneDrive/Dropbox, make sure it’s fully downloaded first, then try again.')
+      return
+    }
     setErr(null)
     setBusy(true)
     try {

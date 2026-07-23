@@ -112,6 +112,20 @@ export function CompanyDocEditor({
     let cancelled = false
     ;(async () => {
       try {
+        // Check for a dead (0-byte) file up front — this happens when a company
+        // document is uploaded straight from a cloud-synced folder (OneDrive,
+        // Dropbox, ...) before it's actually downloaded locally, which reads as an
+        // empty file. pdfjs's error message for that case isn't clear, so catch it
+        // here and say so plainly instead of a generic "could not render" message.
+        try {
+          const head = await fetch(pdfUrl, { method: 'HEAD' })
+          const len = Number(head.headers.get('content-length') ?? '')
+          if (head.ok && len === 0) {
+            if (!cancelled) setLoadingMsg('This document is empty (0 bytes) — the upload didn’t complete. Delete it under Company Documents and re-upload the file (make sure it’s fully downloaded if it’s in OneDrive/Dropbox first).')
+            return
+          }
+        } catch { /* HEAD check is best-effort — fall through to the real render attempt */ }
+
         const pdfjs: any = await import('pdfjs-dist')
         pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER
         const pdf = await pdfjs.getDocument({ url: pdfUrl }).promise
@@ -132,6 +146,7 @@ export function CompanyDocEditor({
         }
         setLoadingMsg('')
       } catch (e: any) {
+        console.error('CompanyDocEditor: failed to render PDF', e)
         setLoadingMsg('Could not render this document. You can still open it with the button above.')
       }
     })()
