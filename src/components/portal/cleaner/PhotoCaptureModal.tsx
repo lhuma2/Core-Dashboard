@@ -20,7 +20,7 @@ interface PhotoCaptureModalProps {
   jobId: string
   phase: Phase
   /** Which table jobId points at — job_assignments' jobs, or a bond_jobs clean */
-  jobKind?: 'job_assignment' | 'bond_job'
+  jobKind?: 'job_assignment' | 'bond_job' | 'residential_job'
   /** Called once the cleaner is done (Submit or Skip) */
   onClose: () => void
 }
@@ -36,7 +36,7 @@ const PHASE_COPY: Record<Phase, { title: string; hint: string }> = {
   },
 }
 
-async function uploadFile(jobId: string, phase: Phase, file: File, jobKind: 'job_assignment' | 'bond_job') {
+async function uploadFile(jobId: string, phase: Phase, file: File, jobKind: 'job_assignment' | 'bond_job' | 'residential_job') {
   const fd = new FormData()
   fd.append('photo', file)
   return uploadJobPhotoAction(jobId, fd, phase, jobKind)

@@ -33,13 +33,14 @@ interface WeekEntry {
   clientName: string
   address: string | null
   statusKey: string
-  jobType: 'commercial' | 'bond'
+  jobType: 'commercial' | 'bond' | 'residential'
   time: string | null   // HH:MM, 24-hour
 }
 
 const JOB_TYPE_LABELS: Record<WeekEntry['jobType'], string> = {
   commercial: 'Commercial',
   bond: 'Bond',
+  residential: 'Residential',
 }
 
 /** "14:05:00" or "9:30" -> "14:05" / "09:30" (24-hour, no seconds). */
@@ -101,7 +102,7 @@ export default async function CleanerDashboard({
   // real jobs (both regular and bond cleans) in parallel
   const [
     { data: clients }, { data: activeJobs }, { data: missedJobsRaw },
-    { data: weekJobs }, { data: weekBondJobs },
+    { data: weekJobs }, { data: weekBondJobs }, { data: weekResidentialJobs },
   ] = await Promise.all([
     (supabase as any)
       .from('clients')
@@ -131,6 +132,12 @@ export default async function CleanerDashboard({
       .lte('scheduled_date', weekEnd),
     (supabase as any)
       .from('bond_jobs')
+      .select('id, clean_date, clean_time, status, client_name, address')
+      .eq('cleaner_id', profile.id)
+      .gte('clean_date', weekStart)
+      .lte('clean_date', weekEnd),
+    (supabase as any)
+      .from('residential_jobs')
       .select('id, clean_date, clean_time, status, client_name, address')
       .eq('cleaner_id', profile.id)
       .gte('clean_date', weekStart)
@@ -166,6 +173,17 @@ export default async function CleanerDashboard({
       statusKey: bond.status === 'completed' ? 'completed' : 'bond',
       jobType: 'bond',
       time: formatTime24(bond.clean_time),
+    })
+  }
+  for (const res of weekResidentialJobs ?? []) {
+    weekByDate[res.clean_date]?.push({
+      id: `residential-${res.id}`,
+      href: `/cleaner/residential/${res.id}`,
+      clientName: res.client_name,
+      address: res.address,
+      statusKey: res.status === 'completed' ? 'completed' : 'residential',
+      jobType: 'residential',
+      time: formatTime24(res.clean_time),
     })
   }
 
@@ -425,7 +443,9 @@ export default async function CleanerDashboard({
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 mb-1">
                                 <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                                  ev.jobType === 'bond' ? 'bg-amber-100 text-amber-700' : 'bg-brand-navy/10 text-brand-navy'
+                                  ev.jobType === 'bond' ? 'bg-amber-100 text-amber-700'
+                                    : ev.jobType === 'residential' ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-brand-navy/10 text-brand-navy'
                                 }`}>
                                   {JOB_TYPE_LABELS[ev.jobType]}
                                 </span>

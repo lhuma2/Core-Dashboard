@@ -15,7 +15,7 @@ const STORE = 'pending-photos'
 export interface QueuedPhoto {
   id: string
   jobId: string
-  jobKind: 'job_assignment' | 'bond_job'
+  jobKind: 'job_assignment' | 'bond_job' | 'residential_job'
   phase: 'before' | 'after'
   blob: Blob
   fileName: string

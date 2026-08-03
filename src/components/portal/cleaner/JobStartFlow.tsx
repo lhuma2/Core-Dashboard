@@ -4,21 +4,23 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { startJobAction, cancelStartAction, uploadJobPhotoAction } from '@/actions/jobs'
 import { startBondJobAction, cancelStartBondJobAction, finishBondJobAction } from '@/actions/bondJobs'
+import { startResidentialJobAction, cancelStartResidentialJobAction, finishResidentialJobAction } from '@/actions/residentialJobs'
 import { flushPhotoQueue } from '@/lib/photoQueue'
 import { PhotoCaptureModal } from './PhotoCaptureModal'
 import { JobTimer } from './JobTimer'
 import { AlertCircle, ChevronRight } from 'lucide-react'
 
-type Kind = 'job_assignment' | 'bond_job'
+type Kind = 'job_assignment' | 'bond_job' | 'residential_job'
 
 interface Props {
   jobId: string
   status: string
   startedAt: string | null
   finishedAt?: string | null
-  /** job_assignments (the regular commercial job flow) or a bond_jobs clean.
-   *  Bond cleans have no separate checklist/notes "submit" page, so Finish is
-   *  handled right here instead of linking out. */
+  /** job_assignments (the regular commercial job flow), a bond_jobs clean, or
+   *  a residential_jobs clean. Bond/residential cleans have no separate
+   *  checklist/notes "submit" page, so Finish is handled right here instead
+   *  of linking out. */
   kind?: Kind
 }
 
@@ -29,6 +31,7 @@ const ACTIONS: Record<Kind, {
 }> = {
   job_assignment: { start: startJobAction, cancel: cancelStartAction },
   bond_job:       { start: startBondJobAction, cancel: cancelStartBondJobAction, finish: finishBondJobAction },
+  residential_job: { start: startResidentialJobAction, cancel: cancelStartResidentialJobAction, finish: finishResidentialJobAction },
 }
 
 /** Owns the not_started → in_progress transition, the live timer, and the
@@ -162,7 +165,7 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
   if (status_ === 'completed') {
     return (
       <div className="space-y-2">
-        {kind === 'bond_job' && (
+        {kind !== 'job_assignment' && (
           <div className="text-center py-4">
             <p className="text-sm font-medium text-black">✓ Clean completed</p>
             {finishedAt && (

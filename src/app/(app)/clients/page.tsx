@@ -10,6 +10,8 @@ import { ClientTable } from '@/components/clients/ClientTable'
 import { ClientFilters } from '@/components/clients/ClientFilters'
 import { BondJobTable, type BondJobRow } from '@/components/clients/BondJobTable'
 import { deleteBondJobAction } from '@/actions/bondJobs'
+import { ResidentialJobTable, type ResidentialJobRow } from '@/components/clients/ResidentialJobTable'
+import { deleteResidentialJobAction } from '@/actions/residentialJobs'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Plus } from 'lucide-react'
@@ -25,9 +27,13 @@ interface SearchParams {
 
 export default async function ClientsPage({ searchParams }: { searchParams: SearchParams }) {
   const isBondTab = searchParams.tab === 'bond'
+  const isResidentialTab = searchParams.tab === 'residential'
 
   if (isBondTab) {
     return <BondClientsTab />
+  }
+  if (isResidentialTab) {
+    return <ResidentialClientsTab />
   }
 
   const supabase = createClient()
@@ -139,8 +145,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   )
 }
 
-function ClientsTabBar({ active }: { active: 'commercial' | 'bond' }) {
-  const tabClass = (tab: 'commercial' | 'bond') =>
+function ClientsTabBar({ active }: { active: 'commercial' | 'bond' | 'residential' }) {
+  const tabClass = (tab: 'commercial' | 'bond' | 'residential') =>
     `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
       active === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
     }`
@@ -149,6 +155,7 @@ function ClientsTabBar({ active }: { active: 'commercial' | 'bond' }) {
     <div className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1">
       <Link href="/clients" className={tabClass('commercial')}>Commercial</Link>
       <Link href="/clients?tab=bond" className={tabClass('bond')}>Bond</Link>
+      <Link href="/clients?tab=residential" className={tabClass('residential')}>Residential</Link>
     </div>
   )
 }
@@ -191,6 +198,49 @@ async function BondClientsTab() {
 
       <Card padding={false}>
         <BondJobTable jobs={jobs} deleteAction={deleteBondJobAction} />
+      </Card>
+    </div>
+  )
+}
+
+async function ResidentialClientsTab() {
+  const supabase = createClient()
+  const { data: rawJobs } = await (supabase as any)
+    .from('residential_jobs')
+    .select('id, client_name, address, contact_phone, clean_date, clean_time, cleaner_id, status, profiles!residential_jobs_cleaner_id_fkey(full_name)')
+    .order('clean_date', { ascending: true })
+
+  const jobs: ResidentialJobRow[] = (rawJobs ?? []).map((j: any) => ({
+    id:            j.id,
+    client_name:   j.client_name,
+    address:       j.address,
+    contact_phone: j.contact_phone,
+    clean_date:    j.clean_date,
+    clean_time:    j.clean_time,
+    comments:      null,
+    cleaner_id:    j.cleaner_id,
+    cleaner_name:  j.profiles?.full_name ?? null,
+    status:        j.status ?? 'not_started',
+  }))
+
+  return (
+    <div className="space-y-5">
+      <ClientsTabBar active="residential" />
+
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm text-gray-500">
+          Residential cleans · {jobs.length} scheduled
+        </p>
+        <Link href="/clients/residential/new">
+          <Button>
+            <Plus className="w-4 h-4" />
+            Add Residential Clean
+          </Button>
+        </Link>
+      </div>
+
+      <Card padding={false}>
+        <ResidentialJobTable jobs={jobs} deleteAction={deleteResidentialJobAction} />
       </Card>
     </div>
   )

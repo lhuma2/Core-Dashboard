@@ -298,7 +298,7 @@ export async function uploadJobPhotoAction(
   jobId: string,
   formData: FormData,
   phase: 'before' | 'after' = 'after',
-  jobKind: 'job_assignment' | 'bond_job' = 'job_assignment',
+  jobKind: 'job_assignment' | 'bond_job' | 'residential_job' = 'job_assignment',
 ) {
   const supabase = createClient()
   const profile = await getCurrentProfile()
