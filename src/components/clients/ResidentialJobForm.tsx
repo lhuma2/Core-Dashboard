@@ -16,9 +16,19 @@ interface ResidentialJobFormProps {
   cleaners: CleanerOption[]
 }
 
+const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const FREQUENCY_OPTIONS = [
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'fortnightly', label: 'Fortnightly' },
+  { value: 'monthly', label: 'Monthly' },
+]
+
 export function ResidentialJobForm({ action, cleaners }: ResidentialJobFormProps) {
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(false)
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [frequency, setFrequency] = useState('weekly')
+  const [serviceDays, setServiceDays] = useState<string[]>([])
 
   const cleanerOptions = [
     { value: '', label: 'Unassigned' },
@@ -27,11 +37,21 @@ export function ResidentialJobForm({ action, cleaners }: ResidentialJobFormProps
 
   const countOptions = Array.from({ length: 8 }, (_, n) => ({ value: String(n), label: String(n) }))
 
+  function toggleDay(day: string) {
+    setServiceDays((prev) => prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day])
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     setErrors({})
     const fd = new FormData(e.currentTarget)
+    fd.set('is_recurring', isRecurring ? 'true' : 'false')
+    if (isRecurring) {
+      fd.set('frequency', frequency)
+      fd.delete('service_days')
+      serviceDays.forEach((d) => fd.append('service_days', d))
+    }
     try {
       const result = await action(fd)
       if (result?.error) {
@@ -76,18 +96,68 @@ export function ResidentialJobForm({ action, cleaners }: ResidentialJobFormProps
         error={errors.contact_phone?.[0]}
       />
 
+      <div className="rounded-xl border border-gray-200 p-4 space-y-3 bg-gray-50/60">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Schedule</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setIsRecurring(false)}
+            className={`rounded-lg border-2 px-3 py-2.5 text-sm font-semibold text-left transition-all ${!isRecurring ? 'border-[#00250e] bg-[#00250e]/5 text-[#00250e]' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
+          >
+            One-off
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsRecurring(true)}
+            className={`rounded-lg border-2 px-3 py-2.5 text-sm font-semibold text-left transition-all ${isRecurring ? 'border-[#00250e] bg-[#00250e]/5 text-[#00250e]' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
+          >
+            Ongoing
+          </button>
+        </div>
+
+        {isRecurring && (
+          <div className="space-y-3 pt-1">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Frequency</label>
+              <select
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+                className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00250e]"
+              >
+                {FREQUENCY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Which day{frequency !== 'monthly' ? '(s)' : ''}?</label>
+              <div className="flex flex-wrap gap-2">
+                {DAYS_OF_WEEK.map((day) => (
+                  <button key={day} type="button" onClick={() => toggleDay(day)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${serviceDays.includes(day) ? 'bg-[#00250e] text-white border-[#00250e]' : 'bg-white text-gray-600 border-gray-300 hover:border-[#00250e]'}`}>
+                    {day}
+                  </button>
+                ))}
+              </div>
+              {serviceDays.length > 0 && (
+                <p className="text-xs text-[#00250e] mt-2 font-medium">Cleans on: {serviceDays.join(', ')}</p>
+              )}
+              {errors.frequency?.[0] && <p className="text-xs text-red-600 mt-1">{errors.frequency[0]}</p>}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <Input
           type="date"
           name="clean_date"
-          label="Date of clean"
+          label={isRecurring ? 'Start date' : 'Date of clean'}
           error={errors.clean_date?.[0]}
           required
         />
         <Input
           type="time"
           name="clean_time"
-          label="Time of clean"
+          label={isRecurring ? 'Time (every occurrence)' : 'Time of clean'}
           error={errors.clean_time?.[0]}
         />
       </div>
@@ -145,7 +215,7 @@ export function ResidentialJobForm({ action, cleaners }: ResidentialJobFormProps
       />
 
       <Button type="submit" disabled={loading} className="w-full">
-        {loading ? 'Saving…' : 'Add Residential Clean'}
+        {loading ? 'Saving…' : isRecurring ? 'Add Ongoing Residential Clean' : 'Add Residential Clean'}
       </Button>
     </form>
   )

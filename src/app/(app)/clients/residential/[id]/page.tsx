@@ -2,12 +2,15 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PhotoGrid } from '@/components/ui/PhotoLightbox'
-import { ArrowLeft, MapPin, Phone, User, MessageSquare } from 'lucide-react'
+import { ArrowLeft, MapPin, Phone, User, MessageSquare, Repeat } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
   not_started: 'Not Started',
   in_progress: 'In Progress',
   completed:   'Completed',
+}
+const FREQUENCY_LABELS: Record<string, string> = {
+  weekly: 'Weekly', fortnightly: 'Fortnightly', monthly: 'Monthly',
 }
 
 function formatBrisbaneTime(isoString: string | null | undefined): string {
@@ -36,6 +39,8 @@ export default async function AdminResidentialJobDetailPage({ params }: { params
 
   if (!job) notFound()
 
+  const isTemplate = !!job.frequency && !job.parent_id
+
   const toPublicUrl = (path: string) => (supabase as any).storage.from('job-photos').getPublicUrl(path).data.publicUrl as string
   const beforePhotos = (photos ?? []).filter((p: any) => p.phase === 'before').map((p: any) => toPublicUrl(p.storage_path))
   const afterPhotos  = (photos ?? []).filter((p: any) => p.phase === 'after').map((p: any) => toPublicUrl(p.storage_path))
@@ -57,14 +62,22 @@ export default async function AdminResidentialJobDetailPage({ params }: { params
           <div>
             <h1 className="text-lg font-bold text-gray-900">{job.client_name}</h1>
             <p className="text-xs text-gray-400 mt-0.5">
-              {new Date(job.clean_date + 'T00:00:00').toLocaleDateString('en-AU', {
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-              })}
+              {isTemplate
+                ? `${FREQUENCY_LABELS[job.frequency] ?? job.frequency} · ${(job.service_days ?? []).join(', ')}`
+                : new Date(job.clean_date + 'T00:00:00').toLocaleDateString('en-AU', {
+                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+                  })}
             </p>
           </div>
-          <span className="flex-shrink-0 text-xs font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-600">
-            {STATUS_LABELS[job.status] ?? job.status}
-          </span>
+          {isTemplate ? (
+            <span className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+              <Repeat className="w-3 h-3" /> Ongoing
+            </span>
+          ) : (
+            <span className="flex-shrink-0 text-xs font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+              {STATUS_LABELS[job.status] ?? job.status}
+            </span>
+          )}
         </div>
 
         <div className="mt-3 space-y-1.5">
@@ -105,7 +118,7 @@ export default async function AdminResidentialJobDetailPage({ params }: { params
         </div>
       )}
 
-      {(job.started_at || job.finished_at) && (
+      {!isTemplate && (job.started_at || job.finished_at) && (
         <div className="bg-white border border-gray-200/70 rounded-2xl px-5 py-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Timing</p>
           <div className="flex gap-6 flex-wrap">

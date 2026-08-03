@@ -138,8 +138,9 @@ export default async function CleanerDashboard({
       .lte('clean_date', weekEnd),
     (supabase as any)
       .from('residential_jobs')
-      .select('id, clean_date, clean_time, status, client_name, address')
+      .select('id, clean_date, clean_time, status, client_name, address, parent_id')
       .eq('cleaner_id', profile.id)
+      .is('frequency', null) // templates are expanded virtually below, not shown as-is
       .gte('clean_date', weekStart)
       .lte('clean_date', weekEnd),
   ])
@@ -175,10 +176,15 @@ export default async function CleanerDashboard({
       time: formatTime24(bond.clean_time),
     })
   }
+  // Instances generated from a recurring residential template cover that
+  // template's occurrence for the day — track so the virtual expansion below
+  // doesn't duplicate them.
+  const coveredResidentialKeys = new Set<string>()
   for (const res of weekResidentialJobs ?? []) {
+    if (res.parent_id) coveredResidentialKeys.add(`${res.parent_id}::${res.clean_date}`)
     weekByDate[res.clean_date]?.push({
       id: `residential-${res.id}`,
-      href: `/cleaner/residential/${res.id}`,
+      href: `/cleaner/residential/${res.parent_id ?? res.id}`,
       clientName: res.client_name,
       address: res.address,
       statusKey: res.status === 'completed' ? 'completed' : 'residential',
@@ -191,6 +197,15 @@ export default async function CleanerDashboard({
   const pending  = allClients.filter((c) => !c.assignment_accepted)
   const accepted = allClients.filter((c) => c.assignment_accepted)
   const inProgressJob = (activeJobs ?? [])[0] ?? null
+
+  // Recurring residential templates assigned to this cleaner — expanded into
+  // virtual occurrences below, same as a commercial client's own schedule.
+  const { data: residentialTemplates } = await (supabase as any)
+    .from('residential_jobs')
+    .select('id, client_name, address, clean_time, clean_date, frequency, service_days')
+    .eq('cleaner_id', profile.id)
+    .is('parent_id', null)
+    .not('frequency', 'is', null)
 
   // Sites this cleaner is assigned to individually (multi-site clients). The parent client may
   // not be assigned to them at the client level, so fetch via admin scoped to this cleaner.
@@ -245,6 +260,32 @@ export default async function CleanerDashboard({
         statusKey: 'not_started',
         jobType: 'commercial',
         time: null,
+      })
+    }
+  }
+
+  // Recurring residential templates — same virtual-expansion approach, but
+  // linked back to the template itself (not a per-date job) since visiting it
+  // lazily creates/resumes that day's instance, same as starting a commercial job.
+  for (const tpl of residentialTemplates ?? []) {
+    if (!(tpl.service_days ?? []).length || !tpl.frequency) continue
+    const occurrences = getUpcomingDates({
+      id: tpl.id, business_name: tpl.client_name, address: tpl.address, suburb: null,
+      frequency: tpl.frequency, service_days: tpl.service_days, start_date: tpl.clean_date,
+    }, 6, weekStartDate)
+    for (const d of occurrences) {
+      const dateStr = toDateStr(d)
+      if (dateStr < today) continue
+      const key = `${tpl.id}::${dateStr}`
+      if (coveredResidentialKeys.has(key)) continue // a real instance already covers this day
+      weekByDate[dateStr]?.push({
+        id: `res-tpl-${tpl.id}-${dateStr}`,
+        href: `/cleaner/residential/${tpl.id}`,
+        clientName: tpl.client_name,
+        address: tpl.address,
+        statusKey: 'residential',
+        jobType: 'residential',
+        time: formatTime24(tpl.clean_time),
       })
     }
   }

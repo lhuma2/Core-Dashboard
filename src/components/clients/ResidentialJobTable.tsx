@@ -17,6 +17,12 @@ export interface ResidentialJobRow {
   cleaner_id: string | null
   cleaner_name: string | null
   status: string
+  frequency?: string | null
+  serviceDays?: string[]
+}
+
+const FREQUENCY_LABELS: Record<string, string> = {
+  weekly: 'Weekly', fortnightly: 'Fortnightly', monthly: 'Monthly',
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -76,7 +82,11 @@ export function ResidentialJobTable({ jobs, deleteAction }: ResidentialJobTableP
     {
       key: 'status',
       header: 'Status',
-      render: (j) => (
+      render: (j) => j.frequency ? (
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap bg-blue-50 text-blue-700">
+          Ongoing
+        </span>
+      ) : (
         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_STYLES[j.status] ?? STATUS_STYLES.not_started}`}>
           {STATUS_LABELS[j.status] ?? j.status}
         </span>
@@ -86,7 +96,12 @@ export function ResidentialJobTable({ jobs, deleteAction }: ResidentialJobTableP
       key: 'clean_date',
       header: 'Scheduled',
       sortable: true,
-      render: (j) => (
+      render: (j) => j.frequency ? (
+        <div>
+          <p className="text-gray-900">{FREQUENCY_LABELS[j.frequency] ?? j.frequency} · {(j.serviceDays ?? []).join(', ')}</p>
+          <p className="text-xs text-gray-500">{formatTime(j.clean_time)}</p>
+        </div>
+      ) : (
         <div>
           <p className="text-gray-900">{formatDate(j.clean_date)}</p>
           <p className="text-xs text-gray-500">{formatTime(j.clean_time)}</p>
@@ -148,13 +163,17 @@ export function ResidentialJobTable({ jobs, deleteAction }: ResidentialJobTableP
               <Link href={`/clients/residential/${j.id}`} className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-medium text-gray-900 truncate">{j.client_name}</p>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${STATUS_STYLES[j.status] ?? STATUS_STYLES.not_started}`}>
-                    {STATUS_LABELS[j.status] ?? j.status}
-                  </span>
+                  {j.frequency ? (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 bg-blue-50 text-blue-700">Ongoing</span>
+                  ) : (
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${STATUS_STYLES[j.status] ?? STATUS_STYLES.not_started}`}>
+                      {STATUS_LABELS[j.status] ?? j.status}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-gray-500 truncate">{j.address}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {formatDate(j.clean_date)} · {formatTime(j.clean_time)}
+                  {j.frequency ? `${FREQUENCY_LABELS[j.frequency] ?? j.frequency} · ${(j.serviceDays ?? []).join(', ')}` : formatDate(j.clean_date)} · {formatTime(j.clean_time)}
                   {' · '}
                   <span className={j.cleaner_name ? '' : 'text-gray-400'}>{j.cleaner_name || 'Unassigned'}</span>
                 </p>

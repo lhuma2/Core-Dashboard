@@ -205,9 +205,13 @@ async function BondClientsTab() {
 
 async function ResidentialClientsTab() {
   const supabase = createClient()
+  // Only templates + one-off jobs show here — generated per-occurrence instances
+  // of a recurring template are operational detail, surfaced via the template's
+  // own page and the cleaner's timetable, same as commercial job_assignments.
   const { data: rawJobs } = await (supabase as any)
     .from('residential_jobs')
-    .select('id, client_name, address, contact_phone, clean_date, clean_time, cleaner_id, status, profiles!residential_jobs_cleaner_id_fkey(full_name)')
+    .select('id, client_name, address, contact_phone, clean_date, clean_time, cleaner_id, status, frequency, service_days, profiles!residential_jobs_cleaner_id_fkey(full_name)')
+    .is('parent_id', null)
     .order('clean_date', { ascending: true })
 
   const jobs: ResidentialJobRow[] = (rawJobs ?? []).map((j: any) => ({
@@ -221,6 +225,8 @@ async function ResidentialClientsTab() {
     cleaner_id:    j.cleaner_id,
     cleaner_name:  j.profiles?.full_name ?? null,
     status:        j.status ?? 'not_started',
+    frequency:     j.frequency ?? null,
+    serviceDays:   j.service_days ?? [],
   }))
 
   return (

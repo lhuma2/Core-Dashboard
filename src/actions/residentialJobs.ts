@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { residentialJobSchema } from '@/lib/validations/residentialJob.schema'
+import { actionableDates, brisbaneTodayStr } from '@/lib/schedule'
 
 export async function createResidentialJobAction(formData: FormData) {
   const supabase = createClient()
@@ -17,6 +18,9 @@ export async function createResidentialJobAction(formData: FormData) {
     contact_phone: fget('contact_phone'),
     clean_date:    fget('clean_date'),
     clean_time:    fget('clean_time'),
+    is_recurring:  fget('is_recurring'),
+    frequency:     fget('frequency'),
+    service_days:  formData.getAll('service_days') as string[],
     bedrooms:              fget('bedrooms'),
     bathrooms:             fget('bathrooms'),
     carpet_steam_rooms:    fget('carpet_steam_rooms'),
@@ -37,12 +41,16 @@ export async function createResidentialJobAction(formData: FormData) {
     createdBy = profile?.id ?? null
   }
 
+  const isRecurring = parsed.data.is_recurring === 'true'
+
   const { error } = await db.from('residential_jobs').insert({
     client_name:   parsed.data.client_name,
     address:       parsed.data.address,
     contact_phone: parsed.data.contact_phone || null,
     clean_date:    parsed.data.clean_date,
     clean_time:    parsed.data.clean_time || null,
+    frequency:     isRecurring ? parsed.data.frequency : null,
+    service_days:  isRecurring ? parsed.data.service_days : [],
     bedrooms:              parsed.data.bedrooms              ?? null,
     bathrooms:             parsed.data.bathrooms             ?? null,
     carpet_steam_rooms:    parsed.data.carpet_steam_rooms    ?? null,
@@ -152,6 +160,90 @@ export async function cancelStartResidentialJobAction(jobId: string) {
   revalidatePath(`/cleaner/residential/${jobId}`)
   revalidatePath('/clients')
   return { success: true }
+}
+
+// ─── Recurring templates: create today's dated instance on demand ───────────
+// Mirrors startCleanForClientAction (jobs.ts) — the template itself is never
+// "started"; tapping Start on it creates (or resumes) a concrete dated
+// instance row that tracks status/timer/photos like any other residential job.
+
+export async function startResidentialOccurrenceAction(templateId: string) {
+  const supabase = createClient()
+  const profile = await getCurrentProfile(supabase)
+  if (!profile) return { error: 'Not authenticated' }
+
+  const { data: template } = await (supabase as any)
+    .from('residential_jobs')
+    .select('*')
+    .eq('id', templateId)
+    .is('parent_id', null)
+    .not('frequency', 'is', null)
+    .single()
+
+  if (!template) return { error: 'Recurring clean not found' }
+  if (template.cleaner_id !== profile.id) return { error: 'This clean is not assigned to you.' }
+
+  const today = brisbaneTodayStr()
+  const dates = actionableDates(today)
+
+  const { data: activeElsewhere } = await (supabase as any)
+    .from('job_assignments')
+    .select('id')
+    .eq('cleaner_id', profile.id)
+    .in('status', ['in_progress', 'flagged'])
+    .limit(1)
+    .maybeSingle()
+  if (activeElsewhere?.id) {
+    return { error: 'You already have an active job elsewhere. Finish that one first.' }
+  }
+
+  // Resume today's instance if one already exists rather than creating a duplicate.
+  const { data: existingRows } = await (supabase as any)
+    .from('residential_jobs')
+    .select('id, status, started_at')
+    .eq('parent_id', templateId)
+    .in('clean_date', dates)
+    .order('clean_date', { ascending: false })
+  const existing = (existingRows ?? []).find((j: any) => j.status !== 'completed') ?? (existingRows ?? [])[0]
+
+  let jobId: string
+  if (existing?.id) {
+    jobId = existing.id
+  } else {
+    const { data: created, error: createErr } = await (supabase as any)
+      .from('residential_jobs')
+      .insert({
+        client_name:   template.client_name,
+        address:       template.address,
+        contact_phone: template.contact_phone,
+        clean_date:    today,
+        clean_time:    template.clean_time,
+        bedrooms:              template.bedrooms,
+        bathrooms:             template.bathrooms,
+        carpet_steam_rooms:    template.carpet_steam_rooms,
+        carpet_steam_hallways: template.carpet_steam_hallways,
+        comments:      template.comments,
+        cleaner_id:    template.cleaner_id,
+        created_by:    template.created_by,
+        parent_id:     templateId,
+      })
+      .select('id')
+      .single()
+    if (createErr) return { error: createErr.message }
+    jobId = created.id
+  }
+
+  const alreadyStarted = !!existing?.started_at
+  const now = new Date().toISOString()
+  await (supabase as any)
+    .from('residential_jobs')
+    .update(alreadyStarted ? { status: 'in_progress' } : { status: 'in_progress', started_at: now })
+    .eq('id', jobId)
+
+  revalidatePath('/cleaner/dashboard')
+  revalidatePath(`/cleaner/residential/${templateId}`)
+  revalidatePath('/clients')
+  return { success: true, jobId }
 }
 
 export async function finishResidentialJobAction(jobId: string) {
