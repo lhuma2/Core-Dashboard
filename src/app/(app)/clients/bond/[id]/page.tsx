@@ -85,7 +85,7 @@ export default async function AdminBondJobDetailPage({ params }: { params: { id:
         </div>
       </div>
 
-      {(job.bedrooms != null || job.bathrooms != null || job.carpet_steam_rooms != null || job.carpet_steam_hallways != null) && (
+      {(job.bedrooms != null || job.bathrooms != null || job.carpet_steam_rooms != null || job.carpet_steam_hallways != null || job.cleaner_cost != null) && (
         <div className="bg-white border border-gray-200/70 rounded-2xl px-5 py-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Property Details</p>
           <div className="flex gap-6 flex-wrap">
@@ -100,6 +100,9 @@ export default async function AdminBondJobDetailPage({ params }: { params: { id:
             )}
             {job.carpet_steam_hallways != null && (
               <div><p className="text-xs text-gray-400 mb-0.5">Carpet Steam — Hallways</p><p className="text-sm font-semibold text-black">{job.carpet_steam_hallways}</p></div>
+            )}
+            {job.cleaner_cost != null && (
+              <div><p className="text-xs text-gray-400 mb-0.5">Cleaner Cost</p><p className="text-sm font-semibold text-black">${Number(job.cleaner_cost).toFixed(2)}</p></div>
             )}
           </div>
         </div>

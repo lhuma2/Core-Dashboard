@@ -169,6 +169,17 @@ export function ResidentialJobForm({ action, cleaners }: ResidentialJobFormProps
         defaultValue=""
       />
 
+      <Input
+        type="number"
+        step="0.01"
+        min="0"
+        name="cleaner_cost"
+        label="Cleaner Cost ($)"
+        placeholder="e.g. 90.00"
+        error={errors.cleaner_cost?.[0]}
+      />
+      <p className="text-xs text-gray-400 -mt-3">What you're paying the cleaner for this job — flows into the Xero profit &amp; loss.</p>
+
       <div className="grid grid-cols-2 gap-4">
         <Select
           name="bedrooms"

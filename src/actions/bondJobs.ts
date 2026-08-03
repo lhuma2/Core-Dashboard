@@ -23,6 +23,7 @@ export async function createBondJobAction(formData: FormData) {
     carpet_steam_hallways: fget('carpet_steam_hallways'),
     comments:      fget('comments'),
     cleaner_id:    fget('cleaner_id'),
+    cleaner_cost:  fget('cleaner_cost'),
   }
 
   const parsed = bondJobSchema.safeParse(raw)
@@ -49,6 +50,7 @@ export async function createBondJobAction(formData: FormData) {
     carpet_steam_hallways: parsed.data.carpet_steam_hallways ?? null,
     comments:      parsed.data.comments || null,
     cleaner_id:    parsed.data.cleaner_id || null,
+    cleaner_cost:  parsed.data.cleaner_cost || null,
     created_by:    createdBy,
   })
 

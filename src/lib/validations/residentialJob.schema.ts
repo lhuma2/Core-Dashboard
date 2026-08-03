@@ -21,6 +21,7 @@ export const residentialJobSchema = z.object({
   carpet_steam_hallways: roomCount,
   comments:      z.string().max(2000).optional().or(z.literal('')),
   cleaner_id:    z.string().uuid().optional().or(z.literal('')),
+  cleaner_cost:  z.coerce.number().min(0).optional().or(z.literal('')),
 }).refine(
   (data) => data.is_recurring !== 'true' || (!!data.frequency && (data.service_days?.length ?? 0) > 0),
   { message: 'Pick a frequency and at least one day for an ongoing clean.', path: ['frequency'] },

@@ -31,6 +31,7 @@ export interface XeroPLPeriod {
   toDate: string
   revenue: number
   expenses: number
+  cleanerCost: number
   netProfit: number
 }
 
@@ -203,7 +204,17 @@ export async function getApprovedPL(months = 3): Promise<XeroPLPeriod[]> {
     .from('xero_approved_transactions')
     .select('xero_id, type, amount, date')
 
-  if (!approved || approved.length === 0) return []
+  // Cleaner pay on one-off bond/residential jobs — these have no revenue of
+  // their own (invoiced directly in Xero) but their cost should still reduce
+  // the P&L. Excludes recurring templates (frequency set) — only actual dated
+  // occurrences (one-off jobs and generated instances) carry a real date.
+  const [{ data: bondJobs }, { data: residentialJobs }] = await Promise.all([
+    (supabase as any).from('bond_jobs').select('clean_date, cleaner_cost').not('cleaner_cost', 'is', null),
+    (supabase as any).from('residential_jobs').select('clean_date, cleaner_cost').is('frequency', null).not('cleaner_cost', 'is', null),
+  ])
+  const jobCosts = [...(bondJobs ?? []), ...(residentialJobs ?? [])]
+
+  if ((!approved || approved.length === 0) && jobCosts.length === 0) return []
 
   // Build month buckets for the last N months
   const now = new Date()
@@ -214,7 +225,7 @@ export async function getApprovedPL(months = 3): Promise<XeroPLPeriod[]> {
     const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
     const label = start.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })
 
-    const inPeriod = approved.filter((t: any) => {
+    const inPeriod = (approved ?? []).filter((t: any) => {
       if (!t.date) return false
       const d = new Date(t.date)
       return d >= start && d <= end
@@ -223,13 +234,22 @@ export async function getApprovedPL(months = 3): Promise<XeroPLPeriod[]> {
     const revenue  = inPeriod.filter((t: any) => t.type === 'INCOME').reduce((s: number, t: any) => s + (t.amount ?? 0), 0)
     const expenses = inPeriod.filter((t: any) => t.type === 'EXPENSE').reduce((s: number, t: any) => s + (t.amount ?? 0), 0)
 
+    const cleanerCost = jobCosts
+      .filter((j: any) => {
+        if (!j.clean_date) return false
+        const d = new Date(j.clean_date)
+        return d >= start && d <= end
+      })
+      .reduce((s: number, j: any) => s + (Number(j.cleaner_cost) || 0), 0)
+
     periods.push({
       label,
       fromDate: start.toISOString().split('T')[0],
       toDate:   end.toISOString().split('T')[0],
       revenue,
       expenses,
-      netProfit: revenue - expenses,
+      cleanerCost,
+      netProfit: revenue - expenses - cleanerCost,
     })
   }
 

@@ -27,6 +27,7 @@ export async function createResidentialJobAction(formData: FormData) {
     carpet_steam_hallways: fget('carpet_steam_hallways'),
     comments:      fget('comments'),
     cleaner_id:    fget('cleaner_id'),
+    cleaner_cost:  fget('cleaner_cost'),
   }
 
   const parsed = residentialJobSchema.safeParse(raw)
@@ -57,6 +58,7 @@ export async function createResidentialJobAction(formData: FormData) {
     carpet_steam_hallways: parsed.data.carpet_steam_hallways ?? null,
     comments:      parsed.data.comments || null,
     cleaner_id:    parsed.data.cleaner_id || null,
+    cleaner_cost:  parsed.data.cleaner_cost || null,
     created_by:    createdBy,
   })
 
@@ -224,6 +226,7 @@ export async function startResidentialOccurrenceAction(templateId: string) {
         carpet_steam_hallways: template.carpet_steam_hallways,
         comments:      template.comments,
         cleaner_id:    template.cleaner_id,
+        cleaner_cost:  template.cleaner_cost,
         created_by:    template.created_by,
         parent_id:     templateId,
       })

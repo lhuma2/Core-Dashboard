@@ -10,6 +10,7 @@ interface PLPeriod {
   toDate: string
   revenue: number
   expenses: number
+  cleanerCost: number
   netProfit: number
 }
 
@@ -283,10 +284,10 @@ export function XeroFinanceWidget() {
           ) : (
             <div className="space-y-4">
               {/* KPI summary */}
-              <div className="grid grid-cols-3 gap-3">
-                {(['revenue', 'expenses', 'netProfit'] as const).map(key => {
+              <div className="grid grid-cols-4 gap-3">
+                {(['revenue', 'expenses', 'cleanerCost', 'netProfit'] as const).map(key => {
                   const total = plData.reduce((s, p) => s + p[key], 0)
-                  const label = { revenue: 'Revenue', expenses: 'Expenses', netProfit: 'Net Profit' }[key]
+                  const label = { revenue: 'Revenue', expenses: 'Expenses', cleanerCost: 'Cleaner Pay', netProfit: 'Net Profit' }[key]
                   const color = key === 'netProfit' ? (total >= 0 ? 'text-green-700' : 'text-red-600') : 'text-black'
                   return (
                     <div key={key} className="border border-gray-100 rounded-xl p-4">
@@ -304,6 +305,7 @@ export function XeroFinanceWidget() {
                     <th className="text-left py-2 text-gray-400 font-medium">Month</th>
                     <th className="text-right py-2 text-gray-400 font-medium">Revenue</th>
                     <th className="text-right py-2 text-gray-400 font-medium">Expenses</th>
+                    <th className="text-right py-2 text-gray-400 font-medium">Cleaner Pay</th>
                     <th className="text-right py-2 text-gray-400 font-medium">Profit</th>
                     <th className="text-right py-2 text-gray-400 font-medium">Margin</th>
                   </tr>
@@ -316,6 +318,7 @@ export function XeroFinanceWidget() {
                         <td className="py-2.5 font-medium text-gray-700">{p.label}</td>
                         <td className="py-2.5 text-right text-gray-700">{fmt(p.revenue)}</td>
                         <td className="py-2.5 text-right text-gray-500">{fmt(p.expenses)}</td>
+                        <td className="py-2.5 text-right text-gray-500">{fmt(p.cleanerCost)}</td>
                         <td className={`py-2.5 text-right font-semibold ${p.netProfit >= 0 ? 'text-green-700' : 'text-red-600'}`}>
                           {fmt(p.netProfit)}
                         </td>

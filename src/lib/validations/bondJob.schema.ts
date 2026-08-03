@@ -14,6 +14,7 @@ export const bondJobSchema = z.object({
   carpet_steam_hallways: roomCount,
   comments:      z.string().max(2000).optional().or(z.literal('')),
   cleaner_id:    z.string().uuid().optional().or(z.literal('')),
+  cleaner_cost:  z.coerce.number().min(0).optional().or(z.literal('')),
 })
 
 export type BondJobInput = z.infer<typeof bondJobSchema>
