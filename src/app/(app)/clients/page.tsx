@@ -9,9 +9,10 @@ import { computeClientHealth } from '@/lib/health'
 import { ClientTable } from '@/components/clients/ClientTable'
 import { ClientFilters } from '@/components/clients/ClientFilters'
 import { BondJobTable, type BondJobRow } from '@/components/clients/BondJobTable'
-import { deleteBondJobAction } from '@/actions/bondJobs'
+import { deleteBondJobAction, assignBondJobCleanerAction } from '@/actions/bondJobs'
 import { ResidentialJobTable, type ResidentialJobRow } from '@/components/clients/ResidentialJobTable'
-import { deleteResidentialJobAction } from '@/actions/residentialJobs'
+import { deleteResidentialJobAction, assignResidentialJobCleanerAction } from '@/actions/residentialJobs'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Plus } from 'lucide-react'
@@ -162,10 +163,16 @@ function ClientsTabBar({ active }: { active: 'commercial' | 'bond' | 'residentia
 
 async function BondClientsTab() {
   const supabase = createClient()
-  const { data: rawJobs } = await (supabase as any)
-    .from('bond_jobs')
-    .select('id, client_name, address, contact_phone, clean_date, clean_time, cleaner_id, status, profiles!bond_jobs_cleaner_id_fkey(full_name)')
-    .order('clean_date', { ascending: true })
+  const admin = createAdminClient()
+  const [{ data: rawJobs }, { data: cleanerProfiles }] = await Promise.all([
+    (supabase as any)
+      .from('bond_jobs')
+      .select('id, client_name, address, contact_phone, clean_date, clean_time, cleaner_id, status, profiles!bond_jobs_cleaner_id_fkey(full_name)')
+      .order('clean_date', { ascending: true }),
+    (admin as any).from('profiles').select('id, full_name').eq('role', 'cleaner').order('full_name', { ascending: true }),
+  ])
+
+  const cleaners = (cleanerProfiles ?? []).map((p: any) => ({ id: p.id, fullName: p.full_name ?? 'Unknown' }))
 
   const jobs: BondJobRow[] = (rawJobs ?? []).map((j: any) => ({
     id:            j.id,
@@ -197,7 +204,7 @@ async function BondClientsTab() {
       </div>
 
       <Card padding={false}>
-        <BondJobTable jobs={jobs} deleteAction={deleteBondJobAction} />
+        <BondJobTable jobs={jobs} deleteAction={deleteBondJobAction} assignAction={assignBondJobCleanerAction} cleaners={cleaners} />
       </Card>
     </div>
   )
@@ -205,14 +212,20 @@ async function BondClientsTab() {
 
 async function ResidentialClientsTab() {
   const supabase = createClient()
+  const admin = createAdminClient()
   // Only templates + one-off jobs show here — generated per-occurrence instances
   // of a recurring template are operational detail, surfaced via the template's
   // own page and the cleaner's timetable, same as commercial job_assignments.
-  const { data: rawJobs } = await (supabase as any)
-    .from('residential_jobs')
-    .select('id, client_name, address, contact_phone, clean_date, clean_time, cleaner_id, status, frequency, service_days, profiles!residential_jobs_cleaner_id_fkey(full_name)')
-    .is('parent_id', null)
-    .order('clean_date', { ascending: true })
+  const [{ data: rawJobs }, { data: cleanerProfiles }] = await Promise.all([
+    (supabase as any)
+      .from('residential_jobs')
+      .select('id, client_name, address, contact_phone, clean_date, clean_time, cleaner_id, status, frequency, service_days, profiles!residential_jobs_cleaner_id_fkey(full_name)')
+      .is('parent_id', null)
+      .order('clean_date', { ascending: true }),
+    (admin as any).from('profiles').select('id, full_name').eq('role', 'cleaner').order('full_name', { ascending: true }),
+  ])
+
+  const cleaners = (cleanerProfiles ?? []).map((p: any) => ({ id: p.id, fullName: p.full_name ?? 'Unknown' }))
 
   const jobs: ResidentialJobRow[] = (rawJobs ?? []).map((j: any) => ({
     id:            j.id,
@@ -246,7 +259,7 @@ async function ResidentialClientsTab() {
       </div>
 
       <Card padding={false}>
-        <ResidentialJobTable jobs={jobs} deleteAction={deleteResidentialJobAction} />
+        <ResidentialJobTable jobs={jobs} deleteAction={deleteResidentialJobAction} assignAction={assignResidentialJobCleanerAction} cleaners={cleaners} />
       </Card>
     </div>
   )

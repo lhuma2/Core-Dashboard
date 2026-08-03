@@ -36,9 +36,47 @@ const STATUS_LABELS: Record<string, string> = {
   completed:   'Completed',
 }
 
+interface CleanerOption {
+  id: string
+  fullName: string
+}
+
 interface ResidentialJobTableProps {
   jobs: ResidentialJobRow[]
   deleteAction: (id: string) => Promise<void>
+  assignAction?: (id: string, cleanerId: string) => Promise<{ error?: string; success?: boolean }>
+  cleaners?: CleanerOption[]
+}
+
+function CleanerCell({ job, cleaners, assignAction }: {
+  job: ResidentialJobRow
+  cleaners: CleanerOption[]
+  assignAction: (id: string, cleanerId: string) => Promise<{ error?: string; success?: boolean }>
+}) {
+  const [isPending, startTransition] = useTransition()
+
+  if (job.cleaner_name) {
+    return <span className="text-gray-900">{job.cleaner_name}</span>
+  }
+
+  return (
+    <select
+      className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:border-[#00250e] disabled:opacity-50"
+      defaultValue=""
+      disabled={isPending}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => {
+        const cleanerId = e.target.value
+        if (!cleanerId) return
+        startTransition(async () => { await assignAction(job.id, cleanerId) })
+      }}
+    >
+      <option value="" disabled>Unassigned</option>
+      {cleaners.map((c) => (
+        <option key={c.id} value={c.id}>{c.fullName}</option>
+      ))}
+    </select>
+  )
 }
 
 function formatDate(dateStr: string) {
@@ -55,7 +93,7 @@ function formatTime(timeStr: string | null) {
   return d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
 }
 
-export function ResidentialJobTable({ jobs, deleteAction }: ResidentialJobTableProps) {
+export function ResidentialJobTable({ jobs, deleteAction, assignAction, cleaners = [] }: ResidentialJobTableProps) {
   const [isPending, startTransition] = useTransition()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -116,7 +154,9 @@ export function ResidentialJobTable({ jobs, deleteAction }: ResidentialJobTableP
     {
       key: 'cleaner_name',
       header: 'Cleaner',
-      render: (j) => (
+      render: (j) => assignAction ? (
+        <CleanerCell job={j} cleaners={cleaners} assignAction={assignAction} />
+      ) : (
         <span className={j.cleaner_name ? 'text-gray-900' : 'text-gray-400'}>
           {j.cleaner_name || 'Unassigned'}
         </span>
@@ -172,10 +212,15 @@ export function ResidentialJobTable({ jobs, deleteAction }: ResidentialJobTableP
                   )}
                 </div>
                 <p className="text-xs text-gray-500 truncate">{j.address}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {j.frequency ? `${FREQUENCY_LABELS[j.frequency] ?? j.frequency} · ${(j.serviceDays ?? []).join(', ')}` : formatDate(j.clean_date)} · {formatTime(j.clean_time)}
-                  {' · '}
-                  <span className={j.cleaner_name ? '' : 'text-gray-400'}>{j.cleaner_name || 'Unassigned'}</span>
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1 flex-wrap">
+                  <span>
+                    {j.frequency ? `${FREQUENCY_LABELS[j.frequency] ?? j.frequency} · ${(j.serviceDays ?? []).join(', ')}` : formatDate(j.clean_date)} · {formatTime(j.clean_time)} ·
+                  </span>
+                  {assignAction ? (
+                    <CleanerCell job={j} cleaners={cleaners} assignAction={assignAction} />
+                  ) : (
+                    <span className={j.cleaner_name ? '' : 'text-gray-400'}>{j.cleaner_name || 'Unassigned'}</span>
+                  )}
                 </p>
               </Link>
               <button

@@ -5,6 +5,8 @@ import { createResidentialJobAction } from '@/actions/residentialJobs'
 import { ResidentialJobForm } from '@/components/clients/ResidentialJobForm'
 import { Card } from '@/components/ui/Card'
 
+export const dynamic = 'force-dynamic'
+
 export default async function NewResidentialJobPage() {
   const admin = createAdminClient()
   const { data: cleanerProfiles } = await (admin as any)

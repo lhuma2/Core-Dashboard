@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+export const dynamic = 'force-dynamic'
+
 export default async function NewClientPage() {
   const admin = createAdminClient()
   const { data: cleanerProfiles } = await (admin as any)

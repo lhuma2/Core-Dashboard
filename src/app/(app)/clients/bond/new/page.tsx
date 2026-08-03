@@ -5,6 +5,8 @@ import { createBondJobAction } from '@/actions/bondJobs'
 import { BondJobForm } from '@/components/clients/BondJobForm'
 import { Card } from '@/components/ui/Card'
 
+export const dynamic = 'force-dynamic'
+
 export default async function NewBondJobPage() {
   const admin = createAdminClient()
   const { data: cleanerProfiles } = await (admin as any)
