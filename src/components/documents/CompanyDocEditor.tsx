@@ -84,8 +84,8 @@ const FIELD_META: Record<FieldType, { label: string; icon: any; placeholder: str
 }
 
 export function CompanyDocEditor({
-  id, initialData, pdfUrl, docTitle,
-}: { id: string; initialData: any; pdfUrl: string; docTitle: string }) {
+  id, initialData, pdfUrl, docTitle, status,
+}: { id: string; initialData: any; pdfUrl: string; docTitle: string; status?: string }) {
   const [values, setValues] = useState<FieldValues>({
     clientName:  initialData?.fieldValues?.clientName ?? initialData?.clientName ?? '',
     quotedPrice: initialData?.fieldValues?.quotedPrice ?? '',
@@ -338,6 +338,12 @@ export function CompanyDocEditor({
             className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:border-gray-300 rounded-lg px-3 py-2 transition-colors">
             <Download className="w-3.5 h-3.5" /> Open PDF
           </a>
+          {status === 'signed' && (
+            <a href={`/api/documents/${id}/flatten`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:border-emerald-300 rounded-lg px-3 py-2 transition-colors">
+              <Download className="w-3.5 h-3.5" /> Download Signed PDF
+            </a>
+          )}
           <button onClick={() => setShowSend(true)}
             className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#003314] hover:bg-[#00250e] text-white rounded-lg px-3 py-2 transition-colors">
             <Send className="w-3.5 h-3.5" /> Send

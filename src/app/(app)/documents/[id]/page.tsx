@@ -48,6 +48,7 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
         initialData={doc.data ?? {}}
         pdfUrl={doc.pdf_url}
         docTitle={doc.client_name || 'Company document'}
+        status={doc.status}
       />
     )
   }

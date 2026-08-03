@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Folder, FolderOpen, FilePen, FileText, Plus, Trash2, X, Loader2, Check, FolderInput, Upload } from 'lucide-react'
+import { Folder, FolderOpen, FilePen, FileText, Plus, Trash2, X, Loader2, Check, FolderInput, Upload, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { createFolderAction, deleteFolderAction, moveDocToFolderAction, addFolderFileAction, deleteFolderFileAction } from '@/actions/folders'
 import { deleteProposalDocAction } from '@/actions/proposal-docs'
 
-type Doc = { id: string; client_name: string | null; kind: string; folder_id: string | null; signed_at: string | null }
+type Doc = { id: string; client_name: string | null; kind: string; folder_id: string | null; signed_at: string | null; pdf_url?: string | null }
 type FolderFile = { id: string; folder_id: string; name: string; file_url: string }
 type FolderT = { id: string; name: string }
 
@@ -81,6 +81,12 @@ export function SignedDocsFolders({ folders, signed, files }: { folders: FolderT
         <p className="text-xs text-gray-400">Signed{d.signed_at ? ` · ${new Date(d.signed_at).toLocaleDateString('en-AU')}` : ''}</p>
       </div>
       <Link href={`/documents/${d.id}`} className="text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-3 py-1 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">View</Link>
+      {d.pdf_url && (
+        <a href={`/api/documents/${d.id}/flatten`} title="Download the signed PDF with the signature and filled fields included"
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 border border-emerald-200 bg-emerald-50 rounded-full px-3 py-1 hover:bg-emerald-100 transition-colors flex-shrink-0">
+          <Download className="w-3 h-3" /> PDF
+        </a>
+      )}
       {showUnfile && <button onClick={() => moveTo(d.id, null)} title="Remove from folder" className="text-gray-400 hover:text-red-500 flex-shrink-0"><X className="w-4 h-4" /></button>}
       {showDelete && <button onClick={() => removeDoc(d.id)} title="Delete document" className="text-gray-400 hover:text-red-500 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>}
     </div>

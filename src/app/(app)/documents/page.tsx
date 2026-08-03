@@ -40,7 +40,7 @@ export default async function DocumentsPage() {
   // Signed documents + their folders
   const { data: signedRows } = await db
     .from('proposal_documents')
-    .select('id, kind, client_name, folder_id, signed_at')
+    .select('id, kind, client_name, folder_id, signed_at, pdf_url')
     .eq('status', 'signed')
     .order('signed_at', { ascending: false })
   const signedDocs: any[] = signedRows ?? []
