@@ -8,6 +8,7 @@ import { AlertPanel } from '@/components/dashboard/AlertPanel'
 import { RevenueByServiceType } from '@/components/analytics/RevenueByServiceType'
 import { AdminCompleteJobButton } from '@/components/dashboard/AdminCompleteJobButton'
 import { XeroFinanceWidget } from '@/components/admin/XeroFinanceWidget'
+import { getApprovedPL } from '@/lib/xero'
 import { formatAUD } from '@/lib/formatters'
 import { HEALTH_STATUS_LABELS } from '@/lib/constants'
 import { ChevronRight, CheckCircle, AlertTriangle, TrendingDown, Info, Activity, TrendingUp, XCircle, CheckCircle2 } from 'lucide-react'
@@ -223,6 +224,23 @@ export default async function DashboardPage() {
     ? clientsWithProfit.reduce((s: number, c: any) => s + (c.monthly_profit || 0), 0)
     : null
 
+  // This month's approved Xero P&L (revenue you've explicitly approved in the
+  // Review tab, minus real Xero expenses and bond/residential cleaner pay) —
+  // rolled into the headline revenue/profit tiles alongside recurring client
+  // MRR. Kept out of the 12-month forecast and valuation below, which are
+  // explicitly about recurring, contractual revenue.
+  let xeroThisMonth: Awaited<ReturnType<typeof getApprovedPL>>[number] | null = null
+  try {
+    const xeroPL = await getApprovedPL(1)
+    xeroThisMonth = xeroPL[0] ?? null
+  } catch { /* Xero not connected or unreachable — dashboard still works without it */ }
+
+  const hasXeroData = !!xeroThisMonth && (xeroThisMonth.revenue !== 0 || xeroThisMonth.expenses !== 0 || xeroThisMonth.cleanerCost !== 0)
+  const combinedRevenue   = mrr + (xeroThisMonth?.revenue ?? 0)
+  const combinedNetProfit = (netMonthlyProfit != null || hasXeroData)
+    ? (netMonthlyProfit ?? 0) + (xeroThisMonth?.netProfit ?? 0)
+    : null
+
   const marginsWithData = activeClients.filter((c: any) => c.margin_pct != null)
   const avgMarginPct    = marginsWithData.length > 0
     ? marginsWithData.reduce((s: number, c: any) => s + (c.margin_pct || 0), 0) / marginsWithData.length
@@ -306,14 +324,15 @@ export default async function DashboardPage() {
           {greeting}, Laith
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          {activeClients.length} active client{activeClients.length === 1 ? '' : 's'} · {formatAUD(mrr)} monthly revenue
+          {activeClients.length} active client{activeClients.length === 1 ? '' : 's'} · {formatAUD(combinedRevenue)} monthly revenue
         </p>
       </div>
 
       <KPIGrid
         activeClients={activeClients.length}
         mrr={mrr}
-        netMonthlyProfit={netMonthlyProfit}
+        displayRevenue={combinedRevenue}
+        netMonthlyProfit={combinedNetProfit}
         avgMarginPct={avgMarginPct}
         valuationMultiple={settings.valuation_multiple}
       />

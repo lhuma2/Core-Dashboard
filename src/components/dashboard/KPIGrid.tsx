@@ -9,6 +9,7 @@ const aud0 = (v: number) =>
 interface KPIGridProps {
   activeClients:     number
   mrr:               number
+  displayRevenue?:   number // headline "Monthly Revenue" figure — may include this month's approved Xero income on top of recurring MRR. Valuation below still uses `mrr` alone since that's recurring, contractual revenue.
   netMonthlyProfit:  number | null
   avgMarginPct:      number | null
   valuationMultiple?: number
@@ -37,9 +38,10 @@ function KPITile({
   )
 }
 
-export function KPIGrid({ activeClients, mrr, netMonthlyProfit, avgMarginPct, valuationMultiple }: KPIGridProps) {
+export function KPIGrid({ activeClients, mrr, displayRevenue, netMonthlyProfit, avgMarginPct, valuationMultiple }: KPIGridProps) {
   const multiple  = valuationMultiple ?? VALUATION_MULTIPLE
   const valuation = mrr * 12 * multiple
+  const revenue   = displayRevenue ?? mrr
 
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -50,8 +52,8 @@ export function KPIGrid({ activeClients, mrr, netMonthlyProfit, avgMarginPct, va
       />
       <KPITile
         label="Monthly Revenue"
-        value={aud0(mrr)}
-        subtext={`${formatAUDCompact(mrr * 12)} ARR`}
+        value={aud0(revenue)}
+        subtext={`${formatAUDCompact(mrr * 12)} ARR · recurring`}
       />
       <KPITile
         label="Net Profit / Month"
