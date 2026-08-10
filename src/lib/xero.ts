@@ -206,11 +206,13 @@ export async function getApprovedPL(months = 3): Promise<XeroPLPeriod[]> {
 
   // Cleaner pay on one-off bond/residential jobs — these have no revenue of
   // their own (invoiced directly in Xero) but their cost should still reduce
-  // the P&L. Excludes recurring templates (frequency set) — only actual dated
-  // occurrences (one-off jobs and generated instances) carry a real date.
+  // the P&L. Only counts once the clean is actually completed (not just
+  // scheduled), so a future job's cost doesn't drag down profit before it's
+  // even happened. Excludes recurring templates (frequency set) — only actual
+  // dated occurrences (one-off jobs and generated instances) carry a real date.
   const [{ data: bondJobs }, { data: residentialJobs }] = await Promise.all([
-    (supabase as any).from('bond_jobs').select('clean_date, cleaner_cost').not('cleaner_cost', 'is', null),
-    (supabase as any).from('residential_jobs').select('clean_date, cleaner_cost').is('frequency', null).not('cleaner_cost', 'is', null),
+    (supabase as any).from('bond_jobs').select('clean_date, cleaner_cost').eq('status', 'completed').not('cleaner_cost', 'is', null),
+    (supabase as any).from('residential_jobs').select('clean_date, cleaner_cost').is('frequency', null).eq('status', 'completed').not('cleaner_cost', 'is', null),
   ])
   const jobCosts = [...(bondJobs ?? []), ...(residentialJobs ?? [])]
 
