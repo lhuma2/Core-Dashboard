@@ -8,7 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { AcceptClientButton } from '@/components/portal/cleaner/AcceptClientButton'
 import { actionableDates, brisbaneTodayStr, getUpcomingDates } from '@/lib/schedule'
-import { ChevronRight, ChevronLeft, Briefcase, Calendar, AlertCircle, XCircle } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Briefcase, Calendar, AlertCircle, XCircle, CheckCircle2 } from 'lucide-react'
 
 function pad(n: number) { return n.toString().padStart(2, '0') }
 function toDateStr(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` }
@@ -471,13 +471,16 @@ export default async function CleanerDashboard({
                 ) : (
                   <div className="space-y-2">
                     {entries.map((ev) => {
-                      const outstandingToday = isToday && ev.statusKey !== 'completed'
+                      const isCompleted = ev.statusKey === 'completed'
+                      const outstandingToday = isToday && !isCompleted
                       return (
                         <Link key={ev.id} href={ev.href} className="block">
                           <div
                             className={`rounded-2xl px-5 py-5 flex items-center justify-between gap-3 active:opacity-80 transition-opacity ${
                               outstandingToday
                                 ? 'bg-brand-warning/10 border-2 border-brand-warning'
+                                : isCompleted
+                                ? 'bg-green-50 border border-green-100'
                                 : 'bg-white border border-gray-100'
                             }`}
                           >
@@ -492,6 +495,12 @@ export default async function CleanerDashboard({
                                 </span>
                                 {ev.time && (
                                   <span className="text-xs font-semibold text-gray-500">{ev.time}</span>
+                                )}
+                                {isCompleted && (
+                                  <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Completed
+                                  </span>
                                 )}
                               </div>
                               <p className="text-base font-bold text-black truncate">{ev.clientName}</p>
