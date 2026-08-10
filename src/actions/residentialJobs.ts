@@ -71,6 +71,16 @@ export async function createResidentialJobAction(formData: FormData) {
   redirect('/clients?tab=residential')
 }
 
+export async function updateResidentialJobCleanerCostAction(id: string, cost: number | null) {
+  const supabase = createClient()
+  const db = supabase as any
+  const { error } = await db.from('residential_jobs').update({ cleaner_cost: cost }).eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/clients')
+  revalidatePath(`/clients/residential/${id}`)
+  return { success: true }
+}
+
 export async function assignResidentialJobCleanerAction(id: string, cleanerId: string) {
   const supabase = createClient()
   const db = supabase as any

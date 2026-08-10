@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PhotoGrid } from '@/components/ui/PhotoLightbox'
+import { CleanerCostEditor } from '@/components/clients/CleanerCostEditor'
+import { updateResidentialJobCleanerCostAction } from '@/actions/residentialJobs'
 import { ArrowLeft, MapPin, Phone, User, MessageSquare, Repeat } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -114,9 +116,10 @@ export default async function AdminResidentialJobDetailPage({ params }: { params
             {job.carpet_steam_hallways != null && (
               <div><p className="text-xs text-gray-400 mb-0.5">Carpet Steam — Hallways</p><p className="text-sm font-semibold text-black">{job.carpet_steam_hallways}</p></div>
             )}
-            {job.cleaner_cost != null && (
-              <div><p className="text-xs text-gray-400 mb-0.5">Cleaner Cost</p><p className="text-sm font-semibold text-black">${Number(job.cleaner_cost).toFixed(2)}</p></div>
-            )}
+            <div>
+              <p className="text-xs text-gray-400 mb-0.5">Cleaner Cost</p>
+              <CleanerCostEditor jobId={job.id} initialCost={job.cleaner_cost ?? null} updateAction={updateResidentialJobCleanerCostAction} />
+            </div>
           </div>
         </div>
       )}

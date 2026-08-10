@@ -62,6 +62,16 @@ export async function createBondJobAction(formData: FormData) {
   redirect('/clients?tab=bond')
 }
 
+export async function updateBondJobCleanerCostAction(id: string, cost: number | null) {
+  const supabase = createClient()
+  const db = supabase as any
+  const { error } = await db.from('bond_jobs').update({ cleaner_cost: cost }).eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/clients')
+  revalidatePath(`/clients/bond/${id}`)
+  return { success: true }
+}
+
 export async function assignBondJobCleanerAction(id: string, cleanerId: string) {
   const supabase = createClient()
   const db = supabase as any
