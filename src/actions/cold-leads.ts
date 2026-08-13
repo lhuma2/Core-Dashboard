@@ -392,6 +392,40 @@ async function sendThreadedEmail(opts: {
   }
 }
 
+// ─── Email attachments ────────────────────────────────────────────────────────
+
+async function loadStaticAsset(assetPath: string): Promise<Buffer | null> {
+  try {
+    const { readFile } = await import('node:fs/promises')
+    const path = await import('node:path')
+    return await readFile(path.join(process.cwd(), assetPath))
+  } catch {
+    return null
+  }
+}
+
+// The capability statement is user-editable via Documents → Company documents,
+// so it lives in Supabase Storage, not the git-bundled static copy — pull
+// whichever was uploaded most recently. Falls back to the bundled PDF only if
+// nothing has ever been uploaded there.
+async function loadCapabilityStatement(): Promise<Buffer | null> {
+  try {
+    const db = createAdminClient() as any
+    const { data } = await db
+      .from('company_documents')
+      .select('file_url')
+      .eq('name', 'Capability Statement')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (data?.file_url) {
+      const res = await fetch(data.file_url)
+      if (res.ok) return Buffer.from(await res.arrayBuffer())
+    }
+  } catch { /* fall through to the bundled copy */ }
+  return loadStaticAsset('src/lib/documents/assets/capability-statement.pdf')
+}
+
 export async function sendIntroEmailAction(id: string, scheduleFollowUp = false) {
   const db = createAdminClient() as any
   const { data: lead } = await db.from('cold_leads').select('*').eq('id', id).single()
@@ -419,22 +453,11 @@ export async function sendIntroEmailAction(id: string, scheduleFollowUp = false)
   <p>We look after commercial cleaning for businesses${locality}: offices, clinics, retail and shared spaces — reliable teams, fixed monthly pricing and no lock-in.</p>
   <p>Have a look when you get a moment. If you think we can help in any way, feel free to call me directly on <a href="tel:+61412844237">0407 026 360</a>, or just reply here and I'll set up a quick, free site visit.</p>`)
 
-  // Attach the same uploaded PDFs the Capability Statement button uses — reading
-  // the static files directly is far more reliable than rendering a PDF component
-  // on the fly, which was silently dropping the attachment on any render hiccup.
-  const toAttach = [
-    { filename: 'Core Cleaning Capability Statement.pdf', assetPath: 'src/lib/documents/assets/capability-statement.pdf' },
-    { filename: 'Core Cleaning Bond Cleaning Price Guide.pdf', assetPath: 'src/lib/documents/assets/bond-cleaning-price-guide.pdf' },
-  ]
   const attachments: { filename: string; content: Buffer }[] = []
-  for (const a of toAttach) {
-    try {
-      const { readFile } = await import('node:fs/promises')
-      const path = await import('node:path')
-      const content = await readFile(path.join(process.cwd(), a.assetPath))
-      attachments.push({ filename: a.filename, content })
-    } catch { /* skip this one, still send with whichever attachments did load */ }
-  }
+  const capBuf = await loadCapabilityStatement()
+  if (capBuf) attachments.push({ filename: 'Core Cleaning Capability Statement.pdf', content: capBuf })
+  const bondBuf = await loadStaticAsset('src/lib/documents/assets/bond-cleaning-price-guide.pdf')
+  if (bondBuf) attachments.push({ filename: 'Core Cleaning Bond Cleaning Price Guide.pdf', content: bondBuf })
 
   const result = await sendThreadedEmail({ to: lead.email, subject, html, messageId, attachments: attachments.length ? attachments : undefined })
   if (!result.success) return { error: result.error || 'Email failed to send' }
@@ -570,23 +593,12 @@ export async function sendCapabilityEmailAction(id: string, includeBondGuide = f
 
   const { subject, bodyText, html } = capabilityEmailContent(lead)
 
-  const toAttach: { filename: string; assetPath: string }[] = [
-    { filename: 'Core Cleaning Capability Statement.pdf', assetPath: 'src/lib/documents/assets/capability-statement.pdf' },
-  ]
-  if (includeBondGuide) {
-    toAttach.push({ filename: 'Core Cleaning Bond Cleaning Price Guide.pdf', assetPath: 'src/lib/documents/assets/bond-cleaning-price-guide.pdf' })
-  }
-
-  // Read each file independently — if one is missing/unreadable, still send
-  // with whichever attachments did load rather than dropping all of them.
   const attachments: { filename: string; content: Buffer }[] = []
-  for (const a of toAttach) {
-    try {
-      const { readFile } = await import('node:fs/promises')
-      const path = await import('node:path')
-      const content = await readFile(path.join(process.cwd(), a.assetPath))
-      attachments.push({ filename: a.filename, content })
-    } catch { /* skip this one, still send with the rest */ }
+  const capBuf = await loadCapabilityStatement()
+  if (capBuf) attachments.push({ filename: 'Core Cleaning Capability Statement.pdf', content: capBuf })
+  if (includeBondGuide) {
+    const bondBuf = await loadStaticAsset('src/lib/documents/assets/bond-cleaning-price-guide.pdf')
+    if (bondBuf) attachments.push({ filename: 'Core Cleaning Bond Cleaning Price Guide.pdf', content: bondBuf })
   }
 
   const result = await sendThreadedEmail({ to: lead.email, subject, html, attachments: attachments.length ? attachments : undefined })
