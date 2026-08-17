@@ -9,10 +9,10 @@ export const dynamic = 'force-dynamic'
 
 export default async function SafetyPage() {
   const db = createAdminClient() as any
-  const { data: sub } = await db
+  const { data: subs } = await db
     .from('subcontractors')
-    .select('company_name, abn, contact_name, contact_email, insurance_expiry, sign_code, signed_at, signed_name')
-    .order('created_at', { ascending: false }).limit(1).maybeSingle()
+    .select('id, company_name, abn, contact_name, contact_email, insurance_expiry, sign_code, signed_at, signed_name')
+    .order('created_at', { ascending: false })
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -21,7 +21,7 @@ export default async function SafetyPage() {
         <p className="text-sm text-gray-400 mt-0.5">Safe Work Method Statements and policies — view, print, or share with clients and auditors.</p>
       </div>
 
-      <SubcontractorPanel sub={sub ?? null} />
+      <SubcontractorPanel subs={subs ?? []} />
 
       {/* SWMS */}
       <div className="flex items-center gap-2 mb-3">

@@ -25,23 +25,24 @@ function makeCode(): string {
   return `subcontractor-${r}`
 }
 
-// Get-or-create the single subcontractor onboarding record + a copyable link.
-export async function ensureSubcontractorLinkAction(): Promise<{ code: string; link: string } | { error: string }> {
+// Create a brand-new subcontractor onboarding record + a copyable link. Each
+// call makes a distinct record, so a fresh link can be sent to each cleaner —
+// signing one never overwrites or blocks another.
+export async function createSubcontractorLinkAction(): Promise<{ code: string; link: string } | { error: string }> {
   const db = createAdminClient() as any
-  const { data: existing } = await db.from('subcontractors')
-    .select('id, sign_code').order('created_at', { ascending: false }).limit(1).maybeSingle()
-
-  let code: string | null = existing?.sign_code ?? null
-  if (existing?.id && !code) {
-    code = makeCode()
-    await db.from('subcontractors').update({ sign_code: code }).eq('id', existing.id)
-  } else if (!existing) {
-    code = makeCode()
-    const { error } = await db.from('subcontractors').insert({ sign_code: code })
-    if (error) return { error: error.message }
-  }
+  const code = makeCode()
+  const { error } = await db.from('subcontractors').insert({ sign_code: code })
+  if (error) return { error: error.message }
   revalidatePath('/safety')
-  return { code: code!, link: `${APP_URL}/onboard/${code}` }
+  return { code, link: `${APP_URL}/onboard/${code}` }
+}
+
+export async function deleteSubcontractorLinkAction(id: string): Promise<{ success: true } | { error: string }> {
+  const db = createAdminClient() as any
+  const { error } = await db.from('subcontractors').delete().eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/safety')
+  return { success: true }
 }
 
 // The subcontractor submits their details + signs the whole pack (once).
