@@ -73,9 +73,10 @@ export async function submitSubcontractorOnboardingAction(code: string, typedNam
 
   const co = clean(details.companyName) || 'Your subcontractor'
   const when = new Date(now).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Brisbane' })
+  const packUrl = `${APP_URL}/onboard/${code}`
   sendPushToRole('admin', { title: `${co} signed the onboarding pack`, body: name, url: '/safety' }).catch(() => {})
   sendEmail(OWNER_EMAIL, `Subcontractor onboarded — ${co}`,
-    `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f172a;"><p><strong>${co}</strong> has signed the onboarding pack (agreement, induction, SWMS & policies).</p><p>Signed by ${name} on ${when}.</p></div>`
+    `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f172a;"><p><strong>${co}</strong> has signed the onboarding pack (agreement, induction, SWMS &amp; policies).</p><p>Signed by ${name} on ${when}.</p><p style="margin-top:20px;"><a href="${packUrl}" style="display:inline-block;background:#00250e;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600;">View signed pack</a></p></div>`
   ).catch(() => {})
 
   revalidatePath('/safety'); revalidatePath(`/onboard/${code}`)
