@@ -300,6 +300,60 @@ export async function addCleanerAction(input: {
   })
 }
 
+// ─── Cleaner with contact details (phone, email, region) ─────────────────────
+
+function randomPassword() {
+  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
+}
+
+export async function addCleanerDetailedAction(input: {
+  fullName: string
+  email: string
+  phone: string
+  region: 'brisbane' | 'gold_coast'
+  isTeamLeader: boolean
+}) {
+  const result = await createPortalUserAction({
+    email: input.email,
+    password: randomPassword(),
+    fullName: input.fullName,
+    role: 'cleaner',
+    linkedClientId: null,
+  })
+  if (result.error) return { error: result.error }
+  if (!result.userId) return { error: 'Failed to create cleaner' }
+
+  const adminClient = createAdminClient()
+  const { error: profErr } = await (adminClient as any)
+    .from('profiles')
+    .update({ phone: input.phone, region: input.region, is_team_leader: input.isTeamLeader })
+    .eq('user_id', result.userId)
+
+  if (profErr) return { error: profErr.message }
+
+  revalidatePath('/team')
+  revalidatePath('/manager/team')
+  return { success: true }
+}
+
+export async function updateCleanerDetailsAction(input: {
+  profileId: string
+  phone: string | null
+  region: 'brisbane' | 'gold_coast' | null
+  isTeamLeader: boolean
+}) {
+  const supabase = createClient()
+  const { error } = await (supabase as any)
+    .from('profiles')
+    .update({ phone: input.phone || null, region: input.region || null, is_team_leader: input.isTeamLeader })
+    .eq('id', input.profileId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/team')
+  revalidatePath('/manager/team')
+  return { success: true }
+}
+
 export async function updateCleanerNameAction(input: {
   profileId: string
   userId: string

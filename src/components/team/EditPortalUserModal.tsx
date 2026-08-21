@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { updatePortalUserAction } from '@/actions/team'
+import { updatePortalUserAction, updateCleanerDetailsAction } from '@/actions/team'
 import { Pencil, X } from 'lucide-react'
 
 interface Client {
@@ -18,6 +18,9 @@ interface Props {
   role: string
   linkedClientId?: string | null
   clients?: Client[]
+  phone?: string
+  region?: 'brisbane' | 'gold_coast' | null
+  isTeamLeader?: boolean
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -27,13 +30,16 @@ const ROLE_LABELS: Record<string, string> = {
   admin:   'Admin',
 }
 
-export function EditPortalUserModal({ profileId, userId, fullName, email, role, linkedClientId, clients = [] }: Props) {
+export function EditPortalUserModal({ profileId, userId, fullName, email, role, linkedClientId, clients = [], phone = '', region = null, isTeamLeader = false }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(fullName)
   const [emailVal, setEmailVal] = useState(email)
   const [password, setPassword] = useState('')
   const [linkedClient, setLinkedClient] = useState(linkedClientId ?? '')
+  const [phoneVal, setPhoneVal] = useState(phone)
+  const [regionVal, setRegionVal] = useState<'brisbane' | 'gold_coast' | null>(region)
+  const [teamLeader, setTeamLeader] = useState(isTeamLeader)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -46,6 +52,9 @@ export function EditPortalUserModal({ profileId, userId, fullName, email, role, 
     setEmailVal(email)
     setPassword('')
     setLinkedClient(linkedClientId ?? '')
+    setPhoneVal(phone)
+    setRegionVal(region)
+    setTeamLeader(isTeamLeader)
     setError(null)
     setSaved(false)
     setOpen(true)
@@ -65,8 +74,23 @@ export function EditPortalUserModal({ profileId, userId, fullName, email, role, 
       newPassword: password || null,
       linkedClientId: role === 'client' ? (linkedClient || null) : undefined,
     })
+    if (result.error) {
+      setSaving(false)
+      return setError(result.error)
+    }
+    if (role === 'cleaner') {
+      const cleanerResult = await updateCleanerDetailsAction({
+        profileId,
+        phone: phoneVal.trim() || null,
+        region: regionVal,
+        isTeamLeader: teamLeader,
+      })
+      if (cleanerResult.error) {
+        setSaving(false)
+        return setError(cleanerResult.error)
+      }
+    }
     setSaving(false)
-    if (result.error) return setError(result.error)
     setSaved(true)
     router.refresh()
     setTimeout(() => setOpen(false), 800)
@@ -121,6 +145,48 @@ export function EditPortalUserModal({ profileId, userId, fullName, email, role, 
                 <label className={lbl}>New Password <span className="text-gray-400 font-normal">(leave blank to keep current)</span></label>
                 <input className={inp} type="text" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 5 characters" autoComplete="new-password" />
               </div>
+
+              {role === 'cleaner' && (
+                <>
+                  <div>
+                    <label className={lbl}>Contact Number</label>
+                    <input className={inp} type="tel" value={phoneVal} onChange={(e) => setPhoneVal(e.target.value)} placeholder="0412 345 678" />
+                  </div>
+
+                  <div>
+                    <label className={lbl}>Region</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {([
+                        ['brisbane', 'Brisbane'],
+                        ['gold_coast', 'Gold Coast'],
+                      ] as const).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setRegionVal(value)}
+                          className={`text-xs font-semibold py-2 rounded-lg border transition-all ${
+                            regionVal === value
+                              ? 'bg-[#00250e] border-[#00250e] text-white'
+                              : 'border-gray-200 text-gray-500 hover:border-gray-400'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={teamLeader}
+                      onChange={(e) => setTeamLeader(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-[#00250e] focus:ring-[#00250e]"
+                    />
+                    <span className="text-xs font-medium text-gray-600">Team Leader</span>
+                  </label>
+                </>
+              )}
 
               {role === 'client' && clients.length > 0 && (
                 <div>

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { CreatePortalUserForm } from '@/components/team/CreatePortalUserForm'
 import { DeletePortalUserButton } from '@/components/team/DeletePortalUserButton'
 import { EditPortalUserModal } from '@/components/team/EditPortalUserModal'
-import { Users, UserCircle, CalendarDays, ChevronRight, ShieldCheck, Sparkles, Building2 } from 'lucide-react'
+import { Users, UserCircle, CalendarDays, ChevronRight, ShieldCheck, Sparkles, Building2, Phone, Star, UserPlus } from 'lucide-react'
 
 const ROLE_LABELS: Record<string, string> = {
   cleaner: 'Cleaner', manager: 'Team Manager', client: 'Client Portal', admin: 'Admin',
@@ -17,6 +17,9 @@ const ROLE_COLORS: Record<string, string> = {
   cleaner: 'bg-gray-100 text-gray-600', manager: 'bg-blue-50 text-blue-700',
   client: 'bg-emerald-50 text-emerald-700', admin: 'bg-purple-50 text-purple-700',
 }
+const REGION_LABELS: Record<string, string> = {
+  brisbane: 'Brisbane', gold_coast: 'Gold Coast',
+}
 
 export default async function TeamPage() {
   const supabase = createClient()
@@ -24,7 +27,7 @@ export default async function TeamPage() {
   const [{ data: profiles, error: profilesError }, { data: allClients }, { data: jobRows }] = await Promise.all([
     (supabase as any)
       .from('profiles')
-      .select('id, user_id, role, full_name, email, linked_client_id, created_at')
+      .select('id, user_id, role, full_name, email, phone, region, is_team_leader, linked_client_id, created_at')
       .order('full_name'),
     (supabase as any).from('clients').select('id, business_name').order('business_name'),
     (supabase as any).from('job_assignments').select('cleaner_id, status'),
@@ -58,10 +61,18 @@ export default async function TeamPage() {
           <UserCircle className="w-5 h-5 text-gray-500" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate">{u.full_name ?? '—'}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-semibold text-gray-900 truncate">{u.full_name ?? '—'}</p>
+            {u.is_team_leader && (
+              <span title="Team Leader"><Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 flex-shrink-0" /></span>
+            )}
+          </div>
           {u.clientName && <p className="text-xs text-gray-500 mt-0.5 truncate">{u.clientName}</p>}
           {u.role === 'cleaner' && (
-            <p className="text-xs text-gray-400 mt-0.5">{u.completedJobs} job{u.completedJobs === 1 ? '' : 's'} completed</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {u.completedJobs} job{u.completedJobs === 1 ? '' : 's'} completed
+              {u.region && ` · ${REGION_LABELS[u.region] ?? u.region}`}
+            </p>
           )}
         </div>
       </div>
@@ -70,17 +81,26 @@ export default async function TeamPage() {
       <div className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
         {href ? <Link href={href} className="min-w-0 flex-1">{left}</Link> : left}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {u.role === 'cleaner' && u.phone && (
+            <a
+              href={`tel:${u.phone}`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+              title={`Call ${u.full_name ?? 'cleaner'}`}
+            >
+              <Phone className="w-3.5 h-3.5" /> Call
+            </a>
+          )}
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ROLE_COLORS[u.role] ?? ROLE_COLORS.admin}`}>
             {ROLE_LABELS[u.role] ?? u.role}
           </span>
-          {href ? (
+          <EditPortalUserModal
+            profileId={u.id} userId={u.user_id} fullName={u.full_name ?? ''}
+            email={u.email ?? ''} role={u.role} linkedClientId={u.linked_client_id}
+            clients={clients ?? []} phone={u.phone ?? ''} region={u.region ?? null}
+            isTeamLeader={u.is_team_leader ?? false}
+          />
+          {href && (
             <Link href={href} className="text-gray-300 hover:text-gray-500"><ChevronRight className="w-4 h-4" /></Link>
-          ) : (
-            <EditPortalUserModal
-              profileId={u.id} userId={u.user_id} fullName={u.full_name ?? ''}
-              email={u.email ?? ''} role={u.role} linkedClientId={u.linked_client_id}
-              clients={clients ?? []}
-            />
           )}
           <DeletePortalUserButton userId={u.user_id} userName={u.full_name} />
         </div>
@@ -117,6 +137,7 @@ export default async function TeamPage() {
           <p className="text-sm text-gray-500 mt-1">Managers, cleaners and client accounts in one place.</p>
         </div>
         <div className="flex gap-2">
+          <Link href="/team/cleaners/new"><Button variant="secondary"><UserPlus className="w-4 h-4" /> Add Cleaner</Button></Link>
           <Link href="/team/compliance"><Button variant="secondary"><CalendarDays className="w-4 h-4" /> Compliance Docs</Button></Link>
           <Link href="/team/jobs"><Button><CalendarDays className="w-4 h-4" /> Manage Jobs</Button></Link>
         </div>
