@@ -9,7 +9,7 @@
 // otherwise the text sits at its stored font size, left-anchored at x.
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib'
 
-export type FlattenPlacementType = 'clientName' | 'quotedPrice' | 'date' | 'text' | 'signature'
+export type FlattenPlacementType = 'address' | 'fullName' | 'contactNumber' | 'clientName' | 'quotedPrice' | 'date' | 'text' | 'signature'
 
 export interface FlattenPlacement {
   type: FlattenPlacementType
@@ -27,6 +27,9 @@ export interface FlattenFieldValues {
   clientName?: string
   quotedPrice?: string
   date?: string
+  address?: string
+  fullName?: string
+  contactNumber?: string
 }
 
 const WHITE = rgb(1, 1, 1)
@@ -43,6 +46,9 @@ export async function flattenCompanyDocument(
   const fonts: Record<FlattenPlacementType, PDFFont> = {
     text: await pdfDoc.embedFont(StandardFonts.Helvetica),
     date: await pdfDoc.embedFont(StandardFonts.Helvetica),
+    address: await pdfDoc.embedFont(StandardFonts.Helvetica),
+    contactNumber: await pdfDoc.embedFont(StandardFonts.Helvetica),
+    fullName: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     clientName: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     quotedPrice: await pdfDoc.embedFont(StandardFonts.TimesRoman),
     // No cursive font is embedded in this app — italic is the closest built-in

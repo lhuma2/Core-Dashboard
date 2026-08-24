@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Palette, PenLine, Send, Plus, Calendar, ZoomIn, ZoomOut } from 'lucide-react'
-import { saveProposalDocAction } from '@/actions/proposal-docs'
+import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign, Type, Palette, PenLine, Send, Plus, Calendar, ZoomIn, ZoomOut, MapPin, Phone, Building2 } from 'lucide-react'
+import { saveProposalDocAction, saveFlattenedPdfAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
 
 const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
 
-type FieldType = 'clientName' | 'quotedPrice' | 'date' | 'text' | 'signature'
+type FieldType = 'address' | 'fullName' | 'contactNumber' | 'clientName' | 'quotedPrice' | 'date' | 'text' | 'signature'
 type BgStyle = 'white' | 'dark' | 'none'
 type Placement = { id: string; type: FieldType; page: number; x: number; y: number; text?: string; bg?: BgStyle; size?: number; w?: number; h?: number } // x,y,w,h = % of page
 
@@ -72,24 +72,30 @@ function FitBox({ sized, size, font, text, children }: { sized: boolean; size: n
   if (!sized) return <>{children(size)}</>
   return <div ref={ref} className="w-full h-full flex items-center justify-center overflow-hidden">{children(fit)}</div>
 }
-type FieldValues = { clientName: string; quotedPrice: string; date: string }
+type FieldValues = { clientName: string; quotedPrice: string; date: string; address: string; fullName: string; contactNumber: string }
 type PageImg = { src: string; aspect: number } // aspect = height / width
 
 const FIELD_META: Record<FieldType, { label: string; icon: any; placeholder: string }> = {
-  clientName:  { label: 'Client Name',  icon: User,       placeholder: 'e.g. Northpoint Commercial' },
-  quotedPrice: { label: 'Quoted Price', icon: DollarSign, placeholder: 'e.g. $5,400 / month' },
-  date:        { label: 'Date',         icon: Calendar,   placeholder: 'e.g. 14 May 2026' },
-  text:        { label: 'Text box',     icon: Type,       placeholder: '' },
-  signature:   { label: 'Signature',    icon: PenLine,    placeholder: '' },
+  address:       { label: 'Address',        icon: MapPin,     placeholder: 'e.g. 12 Smith St, Brisbane QLD 4000' },
+  fullName:      { label: 'Full Name',      icon: User,       placeholder: 'e.g. Jane Smith' },
+  contactNumber: { label: 'Contact Number', icon: Phone,      placeholder: 'e.g. 0412 345 678' },
+  quotedPrice:   { label: 'Quoted Price',   icon: DollarSign, placeholder: 'e.g. $5,400 / month' },
+  clientName:    { label: 'Client Name',    icon: Building2,  placeholder: 'e.g. Northpoint Commercial' },
+  date:          { label: 'Date',           icon: Calendar,   placeholder: 'e.g. 14 May 2026' },
+  text:          { label: 'Text box',       icon: Type,       placeholder: '' },
+  signature:     { label: 'Signature',      icon: PenLine,    placeholder: '' },
 }
 
 export function CompanyDocEditor({
   id, initialData, pdfUrl, docTitle, status,
 }: { id: string; initialData: any; pdfUrl: string; docTitle: string; status?: string }) {
   const [values, setValues] = useState<FieldValues>({
-    clientName:  initialData?.fieldValues?.clientName ?? initialData?.clientName ?? '',
-    quotedPrice: initialData?.fieldValues?.quotedPrice ?? '',
-    date:        initialData?.fieldValues?.date ?? new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }),
+    clientName:    initialData?.fieldValues?.clientName ?? initialData?.clientName ?? '',
+    quotedPrice:   initialData?.fieldValues?.quotedPrice ?? '',
+    date:          initialData?.fieldValues?.date ?? new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }),
+    address:       initialData?.fieldValues?.address ?? '',
+    fullName:      initialData?.fieldValues?.fullName ?? '',
+    contactNumber: initialData?.fieldValues?.contactNumber ?? '',
   })
   const [placements, setPlacements] = useState<Placement[]>(initialData?.placements ?? [])
   const [pages, setPages] = useState<PageImg[]>([])
@@ -336,14 +342,14 @@ export function CompanyDocEditor({
           </span>
           <a href={pdfUrl} target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:border-gray-300 rounded-lg px-3 py-2 transition-colors">
-            <Download className="w-3.5 h-3.5" /> Open PDF
+            <Download className="w-3.5 h-3.5" /> Open Blank PDF
           </a>
-          {status === 'signed' && (
-            <a href={`/api/documents/${id}/flatten`}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:border-emerald-300 rounded-lg px-3 py-2 transition-colors">
-              <Download className="w-3.5 h-3.5" /> Download Signed PDF
-            </a>
-          )}
+          <a href={`/api/documents/${id}/flatten`}
+            onClick={() => { saveFlattenedPdfAction(id) }}
+            title="Downloads a copy with your filled-in fields baked in, and saves that copy to this document"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:border-emerald-300 rounded-lg px-3 py-2 transition-colors">
+            <Download className="w-3.5 h-3.5" /> {status === 'signed' ? 'Download Signed PDF' : 'Download PDF'}
+          </a>
           <button onClick={() => setShowSend(true)}
             className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#003314] hover:bg-[#00250e] text-white rounded-lg px-3 py-2 transition-colors">
             <Send className="w-3.5 h-3.5" /> Send

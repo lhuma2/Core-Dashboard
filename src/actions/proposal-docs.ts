@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DEFAULT_PROPOSAL, withProposalDefaults, type ProposalData } from '@/lib/documents/proposal'
 import { mapProposalToAgreement, withAgreementDefaults } from '@/lib/documents/agreement'
+import { flattenCompanyDocument } from '@/lib/documents/flatten'
 
 export type DocKind = 'proposal' | 'agreement' | 'one_off' | 'capability'
 
@@ -90,6 +91,42 @@ export async function saveProposalDocAction(id: string, data: ProposalData, snap
   revalidatePath('/documents')
   revalidatePath(`/documents/${id}`)
   return { success: true }
+}
+
+// ─── Bake the filled-in fields into the PDF and save that copy on the document ─
+// Runs alongside the browser's download (see the flatten API route) so the
+// filled-in version is persisted here, not just streamed to the browser.
+
+export async function saveFlattenedPdfAction(id: string) {
+  const db = createAdminClient() as any
+  const { data: doc } = await db.from('proposal_documents').select('id, pdf_url, client_name, data').eq('id', id).single()
+  if (!doc) return { error: 'Document not found' }
+  if (!doc.pdf_url) return { error: 'This document has no PDF attached.' }
+
+  const sourceRes = await fetch(doc.pdf_url)
+  if (!sourceRes.ok) return { error: 'Could not load the original PDF.' }
+  const sourceBytes = new Uint8Array(await sourceRes.arrayBuffer())
+
+  let flattened: Uint8Array
+  try {
+    flattened = await flattenCompanyDocument(sourceBytes, doc.data?.placements ?? [], doc.data?.fieldValues ?? {})
+  } catch (e: any) {
+    return { error: `Could not generate the PDF: ${e?.message ?? 'unknown error'}` }
+  }
+
+  const safe = (s: string) => s.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const path = `proposal-pdfs/${id}-${Date.now()}-${safe(doc.client_name || 'document')}.pdf`
+  const { error: upErr } = await db.storage.from('job-photos')
+    .upload(path, Buffer.from(flattened), { contentType: 'application/pdf', upsert: false })
+  if (upErr) return { error: upErr.message }
+
+  const { data: pub } = db.storage.from('job-photos').getPublicUrl(path)
+  const { error: dbErr } = await db.from('proposal_documents').update({ signed_pdf_url: pub.publicUrl }).eq('id', id)
+  if (dbErr) return { error: dbErr.message }
+
+  revalidatePath('/documents')
+  revalidatePath(`/documents/${id}`)
+  return { success: true, url: pub.publicUrl }
 }
 
 // ─── Convert accepted proposal → agreement (prefilled, editable) ─────────────

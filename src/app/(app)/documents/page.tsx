@@ -4,6 +4,7 @@ export const revalidate = 0
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NewProposalButton } from '@/components/documents/NewProposalButton'
+import { AdminNewProposalButton } from '@/components/documents/AdminNewProposalButton'
 import { DeleteDocButton } from '@/components/documents/DeleteDocButton'
 import { UploadCompanyDocButton } from '@/components/documents/UploadCompanyDocButton'
 import { DeleteCompanyDocButton } from '@/components/documents/DeleteCompanyDocButton'
@@ -86,7 +87,10 @@ export default async function DocumentsPage() {
           <h2 className="font-display text-2xl font-extrabold tracking-tight text-gray-900">Documents</h2>
           <p className="text-sm text-gray-400 mt-0.5">Proposals and service agreements · {list.length}</p>
         </div>
-        <NewProposalButton docs={proposalDocOptions} />
+        <div className="flex items-center gap-2">
+          <AdminNewProposalButton docs={proposalDocOptions} />
+          <NewProposalButton docs={proposalDocOptions} />
+        </div>
       </div>
 
       {list.length === 0 ? (
