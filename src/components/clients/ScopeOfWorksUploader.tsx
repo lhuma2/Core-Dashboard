@@ -4,15 +4,16 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ImageIcon, Trash2, ZoomIn } from 'lucide-react'
-import { uploadScopeOfWorksAction, removeScopeOfWorksAction } from '@/actions/team'
+import { uploadScopeImageAction, removeScopeImageAction } from '@/actions/clients'
 import { PhotoLightbox } from '@/components/ui/PhotoLightbox'
 
 interface Props {
-  jobId: string
+  clientId: string
+  siteId?: string | null
   imageUrl: string | null
 }
 
-export function ScopeOfWorksUploader({ jobId, imageUrl }: Props) {
+export function ScopeOfWorksUploader({ clientId, siteId = null, imageUrl }: Props) {
   const router       = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -28,7 +29,7 @@ export function ScopeOfWorksUploader({ jobId, imageUrl }: Props) {
     setError(null)
     const fd = new FormData()
     fd.append('file', file)
-    const result = await uploadScopeOfWorksAction(jobId, fd)
+    const result = await uploadScopeImageAction(clientId, fd, siteId)
     setUploading(false)
     if (result.error) {
       setError(result.error)
@@ -39,22 +40,22 @@ export function ScopeOfWorksUploader({ jobId, imageUrl }: Props) {
 
   async function handleRemove() {
     setUploading(true)
-    await removeScopeOfWorksAction(jobId)
+    await removeScopeImageAction(clientId, siteId)
     setUploading(false)
     router.refresh()
   }
 
   return (
-    <div className="bg-white rounded-2xl px-5 py-4 mb-4">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Scope of Works</p>
+    <div>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Scope of Works Image</p>
 
       {imageUrl ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <button
             onClick={() => setLightboxOpen(true)}
-            className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-100 active:opacity-80 transition-opacity"
+            className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity"
           >
-            <Image src={imageUrl} alt="Scope of works" fill className="object-cover" sizes="100vw" />
+            <Image src={imageUrl} alt="Scope of works" fill className="object-cover" sizes="400px" />
             <span className="absolute bottom-2 right-2 flex items-center gap-1 text-xs font-medium text-white bg-black/60 px-2 py-1 rounded-lg">
               <ZoomIn className="w-3 h-3" /> View
             </span>
@@ -63,14 +64,14 @@ export function ScopeOfWorksUploader({ jobId, imageUrl }: Props) {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="flex-1 text-xs font-semibold border border-gray-200 rounded-lg py-2 hover:bg-gray-50 disabled:opacity-50"
+              className="flex-1 text-xs font-semibold border border-gray-200 rounded-lg py-1.5 hover:bg-gray-50 disabled:opacity-50"
             >
               {uploading ? 'Uploading…' : 'Replace'}
             </button>
             <button
               onClick={handleRemove}
               disabled={uploading}
-              className="flex items-center justify-center gap-1 text-xs font-semibold text-red-600 border border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 disabled:opacity-50"
+              className="flex items-center justify-center gap-1 text-xs font-semibold text-red-600 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-50 disabled:opacity-50"
             >
               <Trash2 className="w-3.5 h-3.5" /> Remove
             </button>
@@ -80,9 +81,9 @@ export function ScopeOfWorksUploader({ jobId, imageUrl }: Props) {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-8 text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors disabled:opacity-50"
+          className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg py-6 text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors disabled:opacity-50"
         >
-          <ImageIcon className="w-6 h-6" />
+          <ImageIcon className="w-5 h-5" />
           <span className="text-xs font-medium">{uploading ? 'Uploading…' : 'Upload scope of works image'}</span>
         </button>
       )}

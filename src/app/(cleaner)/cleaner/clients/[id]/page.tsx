@@ -9,6 +9,7 @@ import { StartCleanButton } from '@/components/portal/cleaner/StartCleanButton'
 import { SubmitJobForm } from '@/components/portal/cleaner/SubmitJobForm'
 import { FlagModal } from '@/components/portal/cleaner/FlagModal'
 import { CleanerSchedule } from '@/components/portal/cleaner/CleanerSchedule'
+import { ScopeOfWorksCard } from '@/components/portal/cleaner/ScopeOfWorksCard'
 import type { ScopeTask } from '@/lib/scope'
 import { MapPin, Calendar, Key, ClipboardList, CheckCircle2 } from 'lucide-react'
 import { getUpcomingDates, actionableDates, brisbaneTodayStr } from '@/lib/schedule'
@@ -49,6 +50,7 @@ export default async function CleanerClientPage({ params, searchParams }: { para
   const admin = createAdminClient() as any
   const { data: client } = await admin.from('clients').select('*').eq('id', params.id).single()
   if (!client) notFound()
+  const toPublicUrl = (path: string) => admin.storage.from('job-photos').getPublicUrl(path).data.publicUrl as string
 
   const { data: sitesRaw } = await admin
     .from('client_sites').select('*').eq('client_id', params.id).order('sort_order', { ascending: true })
@@ -135,6 +137,7 @@ export default async function CleanerClientPage({ params, searchParams }: { para
           address: (s.address ?? null) as string | null,
           suburb: (s.suburb ?? null) as string | null,
           access: (s.access_details ?? null) as string | null,
+          scopeImageUrl: (s.scope_of_works_image_path ? toPublicUrl(s.scope_of_works_image_path) : null) as string | null,
           frequency: (s.frequency ?? null) as string | null,
           serviceDays: (s.service_days ?? []) as string[],
           upcoming: getUpcomingDates({
@@ -256,6 +259,9 @@ export default async function CleanerClientPage({ params, searchParams }: { para
                 </div>
               )}
 
+              {/* Scope of works image for this site */}
+              {s.scopeImageUrl && <ScopeOfWorksCard imageUrl={s.scopeImageUrl} />}
+
               {/* Scope checklist for this site */}
               {s.scope.length > 0 && (
                 <CleanerSchedule
@@ -364,6 +370,13 @@ export default async function CleanerClientPage({ params, searchParams }: { para
               </div>
             )}
           </div>
+
+          {/* Scope of works image */}
+          {client.scope_of_works_image_path && (
+            <div className="mb-6">
+              <ScopeOfWorksCard imageUrl={toPublicUrl(client.scope_of_works_image_path)} />
+            </div>
+          )}
 
           {jobControl({ job: todayJob, siteId: null, address: client.address ?? null, suburb: client.suburb ?? null, checklist })}
         </>

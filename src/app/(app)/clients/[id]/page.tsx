@@ -7,6 +7,7 @@ import { computeClientHealth } from '@/lib/health'
 import { ClientDocuments } from '@/components/clients/ClientDocuments'
 import { ClientSurveys } from '@/components/clients/ClientSurveys'
 import { ScopeEditor } from '@/components/clients/ScopeEditor'
+import { ScopeOfWorksUploader } from '@/components/clients/ScopeOfWorksUploader'
 import { SiteCleanerSelect } from '@/components/clients/SiteCleanerSelect'
 import { SendSurveyButton } from '@/components/clients/SendSurveyButton'
 import { ImportToPortalButton } from '@/components/clients/ImportToPortalButton'
@@ -95,6 +96,8 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
     .order('signed_at', { ascending: false }).limit(1).maybeSingle()
 
   if (!clientRes.data) notFound()
+
+  const toPublicUrl = (path: string) => (supabase as any).storage.from('job-photos').getPublicUrl(path).data.publicUrl as string
 
   const client     = clientRes.data       as any
   const documents  = docsRes.data         || []
@@ -449,19 +452,34 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                     : ((site.service_days as string[]) ?? []).map((d: string) => d.slice(0, 3).replace(/^./, (c: string) => c.toUpperCase())))
                 }
               />
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                <ScopeOfWorksUploader
+                  clientId={params.id}
+                  siteId={site.id}
+                  imageUrl={site.scope_of_works_image_path ? toPublicUrl(site.scope_of_works_image_path) : null}
+                />
+              </div>
             </div>
           ))}
         </div>
       ) : (
-        <ScopeEditor
-          clientId={params.id}
-          initialScope={Array.isArray(client.scope) ? client.scope : []}
-          initialCleanDays={
-            (client.clean_days?.length
-              ? client.clean_days
-              : ((client.service_days as string[]) ?? []).map((d) => d.slice(0, 3).replace(/^./, (c) => c.toUpperCase())))
-          }
-        />
+        <>
+          <ScopeEditor
+            clientId={params.id}
+            initialScope={Array.isArray(client.scope) ? client.scope : []}
+            initialCleanDays={
+              (client.clean_days?.length
+                ? client.clean_days
+                : ((client.service_days as string[]) ?? []).map((d) => d.slice(0, 3).replace(/^./, (c) => c.toUpperCase())))
+            }
+          />
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <ScopeOfWorksUploader
+              clientId={params.id}
+              imageUrl={client.scope_of_works_image_path ? toPublicUrl(client.scope_of_works_image_path) : null}
+            />
+          </div>
+        </>
       )}
 
       {/* Additional Services */}

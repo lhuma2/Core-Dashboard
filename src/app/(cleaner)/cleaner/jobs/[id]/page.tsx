@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/server'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { JobStartFlow } from '@/components/portal/cleaner/JobStartFlow'
 import { FlagModal } from '@/components/portal/cleaner/FlagModal'
-import { ScopeOfWorksCard } from '@/components/portal/cleaner/ScopeOfWorksCard'
 import { MapPin, Clock, Key, RefreshCw, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -56,9 +55,6 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
     ? [site.address, site.suburb].filter(Boolean).join(', ')
     : (client?.address ? [client.address, client.suburb].filter(Boolean).join(', ') : null)
   const accessNotes  = job.access_notes || site?.access_details || null
-  const scopeOfWorksUrl: string | null = job.scope_of_works_path
-    ? (supabase as any).storage.from('job-photos').getPublicUrl(job.scope_of_works_path).data.publicUrl
-    : null
 
   const scheduledDate = new Date(job.scheduled_date + 'T00:00:00')
   const dateStr = scheduledDate.toLocaleDateString('en-AU', {
@@ -127,9 +123,6 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
           </div>
         )}
       </div>
-
-      {/* Scope of works */}
-      {scopeOfWorksUrl && <ScopeOfWorksCard imageUrl={scopeOfWorksUrl} />}
 
       {/* Checklist preview */}
       {checklist.length > 0 && (

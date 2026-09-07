@@ -391,3 +391,79 @@ export async function updateClientNotesAction(id: string, notes: string) {
   await supabase.from('clients').update({ notes }).eq('id', id)
   revalidatePath(`/clients/${id}`)
 }
+
+// ─── Scope of works image — admin-uploaded reference shown to the cleaner ───
+// Lives on the client (or, for a multi-site client, one per site) alongside
+// the existing scope_of_work text field.
+
+export async function uploadScopeImageAction(clientId: string, formData: FormData, siteId?: string | null) {
+  const supabase = createClient()
+  const table  = siteId ? 'client_sites' : 'clients'
+  const rowId  = siteId ?? clientId
+
+  const file = formData.get('file') as File
+  if (!file) return { error: 'No file provided' }
+
+  const { data: existing } = await (supabase as any)
+    .from(table)
+    .select('scope_of_works_image_path')
+    .eq('id', rowId)
+    .single()
+
+  const ext  = file.name.split('.').pop() ?? 'png'
+  const path = `scope-of-works/client/${clientId}/${siteId ?? 'main'}/${Date.now()}.${ext}`
+
+  const { error: upErr } = await (supabase as any).storage
+    .from('job-photos')
+    .upload(path, file, { contentType: file.type, upsert: false })
+
+  if (upErr) return { error: upErr.message }
+
+  const { error } = await (supabase as any)
+    .from(table)
+    .update({ scope_of_works_image_path: path })
+    .eq('id', rowId)
+
+  if (error) return { error: error.message }
+
+  // Old file is only removed after the new one is safely linked, so a failed
+  // upload never leaves the client without its previous scope of works image.
+  if (existing?.scope_of_works_image_path) {
+    await (supabase as any).storage.from('job-photos').remove([existing.scope_of_works_image_path])
+  }
+
+  const { data } = (supabase as any).storage.from('job-photos').getPublicUrl(path)
+
+  revalidatePath(`/clients/${clientId}`)
+  revalidatePath(`/manager/clients/${clientId}`)
+  revalidatePath(`/cleaner/clients/${clientId}`)
+  return { success: true, url: data.publicUrl as string }
+}
+
+export async function removeScopeImageAction(clientId: string, siteId?: string | null) {
+  const supabase = createClient()
+  const table = siteId ? 'client_sites' : 'clients'
+  const rowId = siteId ?? clientId
+
+  const { data: row } = await (supabase as any)
+    .from(table)
+    .select('scope_of_works_image_path')
+    .eq('id', rowId)
+    .single()
+
+  if (row?.scope_of_works_image_path) {
+    await (supabase as any).storage.from('job-photos').remove([row.scope_of_works_image_path])
+  }
+
+  const { error } = await (supabase as any)
+    .from(table)
+    .update({ scope_of_works_image_path: null })
+    .eq('id', rowId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/clients/${clientId}`)
+  revalidatePath(`/manager/clients/${clientId}`)
+  revalidatePath(`/cleaner/clients/${clientId}`)
+  return { success: true }
+}
