@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ResolveButton } from '@/components/portal/manager/ResolveButton'
 import { MarkJobCompleteButton } from '@/components/team/MarkJobCompleteButton'
 import { PhotoGrid } from '@/components/ui/PhotoLightbox'
+import { ScopeOfWorksUploader } from '@/components/team/ScopeOfWorksUploader'
 import { MapPin, User, AlertTriangle, Link as LinkIcon } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -65,6 +66,7 @@ export default async function ManagerJobDetailPage({ params }: { params: { id: s
   const beforePhotos = taggedPhotos.filter((p) => p.phase === 'before').map((p) => toPublicUrl(p.storage_path))
   const afterPhotos  = taggedPhotos.filter((p) => p.phase === 'after').map((p) => toPublicUrl(p.storage_path))
   const photos = afterPhotos.length > 0 || beforePhotos.length > 0 ? afterPhotos : legacyPhotos
+  const scopeOfWorksUrl: string | null = job.scope_of_works_path ? toPublicUrl(job.scope_of_works_path) : null
 
   const completedByRole: string | null = submission?.completed_by_role ?? null
   const cleanerCompleted =
@@ -131,6 +133,8 @@ export default async function ManagerJobDetailPage({ params }: { params: { id: s
           </span>
         </div>
       </div>
+
+      <ScopeOfWorksUploader jobId={job.id} imageUrl={scopeOfWorksUrl} />
 
       {/* Mark as Complete — manager override */}
       {job.status !== 'completed' && (

@@ -417,3 +417,73 @@ export async function createJobAction(input: {
   revalidatePath('/cleaner/dashboard')
   return { success: true }
 }
+
+// ─── Scope of works image — admin-uploaded reference shown to the cleaner ───
+
+export async function uploadScopeOfWorksAction(jobId: string, formData: FormData) {
+  const supabase = createClient()
+
+  const file = formData.get('file') as File
+  if (!file) return { error: 'No file provided' }
+
+  const { data: existing } = await (supabase as any)
+    .from('job_assignments')
+    .select('scope_of_works_path')
+    .eq('id', jobId)
+    .single()
+
+  const ext  = file.name.split('.').pop() ?? 'png'
+  const path = `scope-of-works/${jobId}/${Date.now()}.${ext}`
+
+  const { error: upErr } = await (supabase as any).storage
+    .from('job-photos')
+    .upload(path, file, { contentType: file.type, upsert: false })
+
+  if (upErr) return { error: upErr.message }
+
+  const { error } = await (supabase as any)
+    .from('job_assignments')
+    .update({ scope_of_works_path: path })
+    .eq('id', jobId)
+
+  if (error) return { error: error.message }
+
+  // Old file is only removed after the new one is safely linked, so a failed
+  // upload never leaves the job without its previous scope of works image.
+  if (existing?.scope_of_works_path) {
+    await (supabase as any).storage.from('job-photos').remove([existing.scope_of_works_path])
+  }
+
+  const { data } = (supabase as any).storage.from('job-photos').getPublicUrl(path)
+
+  revalidatePath('/team/jobs')
+  revalidatePath(`/manager/jobs/${jobId}`)
+  revalidatePath(`/cleaner/jobs/${jobId}`)
+  return { success: true, url: data.publicUrl as string }
+}
+
+export async function removeScopeOfWorksAction(jobId: string) {
+  const supabase = createClient()
+
+  const { data: job } = await (supabase as any)
+    .from('job_assignments')
+    .select('scope_of_works_path')
+    .eq('id', jobId)
+    .single()
+
+  if (job?.scope_of_works_path) {
+    await (supabase as any).storage.from('job-photos').remove([job.scope_of_works_path])
+  }
+
+  const { error } = await (supabase as any)
+    .from('job_assignments')
+    .update({ scope_of_works_path: null })
+    .eq('id', jobId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/team/jobs')
+  revalidatePath(`/manager/jobs/${jobId}`)
+  revalidatePath(`/cleaner/jobs/${jobId}`)
+  return { success: true }
+}
