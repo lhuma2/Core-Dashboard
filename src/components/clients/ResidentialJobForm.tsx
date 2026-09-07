@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { ImageIcon } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
@@ -29,6 +30,8 @@ export function ResidentialJobForm({ action, cleaners }: ResidentialJobFormProps
   const [isRecurring, setIsRecurring] = useState(false)
   const [frequency, setFrequency] = useState('weekly')
   const [serviceDays, setServiceDays] = useState<string[]>([])
+  const [scopeImageName, setScopeImageName] = useState<string | null>(null)
+  const scopeImageInputRef = useRef<HTMLInputElement>(null)
 
   const cleanerOptions = [
     { value: '', label: 'Unassigned' },
@@ -224,6 +227,26 @@ export function ResidentialJobForm({ action, cleaners }: ResidentialJobFormProps
         rows={3}
         error={errors.comments?.[0]}
       />
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Scope of Works Image</label>
+        <button
+          type="button"
+          onClick={() => scopeImageInputRef.current?.click()}
+          className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg py-4 text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
+        >
+          <ImageIcon className="w-4 h-4" />
+          <span className="text-sm font-medium">{scopeImageName ?? 'Upload an image (optional)'}</span>
+        </button>
+        <input
+          ref={scopeImageInputRef}
+          type="file"
+          name="scope_image"
+          accept="image/*"
+          onChange={(e) => setScopeImageName(e.target.files?.[0]?.name ?? null)}
+          className="hidden"
+        />
+      </div>
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Saving…' : isRecurring ? 'Add Ongoing Residential Clean' : 'Add Residential Clean'}

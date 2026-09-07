@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PhotoGrid } from '@/components/ui/PhotoLightbox'
 import { CleanerCostEditor } from '@/components/clients/CleanerCostEditor'
+import { ResidentialScopeOfWorksUploader } from '@/components/clients/ResidentialScopeOfWorksUploader'
 import { updateResidentialJobCleanerCostAction } from '@/actions/residentialJobs'
 import { ArrowLeft, MapPin, Phone, User, MessageSquare, Repeat } from 'lucide-react'
 
@@ -99,6 +100,11 @@ export default async function AdminResidentialJobDetailPage({ params }: { params
           </div>
         </div>
       </div>
+
+      <ResidentialScopeOfWorksUploader
+        jobId={job.id}
+        imageUrl={job.scope_of_works_image_path ? toPublicUrl(job.scope_of_works_image_path) : null}
+      />
 
       {(job.bedrooms != null || job.bathrooms != null || job.carpet_steam_rooms != null || job.carpet_steam_hallways != null || job.cleaner_cost != null) && (
         <div className="bg-white border border-gray-200/70 rounded-2xl px-5 py-4">

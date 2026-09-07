@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { JobStartFlow } from '@/components/portal/cleaner/JobStartFlow'
 import { StartResidentialOccurrenceButton } from '@/components/portal/cleaner/StartResidentialOccurrenceButton'
+import { ScopeOfWorksCard } from '@/components/portal/cleaner/ScopeOfWorksCard'
 import { MapPin, Phone, Clock, CalendarDays, MessageSquare, BedDouble, Droplets, Repeat } from 'lucide-react'
 import { actionableDates, brisbaneTodayStr, getUpcomingDates } from '@/lib/schedule'
 
@@ -50,6 +51,7 @@ export default async function CleanerResidentialJobPage({ params }: { params: { 
 
   if (!row) notFound()
 
+  const toPublicUrl = (path: string) => (supabase as any).storage.from('job-photos').getPublicUrl(path).data.publicUrl as string
   const isTemplate = !!row.frequency && !row.parent_id
   let job = row // the concrete, trackable job — the row itself, or a resolved instance below
 
@@ -161,6 +163,10 @@ export default async function CleanerResidentialJobPage({ params }: { params: { 
               </p>
             </div>
           </div>
+        )}
+
+        {row.scope_of_works_image_path && (
+          <ScopeOfWorksCard imageUrl={toPublicUrl(row.scope_of_works_image_path)} />
         )}
 
         {row.comments && (

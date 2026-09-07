@@ -44,7 +44,7 @@ export async function createResidentialJobAction(formData: FormData) {
 
   const isRecurring = parsed.data.is_recurring === 'true'
 
-  const { error } = await db.from('residential_jobs').insert({
+  const { data: created, error } = await db.from('residential_jobs').insert({
     client_name:   parsed.data.client_name,
     address:       parsed.data.address,
     contact_phone: parsed.data.contact_phone || null,
@@ -60,10 +60,24 @@ export async function createResidentialJobAction(formData: FormData) {
     cleaner_id:    parsed.data.cleaner_id || null,
     cleaner_cost:  parsed.data.cleaner_cost || null,
     created_by:    createdBy,
-  })
+  }).select('id').single()
 
   if (error) {
     return { error: { _form: [error.message] } }
+  }
+
+  // Optional scope-of-works image, chosen in the same create form — uploaded
+  // after the insert since the storage path is keyed by the new row's id.
+  const scopeImage = formData.get('scope_image') as File | null
+  if (scopeImage && scopeImage.size > 0) {
+    const ext  = scopeImage.name.split('.').pop() ?? 'png'
+    const path = `scope-of-works/residential/${created.id}/${Date.now()}.${ext}`
+    const { error: upErr } = await db.storage
+      .from('job-photos')
+      .upload(path, scopeImage, { contentType: scopeImage.type, upsert: false })
+    if (!upErr) {
+      await db.from('residential_jobs').update({ scope_of_works_image_path: path }).eq('id', created.id)
+    }
   }
 
   revalidatePath('/clients')
@@ -78,6 +92,68 @@ export async function updateResidentialJobCleanerCostAction(id: string, cost: nu
   if (error) return { error: error.message }
   revalidatePath('/clients')
   revalidatePath(`/clients/residential/${id}`)
+  return { success: true }
+}
+
+export async function uploadResidentialScopeImageAction(jobId: string, formData: FormData) {
+  const supabase = createClient()
+  const db = supabase as any
+
+  const file = formData.get('file') as File
+  if (!file) return { error: 'No file provided' }
+
+  const { data: existing } = await db
+    .from('residential_jobs')
+    .select('scope_of_works_image_path')
+    .eq('id', jobId)
+    .single()
+
+  const ext  = file.name.split('.').pop() ?? 'png'
+  const path = `scope-of-works/residential/${jobId}/${Date.now()}.${ext}`
+
+  const { error: upErr } = await db.storage
+    .from('job-photos')
+    .upload(path, file, { contentType: file.type, upsert: false })
+
+  if (upErr) return { error: upErr.message }
+
+  const { error } = await db.from('residential_jobs').update({ scope_of_works_image_path: path }).eq('id', jobId)
+  if (error) return { error: error.message }
+
+  // Old file is only removed after the new one is safely linked, so a failed
+  // upload never leaves the job without its previous scope of works image.
+  if (existing?.scope_of_works_image_path) {
+    await db.storage.from('job-photos').remove([existing.scope_of_works_image_path])
+  }
+
+  const { data } = db.storage.from('job-photos').getPublicUrl(path)
+
+  revalidatePath('/clients')
+  revalidatePath(`/clients/residential/${jobId}`)
+  revalidatePath(`/cleaner/residential/${jobId}`)
+  return { success: true, url: data.publicUrl as string }
+}
+
+export async function removeResidentialScopeImageAction(jobId: string) {
+  const supabase = createClient()
+  const db = supabase as any
+
+  const { data: job } = await db
+    .from('residential_jobs')
+    .select('scope_of_works_image_path')
+    .eq('id', jobId)
+    .single()
+
+  if (job?.scope_of_works_image_path) {
+    await db.storage.from('job-photos').remove([job.scope_of_works_image_path])
+  }
+
+  const { error } = await db.from('residential_jobs').update({ scope_of_works_image_path: null }).eq('id', jobId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/clients')
+  revalidatePath(`/clients/residential/${jobId}`)
+  revalidatePath(`/cleaner/residential/${jobId}`)
   return { success: true }
 }
 
