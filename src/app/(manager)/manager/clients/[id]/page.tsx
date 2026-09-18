@@ -261,7 +261,9 @@ export default async function ManagerClientDetailPage({ params }: { params: { id
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-black">{svc.name}</p>
                       {svc.frequency && (
-                        <p className="text-xs text-gray-400 mt-0.5">{svc.frequency}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {svc.frequency}{svc.siteCount > 1 ? ` · ${svc.siteCount} sites` : ''}
+                        </p>
                       )}
                       {svc.lastCompleted && (
                         <p className="text-xs text-gray-400 mt-0.5">

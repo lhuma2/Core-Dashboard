@@ -167,12 +167,16 @@ export function ClientForm({ defaultValues, defaultSites, action, submitLabel = 
   ]
 
   function addAdditionalService() {
+    // Multi-site clients most often want a periodic service (window cleaning,
+    // pressure washing, etc.) billed at every site — default to all of them,
+    // visibly adjustable right below before the admin ever saves.
     const newSvc: AdditionalService = {
       id: crypto.randomUUID(),
       name: 'Window Cleaning',
       frequency: 'quarterly',
       my_rate_per_visit: 0,
       cleaner_cost_per_visit: 0,
+      siteCount: isMultiSite && sites.length > 1 ? sites.length : 1,
     }
     setAdditionalServices(prev => [...prev, newSvc])
   }
@@ -578,13 +582,33 @@ export function ClientForm({ defaultValues, defaultSites, action, submitLabel = 
               </div>
             </div>
 
+            {/* Applies to how many sites — multi-site clients only. A periodic
+                service like monthly window cleaning is usually billed once per
+                site, so this multiplies straight into the revenue/cost preview
+                below and into the client's monthly totals. */}
+            {isMultiSite && sites.length > 1 && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Applies to how many sites?</label>
+                <select
+                  className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                  value={svc.siteCount ?? 1}
+                  onChange={(e) => updateAdditionalService(svc.id, 'siteCount', Number(e.target.value))}
+                >
+                  {Array.from({ length: sites.length }, (_, n) => n + 1).map((n) => (
+                    <option key={n} value={n}>{n} of {sites.length} site{sites.length === 1 ? '' : 's'}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Per-service monthly preview */}
             {svc.my_rate_per_visit > 0 && svc.frequency !== 'one_off' && (
               <div className="flex gap-4 pt-2 border-t border-gray-200 text-xs text-gray-500">
-                <span>≈ <strong className="text-gray-900">{formatAUD(svc.my_rate_per_visit * (MULT[svc.frequency] ?? 0))}</strong> revenue/month</span>
+                <span>≈ <strong className="text-gray-900">{formatAUD(svc.my_rate_per_visit * (MULT[svc.frequency] ?? 0) * (svc.siteCount && svc.siteCount > 0 ? svc.siteCount : 1))}</strong> revenue/month</span>
                 {svc.cleaner_cost_per_visit > 0 && (
-                  <span>≈ <strong className="text-gray-900">{formatAUD(svc.cleaner_cost_per_visit * (MULT[svc.frequency] ?? 0))}</strong> cost/month</span>
+                  <span>≈ <strong className="text-gray-900">{formatAUD(svc.cleaner_cost_per_visit * (MULT[svc.frequency] ?? 0) * (svc.siteCount && svc.siteCount > 0 ? svc.siteCount : 1))}</strong> cost/month</span>
                 )}
+                {(svc.siteCount ?? 1) > 1 && <span className="text-gray-400">× {svc.siteCount} sites</span>}
               </div>
             )}
           </div>

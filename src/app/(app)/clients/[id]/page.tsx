@@ -489,8 +489,9 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
           <div className="space-y-3">
             {((client as any).additional_services as AdditionalService[]).map((svc) => {
               const mult = MULT[svc.frequency] ?? 0
-              const revMonth  = svc.my_rate_per_visit * mult
-              const costMonth = svc.cleaner_cost_per_visit * mult
+              const siteMult  = svc.siteCount && svc.siteCount > 0 ? svc.siteCount : 1
+              const revMonth  = svc.my_rate_per_visit * mult * siteMult
+              const costMonth = svc.cleaner_cost_per_visit * mult * siteMult
               const profMonth = revMonth - costMonth
               const freqLabel: Record<string, string> = {
                 monthly: 'Monthly', quarterly: 'Quarterly',
@@ -500,12 +501,15 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                 <div key={svc.id} className="flex items-start justify-between border border-gray-100 rounded-lg p-3 bg-gray-50">
                   <div>
                     <p className="text-sm font-semibold text-gray-800">{svc.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{freqLabel[svc.frequency] ?? svc.frequency}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {freqLabel[svc.frequency] ?? svc.frequency}
+                      {siteMult > 1 ? ` · ${siteMult} sites` : ''}
+                    </p>
                   </div>
                   <div className="text-right space-y-0.5">
-                    <p className="text-sm font-bold text-[#00250e]">{formatAUD(svc.my_rate_per_visit)} / visit</p>
+                    <p className="text-sm font-bold text-[#00250e]">{formatAUD(svc.my_rate_per_visit)} / visit{siteMult > 1 ? ' / site' : ''}</p>
                     {svc.cleaner_cost_per_visit > 0 && (
-                      <p className="text-xs text-gray-400">Cost: {formatAUD(svc.cleaner_cost_per_visit)} / visit</p>
+                      <p className="text-xs text-gray-400">Cost: {formatAUD(svc.cleaner_cost_per_visit)} / visit{siteMult > 1 ? ' / site' : ''}</p>
                     )}
                     {mult > 0 && (
                       <p className="text-xs text-gray-400">≈ {formatAUD(revMonth)}/mo revenue

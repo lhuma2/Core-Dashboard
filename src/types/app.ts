@@ -215,6 +215,8 @@ export interface AdditionalService {
   frequency: AdditionalServiceFrequency
   my_rate_per_visit: number
   cleaner_cost_per_visit: number
+  /** How many of the client's sites this service is billed for (multi-site clients only). Defaults to 1. */
+  siteCount?: number
 }
 
 /** Monthly revenue multiplier for additional service frequencies */
@@ -226,17 +228,21 @@ export const ADDITIONAL_SERVICE_MULTIPLIERS: Record<AdditionalServiceFrequency, 
   one_off:    0,
 }
 
+function siteMultiplier(s: AdditionalService): number {
+  return s.siteCount && s.siteCount > 0 ? s.siteCount : 1
+}
+
 export function calcAdditionalMonthlyRevenue(services: AdditionalService[]): number {
   return services.reduce((sum, s) => {
     const mult = ADDITIONAL_SERVICE_MULTIPLIERS[s.frequency] ?? 0
-    return sum + s.my_rate_per_visit * mult
+    return sum + s.my_rate_per_visit * mult * siteMultiplier(s)
   }, 0)
 }
 
 export function calcAdditionalMonthlyLabour(services: AdditionalService[]): number {
   return services.reduce((sum, s) => {
     const mult = ADDITIONAL_SERVICE_MULTIPLIERS[s.frequency] ?? 0
-    return sum + s.cleaner_cost_per_visit * mult
+    return sum + s.cleaner_cost_per_visit * mult * siteMultiplier(s)
   }, 0)
 }
 
