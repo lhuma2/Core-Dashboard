@@ -7,7 +7,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { clientSchema } from '@/lib/validations/client.schema'
 import { calculateMonthlyValue, calculateAnnualValue, visitsPerMonth } from '@/lib/billing'
 import { sendPushToRole } from '@/lib/push'
-import type { FrequencyType, ServiceType } from '@/types/app'
+import type { FrequencyType, ServiceType, AdditionalService } from '@/types/app'
+import { calcAdditionalMonthlyRevenue, calcAdditionalMonthlyLabour } from '@/types/app'
 
 function parseSites(raw: string | null): any[] {
   if (!raw) return []
@@ -64,8 +65,10 @@ export async function createClientAction(formData: FormData) {
   const cleanerHoursPerVisit = parseFloat(formData.get('cleaner_hours_per_visit') as string) || null
   const contractExpiryDate   = (formData.get('contract_expiry_date') as string)  || null
   const additionalServicesRaw = (formData.get('additional_services') as string) || '[]'
-  let additionalServices: any[] = []
+  let additionalServices: AdditionalService[] = []
   try { additionalServices = JSON.parse(additionalServicesRaw) } catch {}
+  const addRevMonth = calcAdditionalMonthlyRevenue(additionalServices)
+  const addLabMonth = calcAdditionalMonthlyLabour(additionalServices)
 
   const { frequency, rate_per_visit, days_per_week, scope_of_work, access_details, assigned_cleaner_id, ...rest } = parsed.data
 
@@ -75,11 +78,16 @@ export async function createClientAction(formData: FormData) {
     : null
 
   const singleDpw = Number(days_per_week) || 1
-  const monthly_value = isMultiSite
+  const baseMonthlyValue = isMultiSite
     ? (multiSiteMonthly || null)
     : rate_per_visit && frequency
       ? calculateMonthlyValue(rate_per_visit, frequency as FrequencyType, singleDpw)
       : null
+  // Additional services (window cleaning, pressure washing, etc.) are part of
+  // the client's real monthly revenue/cost, not just their own side-total.
+  const monthly_value = (baseMonthlyValue !== null || addRevMonth > 0)
+    ? (baseMonthlyValue ?? 0) + addRevMonth
+    : null
   const annual_value = monthly_value ? calculateAnnualValue(monthly_value) : null
 
   // For multi-site, aggregate labour cost from all sites (days/week aware)
@@ -103,7 +111,10 @@ export async function createClientAction(formData: FormData) {
     ? Math.round(cleanerHourlyRate * cleanerHoursPerVisit * visitsPerMonth(frequency as FrequencyType, singleDpw) * 100) / 100
     : null
 
-  const monthly_labour_cost = isMultiSite ? multiSiteMonthlyLabour : singleSiteLabour
+  const baseMonthlyLabour = isMultiSite ? multiSiteMonthlyLabour : singleSiteLabour
+  const monthly_labour_cost = (baseMonthlyLabour !== null || addLabMonth > 0)
+    ? (baseMonthlyLabour ?? 0) + addLabMonth
+    : null
   const monthly_profit = (monthly_value !== null && monthly_labour_cost !== null)
     ? Math.round((monthly_value - monthly_labour_cost) * 100) / 100
     : null
@@ -254,8 +265,10 @@ export async function updateClientAction(id: string, formData: FormData) {
   const cleanerHoursPerVisitUpd = parseFloat(formData.get('cleaner_hours_per_visit') as string) || null
   const contractExpiryDateUpd   = (formData.get('contract_expiry_date') as string)  || null
   const additionalServicesUpdRaw = (formData.get('additional_services') as string) || '[]'
-  let additionalServicesUpd: any[] = []
+  let additionalServicesUpd: AdditionalService[] = []
   try { additionalServicesUpd = JSON.parse(additionalServicesUpdRaw) } catch {}
+  const addRevMonthUpd = calcAdditionalMonthlyRevenue(additionalServicesUpd)
+  const addLabMonthUpd = calcAdditionalMonthlyLabour(additionalServicesUpd)
 
   const { frequency, rate_per_visit, days_per_week: dpw, scope_of_work: sow, access_details: ad, assigned_cleaner_id: aci, ...rest } = parsed.data
 
@@ -264,11 +277,16 @@ export async function updateClientAction(id: string, formData: FormData) {
     : null
 
   const singleDpwUpd = Number(dpw) || 1
-  const monthly_value = isMultiSite
+  const baseMonthlyValueUpd = isMultiSite
     ? (multiSiteMonthlyUpd || null)
     : rate_per_visit && frequency
       ? calculateMonthlyValue(rate_per_visit, frequency as FrequencyType, singleDpwUpd)
       : null
+  // Additional services (window cleaning, pressure washing, etc.) are part of
+  // the client's real monthly revenue/cost, not just their own side-total.
+  const monthly_value = (baseMonthlyValueUpd !== null || addRevMonthUpd > 0)
+    ? (baseMonthlyValueUpd ?? 0) + addRevMonthUpd
+    : null
   const annual_value = monthly_value ? calculateAnnualValue(monthly_value) : null
 
   // For multi-site, aggregate labour cost from all sites (days/week aware)
@@ -291,7 +309,10 @@ export async function updateClientAction(id: string, formData: FormData) {
     ? Math.round(cleanerHourlyRateUpd * cleanerHoursPerVisitUpd * visitsPerMonth(frequency as FrequencyType, singleDpwUpd) * 100) / 100
     : null
 
-  const monthly_labour_cost_upd = isMultiSite ? multiSiteMonthlyLabourUpd : singleSiteLabourUpd
+  const baseMonthlyLabourUpd = isMultiSite ? multiSiteMonthlyLabourUpd : singleSiteLabourUpd
+  const monthly_labour_cost_upd = (baseMonthlyLabourUpd !== null || addLabMonthUpd > 0)
+    ? (baseMonthlyLabourUpd ?? 0) + addLabMonthUpd
+    : null
   const monthly_profit_upd = (monthly_value !== null && monthly_labour_cost_upd !== null)
     ? Math.round((monthly_value - monthly_labour_cost_upd) * 100) / 100
     : null
