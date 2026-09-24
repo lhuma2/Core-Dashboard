@@ -1,4 +1,4 @@
-import { isRelevantTender, stripHtml, extractEmail, extractPhone, truncate } from '../relevance'
+import { isRelevantTender, classifyNoticeType, stripHtml, extractEmail, extractPhone, truncate } from '../relevance'
 import type { TenderCandidate } from '../types'
 
 const SEARCH_URL = 'https://qtenders.hpw.qld.gov.au/api/search/tenders'
@@ -70,6 +70,7 @@ export async function fetchQtendersCandidates(limit = 12): Promise<TenderCandida
       source: 'qtenders',
       external_id: row.vpReference,
       title,
+      notice_type: classifyNoticeType(title, detailsText),
       issuer: row.issuerName || row.businessName || null,
       category: (row.categories ?? []).map(stripMarks).join(', ') || null,
       summary: truncate(detailsText),

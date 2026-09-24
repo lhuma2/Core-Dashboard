@@ -1,11 +1,13 @@
 export type TenderSource = 'austender' | 'qtenders'
 export type TenderStatus = 'candidate' | 'active' | 'done'
+export type NoticeType = 'tender' | 'pipeline'
 
 export interface Tender {
   id: string
   source: TenderSource
   external_id: string
   title: string
+  notice_type: NoticeType
   issuer: string | null
   category: string | null
   summary: string | null
@@ -26,7 +28,7 @@ export interface Tender {
 // A freshly-fetched, not-yet-deduped record ready to insert as a 'candidate'.
 export type TenderCandidate = Pick<
   Tender,
-  'source' | 'external_id' | 'title' | 'issuer' | 'category' | 'summary' |
+  'source' | 'external_id' | 'title' | 'notice_type' | 'issuer' | 'category' | 'summary' |
   'location' | 'open_date' | 'close_date' | 'contact_name' | 'contact_email' |
   'contact_phone' | 'url'
 >

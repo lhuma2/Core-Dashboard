@@ -31,6 +31,14 @@ export function isRelevantTender(title: string, bodyText: string): boolean {
   return true
 }
 
+// A "pipeline" notice is advance warning that a tender is coming — you can't
+// respond to it yet, it's just a heads-up to get ready for the real ITO/RFT.
+const PIPELINE_PATTERN = /\b(forward\s*procurement\s*notice|prior\s*informat(?:ive|ion)\s*notice|notice\s*of\s*intent(?:ion)?\s*to\s*(?:tender|procure)|advance\s*notice\s*of\s*procurement|annual\s*procurement\s*plan)\b/i
+
+export function classifyNoticeType(title: string, bodyText: string): 'tender' | 'pipeline' {
+  return PIPELINE_PATTERN.test(`${title} ${bodyText}`) ? 'pipeline' : 'tender'
+}
+
 export function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, '\n')

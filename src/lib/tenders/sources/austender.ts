@@ -1,4 +1,4 @@
-import { isRelevantTender, isSeqLocation, stripHtml, extractEmail, extractPhone, truncate } from '../relevance'
+import { isRelevantTender, isSeqLocation, classifyNoticeType, stripHtml, extractEmail, extractPhone, truncate } from '../relevance'
 import type { TenderCandidate } from '../types'
 
 const RSS_URL = 'https://www.tenders.gov.au/public_data/rss/rss.xml'
@@ -83,6 +83,7 @@ async function fetchDetail(url: string): Promise<TenderCandidate | null> {
     source: 'austender',
     external_id: atmId,
     title,
+    notice_type: classifyNoticeType(title, `${category ?? ''} ${description}`),
     issuer: agency,
     category,
     summary: truncate(description || text),

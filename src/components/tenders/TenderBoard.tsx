@@ -56,9 +56,15 @@ function TenderCard({ tender, onTickOff, pending }: { tender: Tender; onTickOff:
                 {tender.category}
               </span>
             )}
-            <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${close.urgent ? 'text-red-600' : 'text-gray-400'}`}>
-              <CalendarClock className="w-3 h-3" /> {close.text}
-            </span>
+            {tender.notice_type === 'pipeline' ? (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-100">
+                Pipeline · not open yet
+              </span>
+            ) : (
+              <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${close.urgent ? 'text-red-600' : 'text-gray-400'}`}>
+                <CalendarClock className="w-3 h-3" /> {close.text}
+              </span>
+            )}
           </div>
           <a href={tender.url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors leading-snug">
             {tender.title}
