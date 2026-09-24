@@ -13,6 +13,17 @@ const EXCLUDE_TITLE = /\b(window\s*clean|facade\s*clean|roof\s*clean|gutter\s*cl
 
 const PRESSURE = /\bpressure\s*(?:wash|clean)/i
 
+// North Brisbane to Gold Coast service area. AusTender's Location field is
+// only ever state/city-level text (no suburb granularity), so this is a
+// best-effort gate — it lets through anything that mentions QLD/Brisbane/
+// Gold Coast and rejects tenders explicitly scoped to other states/regions.
+const SEQ_REGION = /\b(QLD|Queensland|Brisbane|Gold Coast|Logan|Redland(?:s)?|Moreton\s*Bay)\b/i
+
+export function isSeqLocation(location: string | null): boolean {
+  if (!location) return true // no location data — don't reject on missing info
+  return SEQ_REGION.test(location)
+}
+
 export function isRelevantTender(title: string, bodyText: string): boolean {
   const combined = `${title} ${bodyText}`
   if (!INCLUDE.test(combined)) return false

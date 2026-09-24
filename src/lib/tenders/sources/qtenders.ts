@@ -5,6 +5,11 @@ const SEARCH_URL = 'https://qtenders.hpw.qld.gov.au/api/search/tenders'
 // "Cleaning Services & Equipment & Supplies" category id, from /api/search/options.
 const CLEANING_CATEGORY_ID = '116'
 const OPEN_STATUS_ID = '1'
+// Service area: North Brisbane to Gold Coast. Region ids "Brisbane" (3) and
+// "Gold Coast" (11), from /api/search/options — the API matches a tender if
+// ANY of its (often multi-region) locations is in this list, so statewide
+// contracts that include Brisbane/Gold Coast still come through.
+const REGION_IDS = ['3', '11']
 
 interface QTenderRow {
   id: number
@@ -39,7 +44,7 @@ export async function fetchQtendersCandidates(limit = 12): Promise<TenderCandida
       keywords: '',
       agencyIds: [],
       categoryIds: [CLEANING_CATEGORY_ID],
-      locationIds: [],
+      locationIds: REGION_IDS,
       productServiceIds: [],
       tenderStatusIds: [OPEN_STATUS_ID],
       pageNumber: 1,

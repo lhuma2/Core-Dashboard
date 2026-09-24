@@ -127,7 +127,7 @@ export function TenderBoard({ initialTenders }: { initialTenders: Tender[] }) {
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Tenders</h2>
           <p className="text-sm text-gray-400 mt-0.5">
-            {tenders.length} of 10 · AusTender &amp; QTenders, filtered to cleaning &amp; pressure washing
+            {tenders.length} of 10 · AusTender &amp; QTenders · cleaning &amp; pressure washing · North Brisbane–Gold Coast
           </p>
         </div>
         <button
