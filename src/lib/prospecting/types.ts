@@ -38,7 +38,8 @@ export const ROLE_GROUPS: { key: string; label: string; titles: string[] }[] = [
   { key: 'office_facilities', label: 'Office / Facilities Manager', titles: ['Office Manager', 'Facilities Manager'] },
   { key: 'practice_ops',      label: 'Practice / Operations Manager', titles: ['Practice Manager', 'Operations Manager'] },
   { key: 'property_strata',   label: 'Property / Strata Manager', titles: ['Property Manager', 'Strata Manager', 'Body Corporate Manager'] },
-  { key: 'owner_director',    label: 'Owner / Director', titles: ['Owner', 'Director', 'Managing Director', 'Business Owner'] },
+  // Bare "Owner" was dropped — it fuzzy-matches tech titles like "Product Owner" / "Scrum Owner" on Lusha/Apollo.
+  { key: 'owner_director',    label: 'Owner / Director', titles: ['Business Owner', 'Company Owner', 'Director', 'Managing Director'] },
 ]
 
 // North Brisbane to Gold Coast — same service area as the tender board.
