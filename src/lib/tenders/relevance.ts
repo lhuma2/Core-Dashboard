@@ -1,17 +1,18 @@
 // Relevance filter shared by the AusTender and QTenders fetchers.
 // Core Cleaning does residential, commercial and end-of-lease cleaning, plus
-// pressure washing — but no other "external" cleaning (windows, gutters,
-// facades, drains, tanks, etc).
+// pressure washing and leaf blowing — but no other "external" cleaning or
+// gardening (windows, gutters, facades, drains, tanks, mowing, landscaping).
 
-const INCLUDE = /\b(clean(?:ing|er|ers)?|janitorial|janitor|bond\s*clean|vacate\s*clean|end[\s-]of[\s-]lease|move[\s-]out\s*clean|pressure\s*(?:wash|clean)|high[\s-]pressure\s*(?:wash|clean))\b/i
+const INCLUDE = /\b(clean(?:ing|er|ers)?|janitorial|janitor|bond\s*clean|vacate\s*clean|end[\s-]of[\s-]lease|move[\s-]out\s*clean|pressure\s*(?:wash|clean)|high[\s-]pressure\s*(?:wash|clean)|leaf\s*blow(?:ing|er)?|leaf\s*(?:litter\s*)?(?:removal|clearing|collection))\b/i
 
 // Services Core Cleaning doesn't offer — a tender is rejected when one of
 // these terms dominates the title (i.e. is what the tender is actually for),
-// unless a pressure-wash term is also present in the title (that's the one
-// external job we do take).
-const EXCLUDE_TITLE = /\b(window\s*clean|facade\s*clean|roof\s*clean|gutter\s*clean|high[\s-]?rise\s*clean|external\s*(?:building\s*)?clean|drain\s*clean|sewer|sewage|grease\s*trap|pollutant\s*trap|pipe\s*clean|tank\s*clean|duct\s*clean|vessel\s*clean|car\s*clean|vehicle\s*(?:clean|wash|detail)|dry\s*clean|laundering|laundry\s*service|graffiti|road\s*sweep|street\s*sweep|waste\s*collection|garbage\s*collection|medical\s*waste|biohazard|hazmat|mining|industrial\s*degreas)/i
+// unless a pressure-wash or leaf-blowing term is also present in the title
+// (those are the specific external/gardening jobs we do take).
+const EXCLUDE_TITLE = /\b(window\s*clean|facade\s*clean|roof\s*clean|gutter\s*clean|high[\s-]?rise\s*clean|external\s*(?:building\s*)?clean|drain\s*clean|sewer|sewage|grease\s*trap|pollutant\s*trap|pipe\s*clean|tank\s*clean|duct\s*clean|vessel\s*clean|car\s*clean|vehicle\s*(?:clean|wash|detail)|dry\s*clean|laundering|laundry\s*service|graffiti|road\s*sweep|street\s*sweep|waste\s*collection|garbage\s*collection|medical\s*waste|biohazard|hazmat|mining|industrial\s*degreas|mowing|slashing|lawn\s*(?:care|mow|maintenance)|landscap(?:ing|e)|turf|irrigation|tree\s*(?:surgery|removal|pruning|lopping)|arboricultur|horticultur|pest\s*(?:management|control))/i
 
 const PRESSURE = /\bpressure\s*(?:wash|clean)/i
+const LEAF_BLOWING = /\bleaf\s*(?:blow(?:ing|er)?|(?:litter\s*)?(?:removal|clearing|collection))/i
 
 // North Brisbane to Gold Coast service area. AusTender's Location field is
 // only ever state/city-level text (no suburb granularity), so this is a
@@ -27,7 +28,7 @@ export function isSeqLocation(location: string | null): boolean {
 export function isRelevantTender(title: string, bodyText: string): boolean {
   const combined = `${title} ${bodyText}`
   if (!INCLUDE.test(combined)) return false
-  if (EXCLUDE_TITLE.test(title) && !PRESSURE.test(title)) return false
+  if (EXCLUDE_TITLE.test(title) && !PRESSURE.test(title) && !LEAF_BLOWING.test(title)) return false
   return true
 }
 
