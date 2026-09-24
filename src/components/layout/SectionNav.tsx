@@ -8,7 +8,7 @@ interface Tab { href: string; label: string }
 // Grouped sections — each renders a category tab bar under the top bar so several
 // related pages read as one section. Matches the sidebar grouping.
 const GROUPS: { tabs: Tab[] }[] = [
-  { tabs: [{ href: '/calls', label: 'Cold calls' }, { href: '/leads', label: 'Leads' }] },
+  { tabs: [{ href: '/calls', label: 'Cold calls' }, { href: '/leads', label: 'Leads' }, { href: '/tenders', label: 'Tenders' }] },
   { tabs: [{ href: '/documents', label: 'Proposals & agreements' }, { href: '/safety', label: 'Safety & compliance' }, { href: '/sops', label: 'SOPs' }] },
   { tabs: [{ href: '/inspections', label: 'Inspections' }, { href: '/surveys', label: 'Surveys' }] },
   { tabs: [{ href: '/financial', label: 'Financials' }, { href: '/analytics', label: 'Analytics' }] },
