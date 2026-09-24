@@ -18,7 +18,7 @@ import {
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/calls',     label: 'Sales',      icon: TrendingUp, aliases: ['/leads', '/tenders'] },
+  { href: '/calls',     label: 'Sales',      icon: TrendingUp, aliases: ['/leads', '/tenders', '/prospecting'] },
   { href: '/clients',   label: 'Clients',    icon: Users },
   { href: '/documents', label: 'Documents',  icon: FileText, aliases: ['/safety', '/sops'] },
   { href: '/inspections', label: 'Quality',  icon: ClipboardCheck, aliases: ['/surveys'] },
