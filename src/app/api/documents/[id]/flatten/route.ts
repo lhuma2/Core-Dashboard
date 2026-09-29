@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { flattenCompanyDocument } from '@/lib/documents/flatten'
+import { flattenProposalDocument } from '@/lib/documents/flatten'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -21,11 +21,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   let flattened: Uint8Array
   try {
-    flattened = await flattenCompanyDocument(
-      sourceBytes,
-      doc.data?.placements ?? [],
-      doc.data?.fieldValues ?? {},
-    )
+    flattened = await flattenProposalDocument(sourceBytes, doc.data)
   } catch (e: any) {
     return NextResponse.json({ error: `Could not generate the PDF: ${e?.message ?? 'unknown error'}` }, { status: 500 })
   }

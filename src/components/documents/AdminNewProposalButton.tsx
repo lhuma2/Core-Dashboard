@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Loader2, FileText, ChevronDown, ShieldCheck } from 'lucide-react'
-import { createProposalFromDocAction } from '@/actions/proposal-docs'
+import { createProposalFromTemplateAction } from '@/actions/doc-templates'
+import type { TemplateOption } from '@/components/documents/NewProposalButton'
 
-type Doc = { name: string; url: string }
-
-export function AdminNewProposalButton({ docs = [] }: { docs?: Doc[] }) {
+export function AdminNewProposalButton({ templates = [] }: { templates?: TemplateOption[] }) {
+  const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -30,19 +30,23 @@ export function AdminNewProposalButton({ docs = [] }: { docs?: Doc[] }) {
         <ChevronDown className="w-3.5 h-3.5 opacity-80" />
       </button>
 
+      {err && <p className="absolute right-0 top-full mt-1 text-xs text-red-500 whitespace-nowrap">{err}</p>}
       {open && (
         <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl border border-gray-200 shadow-lg py-1.5 z-30">
           <p className="px-3 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-            Select a document to fill in
+            Select a template to fill in
           </p>
           <div className="max-h-72 overflow-y-auto">
-            {docs.length === 0 && (
-              <p className="px-3 py-2 text-xs text-gray-400">No company documents yet — upload one below first.</p>
+            {templates.length === 0 && (
+              <p className="px-3 py-2 text-xs text-gray-400">No templates yet. Use Set up template on a company document below.</p>
             )}
-            {docs.map((d) => (
+            {templates.map((d) => (
               <button
-                key={d.url}
-                onClick={() => { setOpen(false); setBusy(true); createProposalFromDocAction(d.name, d.url) }}
+                key={d.id}
+                onClick={() => {
+                  setOpen(false); setBusy(true); setErr(null)
+                  createProposalFromTemplateAction(d.id).then((res) => { if (res?.error) { setErr(res.error); setBusy(false) } })
+                }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
               >
                 <FileText className="w-4 h-4 text-[#00250e] flex-shrink-0" />

@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { withAgreementDefaults } from '@/lib/documents/agreement'
 import { SignExperience } from '@/components/documents/SignExperience'
 import { CompanyDocSignExperience } from '@/components/documents/CompanyDocSignExperience'
+import { TemplateSignExperience } from '@/components/documents/template/TemplateSignExperience'
+import { isTemplateDocData } from '@/lib/documents/template'
 import type { SignatureFill } from '@/components/documents/render/AgreementDocument'
 
 function auDate(iso: string): string {
@@ -19,6 +21,18 @@ export default async function SignPage({ params }: { params: { token: string } }
     .select('id, kind, data, signed_name, signed_at, pdf_url, client_name')
     .eq('sign_code', params.token)
     .maybeSingle()
+
+  if (doc && doc.pdf_url && isTemplateDocData(doc.data)) {
+    return (
+      <TemplateSignExperience
+        code={params.token}
+        pdfUrl={doc.pdf_url}
+        data={doc.data}
+        docTitle={doc.client_name || 'Document'}
+        alreadySigned={!!doc.signed_at}
+      />
+    )
+  }
 
   // Company-document proposals (an attached PDF with placed fields) sign via the PDF overlay.
   if (doc && doc.pdf_url) {

@@ -142,6 +142,40 @@ export async function submitCompanyDocSignatureAction(code: string, placements: 
   return { success: true }
 }
 
+// Recipient signs a document made from a company-document template.
+export async function submitTemplateDocSignatureAction(code: string, signatures: Record<string, string>, signedName: string) {
+  const db = createAdminClient() as any
+  const { data: doc } = await db
+    .from('proposal_documents')
+    .select('id, data, pdf_url, signed_at')
+    .eq('sign_code', code).maybeSingle()
+  if (!doc || !doc.pdf_url || !Array.isArray(doc.data?.template?.fields)) return { error: "This signing link isn't valid." }
+  if (doc.signed_at) return { error: 'This document has already been signed.' }
+
+  const name = String(signedName ?? '').trim().slice(0, 120)
+  if (name.length < 2) return { error: 'Please type your signature before submitting.' }
+  // Keep only signatures for the template's own signature spots.
+  const sigIds = new Set(doc.data.template.fields.filter((f: any) => f.kind === 'signature').map((f: any) => f.id))
+  const clean: Record<string, string> = {}
+  for (const [k, v] of Object.entries(signatures ?? {})) {
+    if (sigIds.has(k) && String(v).trim()) clean[k] = String(v).trim().slice(0, 120)
+  }
+  if (sigIds.size && Object.keys(clean).length < sigIds.size) return { error: 'Please sign in every highlighted box.' }
+
+  const ip = headers().get('x-forwarded-for')?.split(',')[0]?.trim() || null
+  const { error } = await db.from('proposal_documents').update({
+    data: { ...doc.data, signatures: clean },
+    signed_name: name,
+    signed_at: new Date().toISOString(),
+    signed_ip: ip,
+    status: 'signed',
+  }).eq('id', doc.id)
+  if (error) return { error: error.message }
+
+  try { await sendPushToRole('admin', { title: '✍️ A document was signed', body: `Signed by ${name}`, url: '/documents' }) } catch {}
+  return { success: true }
+}
+
 function companyDocInviteEmail(title: string, link: string, message?: string): string {
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#0f172a">
     <div style="background:#00250e;padding:26px 30px;text-align:center;border-radius:12px 12px 0 0">

@@ -9,7 +9,8 @@ import { DeleteDocButton } from '@/components/documents/DeleteDocButton'
 import { UploadCompanyDocButton } from '@/components/documents/UploadCompanyDocButton'
 import { DeleteCompanyDocButton } from '@/components/documents/DeleteCompanyDocButton'
 import { SignedDocsFolders } from '@/components/documents/SignedDocsFolders'
-import { FileText, FilePen, ChevronRight, FileDown } from 'lucide-react'
+import { FileText, FilePen, ChevronRight, FileDown, LayoutTemplate } from 'lucide-react'
+import { hasTemplate } from '@/lib/documents/template'
 
 const KIND_LABEL: Record<string, string> = {
   proposal: 'Proposal', agreement: 'Service Agreement', one_off: 'One-Off Agreement', capability: 'Capability Statement',
@@ -69,16 +70,18 @@ export default async function DocumentsPage() {
     : { data: [] }
   const clientMap = new Map((contractClients ?? []).map((c: any) => [c.id, c]))
 
-  // Admin-uploaded company documents
+  // Admin-uploaded company documents (select * so this still loads before the
+  // `template` column from migration 054 exists)
   const { data: uploadedRows } = await db
     .from('company_documents')
-    .select('id, name, file_url, created_at')
+    .select('*')
     .eq('kind', 'document')
     .order('created_at', { ascending: false })
   const uploadedDocs: any[] = uploadedRows ?? []
 
-  // Options for the "New proposal" picker: all company documents.
-  const proposalDocOptions = uploadedDocs.map((d) => ({ name: d.name, url: d.file_url }))
+  // Options for the "New proposal" picker: company documents set up as templates.
+  const templateOptions = uploadedDocs.filter((d) => hasTemplate(d.template)).map((d) => ({ id: d.id, name: d.name }))
+  const isPdf = (url: string) => /\.pdf($|\?)/i.test(url ?? '')
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -88,8 +91,8 @@ export default async function DocumentsPage() {
           <p className="text-sm text-gray-400 mt-0.5">Proposals and service agreements · {list.length}</p>
         </div>
         <div className="flex items-center gap-2">
-          <AdminNewProposalButton docs={proposalDocOptions} />
-          <NewProposalButton docs={proposalDocOptions} />
+          <AdminNewProposalButton templates={templateOptions} />
+          <NewProposalButton templates={templateOptions} />
         </div>
       </div>
 
@@ -143,8 +146,18 @@ export default async function DocumentsPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Company document</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {hasTemplate(d.template)
+                    ? <span className="text-emerald-700 font-medium">Template · {d.template.fields.length} editable {d.template.fields.length === 1 ? 'field' : 'fields'}</span>
+                    : 'Company document'}
+                </p>
               </div>
+              {isPdf(d.file_url) && (
+                <Link href={`/documents/templates/${d.id}`}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-4 py-1.5 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">
+                  <LayoutTemplate className="w-3.5 h-3.5" /> {hasTemplate(d.template) ? 'Edit template' : 'Set up template'}
+                </Link>
+              )}
               <a href={d.file_url} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-4 py-1.5 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">
                 <FileDown className="w-3.5 h-3.5" /> View
