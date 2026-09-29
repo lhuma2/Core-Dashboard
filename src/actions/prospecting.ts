@@ -16,11 +16,29 @@ export async function searchProspectsAction(source: ProspectSource, roleKeys: st
       ? await searchApolloPeople(titles, SEQ_CITIES.map((c) => `${c.city}, ${c.state}, ${c.country}`))
       : await searchLushaContacts(titles)
 
-    // Don't show a contact already saved or dismissed.
+    // Don't show a contact that's ever been surfaced before, saved or not —
+    // no crossover between searches.
     const db = createAdminClient() as any
     const { data: known } = await db.from('prospects').select('source, external_id')
     const knownKeys = new Set((known ?? []).map((k: any) => `${k.source}:${k.external_id}`))
     const fresh = candidates.filter((c: ProspectCandidate) => !knownKeys.has(`${c.source}:${c.external_id}`))
+
+    // Record every fresh candidate as 'seen' immediately — before the user
+    // even decides whether to save one — so it's excluded from here on
+    // regardless of whether it ends up saved, dismissed, or just ignored.
+    if (fresh.length > 0) {
+      await db.from('prospects').insert(fresh.map((c: ProspectCandidate) => ({
+        source: c.source,
+        external_id: c.external_id,
+        company_name: c.company_name,
+        company_domain: c.company_domain,
+        contact_name: c.contact_name,
+        job_title: c.job_title,
+        location: c.location,
+        linkedin_url: c.linkedin_url,
+        status: 'seen',
+      })))
+    }
 
     return { success: true, candidates: fresh }
   } catch (err: any) {
@@ -34,8 +52,10 @@ export async function saveProspectAction(candidate: ProspectCandidate) {
       ? await revealApolloContact(candidate.external_id)
       : await revealLushaContact(candidate.external_id)
 
+    // The row already exists as 'seen' from the search step — upsert it to
+    // 'saved' with the revealed contact details rather than inserting fresh.
     const db = createAdminClient() as any
-    const { error } = await db.from('prospects').insert({
+    const { error } = await db.from('prospects').upsert({
       source: candidate.source,
       external_id: candidate.external_id,
       company_name: revealed.company_name ?? candidate.company_name,
@@ -47,7 +67,8 @@ export async function saveProspectAction(candidate: ProspectCandidate) {
       email: revealed.email,
       phone: revealed.phone,
       status: 'saved',
-    })
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'source,external_id' })
     if (error) return { error: error.message }
 
     revalidatePath('/prospecting')
