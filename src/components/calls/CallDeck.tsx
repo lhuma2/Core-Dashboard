@@ -347,7 +347,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
         {!logging && !pickDate && !emailPreview && (
           <div className="flex items-center gap-2 mt-4">
             {lead.phone ? (
-              <a href={`tel:${cleanPhone(lead.phone)}`} onClick={() => setLogging(true)}
+              <a href={`tel:${cleanPhone(lead.phone)}`} onClick={() => { setConfirmDelete(false); setLogging(true) }}
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-[#003314] hover:bg-[#00250e] active:scale-[0.98] text-white text-sm font-semibold rounded-xl py-3 shadow-[0_4px_12px_rgba(0,37,14,0.25)] transition-all">
                 <Phone className="w-4 h-4" /> Call {lead.contact_name ? lead.contact_name.split(' ')[0] : ''}
               </a>
@@ -383,7 +383,7 @@ function LeadCard({ lead, today, onChanged }: { lead: ColdLead; today: string; o
                 <Paperclip className="w-4 h-4" /> <span className="hidden md:inline">Capability</span>
               </button>
             )}
-            <button onClick={() => setLogging(true)} title="Log a call outcome"
+            <button onClick={() => { setConfirmDelete(false); setLogging(true) }} title="Log a call outcome"
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl border bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors text-sm font-medium">
               <Plus className="w-4 h-4" /> <span className="hidden md:inline">Log</span>
             </button>
