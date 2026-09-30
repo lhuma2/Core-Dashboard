@@ -212,7 +212,7 @@ export default async function CleanerDashboard({
   const adminDb = createAdminClient() as any
   const { data: mySitesRaw } = await adminDb
     .from('client_sites')
-    .select('id, site_name, address, suburb, client_id, frequency, service_days, clients(business_name, active, start_date)')
+    .select('id, site_name, address, suburb, client_id, frequency, service_days, start_date, clients(business_name, active, start_date)')
     .eq('assigned_cleaner_id', profile.id)
   const assignedSites: any[] = (mySitesRaw ?? []).filter((s: any) => s.clients?.active !== false)
 
@@ -238,7 +238,7 @@ export default async function CleanerDashboard({
       clientId: s.client_id, siteId: s.id,
       label: s.clients?.business_name ? `${s.clients.business_name} — ${s.site_name}` : s.site_name,
       address: s.address ?? null, suburb: s.suburb ?? null,
-      frequency: s.frequency ?? null, serviceDays: s.service_days ?? [], startDate: s.clients?.start_date ?? null,
+      frequency: s.frequency ?? null, serviceDays: s.service_days ?? [], startDate: s.start_date ?? s.clients?.start_date ?? null,
     })),
   ]
   for (const src of scheduleSources) {

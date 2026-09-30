@@ -147,7 +147,7 @@ export default async function CleanerClientPage({ params, searchParams }: { para
             suburb:        s.suburb ?? null,
             frequency:     s.frequency ?? client.frequency ?? null,
             service_days:  s.service_days ?? [],
-            start_date:    client.start_date ?? null,
+            start_date:    s.start_date ?? client.start_date ?? null,
           }, 60).slice(0, 5),
           job: pickJob(jobs.filter((j: any) => j.site_id === s.id)),
         }))

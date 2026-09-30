@@ -54,19 +54,21 @@ export async function GET(request: Request) {
 
     // Single-site clients scheduled today with an assigned cleaner
     const { data: singles } = await db.from('clients')
-      .select('id, business_name, service_days, clean_days, assigned_cleaner_id')
+      .select('id, business_name, service_days, clean_days, assigned_cleaner_id, start_date')
       .eq('active', true).eq('is_multi_site', false).not('assigned_cleaner_id', 'is', null)
     for (const c of singles ?? []) {
+      if (c.start_date && c.start_date > today) continue // first clean not reached yet
       const days = ((c.clean_days?.length ? c.clean_days : c.service_days) ?? []).map(normDay)
       if (days.includes(dayKey)) cands.push({ cleanerId: c.assigned_cleaner_id, label: c.business_name, clientId: c.id })
     }
 
     // Individually-assigned sites scheduled today
     const { data: sites } = await db.from('client_sites')
-      .select('site_name, client_id, service_days, clean_days, assigned_cleaner_id, clients(business_name, active)')
+      .select('site_name, client_id, service_days, clean_days, assigned_cleaner_id, start_date, clients(business_name, active)')
       .not('assigned_cleaner_id', 'is', null)
     for (const s of sites ?? []) {
       if (s.clients?.active === false) continue
+      if (s.start_date && s.start_date > today) continue // first clean not reached yet
       const days = ((s.clean_days?.length ? s.clean_days : s.service_days) ?? []).map(normDay)
       if (days.includes(dayKey)) {
         cands.push({ cleanerId: s.assigned_cleaner_id, label: `${s.clients?.business_name ?? ''} — ${s.site_name}`.trim(), clientId: s.client_id })

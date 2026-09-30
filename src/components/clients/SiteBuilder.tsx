@@ -17,6 +17,7 @@ export interface SiteFormData {
   scope_of_work:          string
   frequency:              string
   service_days:           string[]
+  start_date:             string   // first clean (YYYY-MM-DD)
   days_per_week:          string
   access_details:         string
   assigned_cleaner_id:    string
@@ -41,7 +42,7 @@ function newSite(): SiteFormData {
   return {
     _localId: crypto.randomUUID(),
     site_name: '', address: '', suburb: '', state: 'QLD', postcode: '',
-    scope_of_work: '', frequency: 'weekly', service_days: [], days_per_week: '',
+    scope_of_work: '', frequency: 'weekly', service_days: [], start_date: '', days_per_week: '',
     access_details: '', assigned_cleaner_id: '', rate_per_visit: '',
     cleaner_hourly_rate: '', cleaner_hours_per_visit: '', notes: '',
   }
@@ -85,6 +86,12 @@ export function SiteBuilder({ defaultSites, cleaners = [], onChange }: Props) {
       ? site.service_days.filter((d) => d !== day)
       : [...site.service_days, day]
     update(siteId, 'service_days', days)
+  }
+
+  function applyStartDateToAll(date: string) {
+    const next = sites.map((s) => ({ ...s, start_date: date }))
+    setSites(next)
+    onChange(next)
   }
 
   function toggleExpand(id: string) {
@@ -212,6 +219,22 @@ export function SiteBuilder({ defaultSites, cleaners = [], onChange }: Props) {
                     {site.service_days.length > 0 && (
                       <p className="text-xs text-[#00250e] font-medium mt-2">Cleans on: {site.service_days.join(', ')}</p>
                     )}
+                  </div>
+                  <div className="mt-3">
+                    <label className={lbl}>First Clean Date</label>
+                    <div className="flex items-center gap-2">
+                      <input className={inp} type="date" value={site.start_date} onChange={(e) => update(site._localId, 'start_date', e.target.value)} />
+                      {sites.length > 1 && site.start_date && (
+                        <button
+                          type="button"
+                          onClick={() => applyStartDateToAll(site.start_date)}
+                          className="flex-shrink-0 px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:border-[#00250e] hover:text-[#00250e] transition-colors"
+                        >
+                          Apply to all sites
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">Cleans show in the cleaner portal from this date, repeating on the frequency above</p>
                   </div>
                 </div>
 

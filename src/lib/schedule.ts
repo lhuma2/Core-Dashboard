@@ -61,6 +61,9 @@ export function getUpcomingDates(client: ClientSchedule, daysAhead = 60, fromDat
   const today = fromDate ? new Date(fromDate) : new Date()
   today.setHours(0, 0, 0, 0)
 
+  // start_date is the first clean — nothing is scheduled before it
+  const firstClean = client.start_date ? new Date(client.start_date + 'T00:00:00') : null
+
   const end = new Date(today)
   end.setDate(end.getDate() + daysAhead)
 
@@ -69,7 +72,7 @@ export function getUpcomingDates(client: ClientSchedule, daysAhead = 60, fromDat
 
   while (cursor <= end) {
     const dow = cursor.getDay()
-    if (days.includes(dow)) {
+    if (days.includes(dow) && !(firstClean && cursor < firstClean)) {
       const weeksSinceAnchor = Math.round(
         (cursor.getTime() - anchor.getTime()) / (7 * 24 * 60 * 60 * 1000)
       )
