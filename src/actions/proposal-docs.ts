@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DEFAULT_PROPOSAL, withProposalDefaults, type ProposalData } from '@/lib/documents/proposal'
 import { mapProposalToAgreement, withAgreementDefaults } from '@/lib/documents/agreement'
-import { flattenCompanyDocument } from '@/lib/documents/flatten'
+import { flattenProposalDocument } from '@/lib/documents/flatten'
 
 export type DocKind = 'proposal' | 'agreement' | 'one_off' | 'capability'
 
@@ -109,7 +109,7 @@ export async function saveFlattenedPdfAction(id: string) {
 
   let flattened: Uint8Array
   try {
-    flattened = await flattenCompanyDocument(sourceBytes, doc.data?.placements ?? [], doc.data?.fieldValues ?? {})
+    flattened = await flattenProposalDocument(sourceBytes, doc.data)
   } catch (e: any) {
     return { error: `Could not generate the PDF: ${e?.message ?? 'unknown error'}` }
   }

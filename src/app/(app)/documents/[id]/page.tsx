@@ -6,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ProposalEditor } from '@/components/documents/ProposalEditor'
 import { CompanyDocEditor } from '@/components/documents/CompanyDocEditor'
 import { AgreementEditor } from '@/components/documents/AgreementEditor'
+import { TemplateDocEditor } from '@/components/documents/template/TemplateDocEditor'
+import { isTemplateDocData } from '@/lib/documents/template'
 import { withProposalDefaults } from '@/lib/documents/proposal'
 import { withAgreementDefaults } from '@/lib/documents/agreement'
 import { ensureSignCode } from '@/actions/signing'
@@ -40,7 +42,11 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
       />
     )
   }
-  // Company-document proposals (a PDF is attached) use the overlay editor.
+  // Made from a company-document template: text boxes that edit the PDF directly.
+  if (doc.pdf_url && isTemplateDocData(doc.data)) {
+    return <TemplateDocEditor id={doc.id} pdfUrl={doc.pdf_url} data={doc.data} status={doc.status} />
+  }
+  // Older company-document proposals (fields dragged onto the PDF).
   if (doc.pdf_url) {
     return (
       <CompanyDocEditor

@@ -120,3 +120,13 @@ export async function flattenCompanyDocument(
 
   return pdfDoc.save()
 }
+
+// Picks the right flattener for a proposal_documents row's `data`: documents made
+// from a template carry `data.template`; older ones carry dragged-on placements.
+export async function flattenProposalDocument(originalPdf: Uint8Array | ArrayBuffer, data: any): Promise<Uint8Array> {
+  if (Array.isArray(data?.template?.fields)) {
+    const { flattenTemplateDocument } = await import('./template-flatten')
+    return flattenTemplateDocument(originalPdf, data)
+  }
+  return flattenCompanyDocument(originalPdf, data?.placements ?? [], data?.fieldValues ?? {})
+}
