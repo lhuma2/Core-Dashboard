@@ -360,32 +360,47 @@ export async function updateClientAction(id: string, formData: FormData) {
     return { error: { _form: [error.message] } }
   }
 
-  // Sync sites: delete old, insert new
-  if (isMultiSite) {
-    await db2.from('client_sites').delete().eq('client_id', id)
-    if (sitesData.length > 0) {
-      const siteUpdates = sitesData.map((site: any, idx: number) => ({
-        client_id:               id,
-        site_name:               site.site_name || `Site ${idx + 1}`,
-        address:                 site.address   || null,
-        suburb:                  site.suburb    || null,
-        state:                   site.state     || 'QLD',
-        postcode:                site.postcode  || null,
-        scope_of_work:           site.scope_of_work || null,
-        frequency:               site.frequency || null,
-        service_days:            Array.isArray(site.service_days) ? site.service_days : [],
+  // Sync sites in place: update existing rows (keeping their id, scope, clean days and
+  // scope-of-works image), insert new ones, delete only the ones removed in the form.
+  if (isMultiSite && formData.get('sites') !== null) {
+    const { data: existingSites } = await db2.from('client_sites').select('id').eq('client_id', id)
+    const existingIds = new Set<string>((existingSites ?? []).map((s: any) => s.id))
+
+    const siteRow = (site: any, idx: number) => ({
+      site_name:               site.site_name || `Site ${idx + 1}`,
+      address:                 site.address   || null,
+      suburb:                  site.suburb    || null,
+      state:                   site.state     || 'QLD',
+      postcode:                site.postcode  || null,
+      scope_of_work:           site.scope_of_work || null,
+      frequency:               site.frequency || null,
+      service_days:            Array.isArray(site.service_days) ? site.service_days : [],
       start_date:              site.start_date                  || null,
-        days_per_week:           parseInt(site.days_per_week)     || null,
-        access_details:          site.access_details              || null,
-        assigned_cleaner_id:     site.assigned_cleaner_id         || null,
-        rate_per_visit:          parseFloat(site.rate_per_visit)  || null,
-        cleaner_hourly_rate:     parseFloat(site.cleaner_hourly_rate) || null,
-        cleaner_hours_per_visit: parseFloat(site.cleaner_hours_per_visit) || null,
-        notes:                   site.notes     || null,
-        sort_order:              idx,
-      }))
-      await db2.from('client_sites').insert(siteUpdates)
+      days_per_week:           parseInt(site.days_per_week)     || null,
+      access_details:          site.access_details              || null,
+      assigned_cleaner_id:     site.assigned_cleaner_id         || null,
+      rate_per_visit:          parseFloat(site.rate_per_visit)  || null,
+      cleaner_hourly_rate:     parseFloat(site.cleaner_hourly_rate) || null,
+      cleaner_hours_per_visit: parseFloat(site.cleaner_hours_per_visit) || null,
+      notes:                   site.notes     || null,
+      sort_order:              idx,
+    })
+
+    const keptIds = new Set<string>()
+    const inserts: any[] = []
+    for (let idx = 0; idx < sitesData.length; idx++) {
+      const site = sitesData[idx]
+      if (site.dbId && existingIds.has(site.dbId)) {
+        keptIds.add(site.dbId)
+        await db2.from('client_sites').update(siteRow(site, idx)).eq('id', site.dbId).eq('client_id', id)
+      } else {
+        inserts.push({ client_id: id, ...siteRow(site, idx) })
+      }
     }
+    if (inserts.length > 0) await db2.from('client_sites').insert(inserts)
+
+    const removedIds = Array.from(existingIds).filter((sid) => !keptIds.has(sid))
+    if (removedIds.length > 0) await db2.from('client_sites').delete().in('id', removedIds)
   }
 
   revalidatePath('/clients')
