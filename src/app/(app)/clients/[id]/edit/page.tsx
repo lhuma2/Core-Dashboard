@@ -50,6 +50,7 @@ export default async function EditClientPage({
     scope_of_work:          s.scope_of_work           ?? '',
     frequency:              s.frequency               ?? 'weekly',
     service_days:           s.service_days            ?? [],
+    start_date:             s.start_date ? String(s.start_date).substring(0, 10) : '',
     days_per_week:          s.days_per_week?.toString() ?? '',
     access_details:         s.access_details          ?? '',
     assigned_cleaner_id:    s.assigned_cleaner_id     ?? '',

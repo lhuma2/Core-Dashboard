@@ -420,8 +420,8 @@ export function ClientForm({ defaultValues, defaultSites, action, submitLabel = 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Input label="Start Date *" name="start_date" type="date" defaultValue={defaultValues?.start_date ? String(defaultValues.start_date).substring(0, 10) : ''} />
-            <p className="text-xs text-gray-400 mt-1">Required — used to calculate fortnightly &amp; 4-weekly schedules accurately</p>
+            <Input label="First Clean Date *" name="start_date" type="date" defaultValue={defaultValues?.start_date ? String(defaultValues.start_date).substring(0, 10) : ''} />
+            <p className="text-xs text-gray-400 mt-1">Cleans show in the cleaner portal from this date, repeating on the frequency above</p>
           </div>
           <Input label="Contract Expiry Date" name="contract_expiry_date" type="date" defaultValue={defaultValues?.contract_expiry_date ? String(defaultValues.contract_expiry_date).substring(0, 10) : ''} />
         </div>

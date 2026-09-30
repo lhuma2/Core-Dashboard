@@ -66,7 +66,7 @@ export default async function ClientDashboardPage({
       .single(),
     (supabase as any)
       .from('client_sites')
-      .select('id, site_name, suburb, frequency, service_days, days_per_week')
+      .select('id, site_name, suburb, frequency, service_days, days_per_week, start_date')
       .eq('client_id', clientId)
       .order('sort_order', { ascending: true }),
   ])
@@ -117,7 +117,7 @@ export default async function ClientDashboardPage({
           suburb: site.suburb ?? null,
           frequency: site.frequency,
           service_days: site.service_days ?? [],
-          start_date: client?.start_date ?? null,
+          start_date: site.start_date ?? client?.start_date ?? null,
         }, 90)
         if (upcoming.length > 0) scheduledNext = upcoming[0].toISOString().split('T')[0]
       }
