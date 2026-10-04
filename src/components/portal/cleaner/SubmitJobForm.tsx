@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { submitJobAction, uploadJobPhotoAction, deleteJobPhotoAction } from '@/actions/jobs'
 import { Camera, Video, X, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { stampPhoto } from '@/lib/stampPhoto'
 
 const MIN_PHOTOS = 0
 const MAX_PHOTOS = 10
@@ -36,65 +37,6 @@ interface VideoEntry {
   name: string
   uploading: boolean
   error: string | null
-}
-
-/** Burns a neat AEST timestamp onto a photo and returns a stamped Blob */
-async function stampPhoto(file: File): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = document.createElement('img')
-    const objectUrl = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl)
-      const canvas = document.createElement('canvas')
-      canvas.width  = img.naturalWidth
-      canvas.height = img.naturalHeight
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0)
-
-      const now = new Date()
-      const stamp = now.toLocaleString('en-AU', {
-        timeZone:   'Australia/Brisbane',
-        day:        '2-digit',
-        month:      '2-digit',
-        year:       'numeric',
-        hour:       '2-digit',
-        minute:     '2-digit',
-        second:     '2-digit',
-        hour12:     false,
-      }) + ' AEST'
-
-      const fontSize = Math.max(20, Math.round(canvas.width * 0.033))
-      const padding  = Math.round(fontSize * 0.6)
-
-      ctx.font      = `bold ${fontSize}px 'Helvetica Neue', Helvetica, Arial, sans-serif`
-      ctx.textAlign = 'right'
-
-      const textW = ctx.measureText(stamp).width
-      const boxW  = textW + padding * 2
-      const boxH  = fontSize + padding * 1.4
-      const boxX  = canvas.width  - boxW - padding
-      const boxY  = canvas.height - boxH - padding
-
-      ctx.fillStyle = 'rgba(0,0,0,0.55)'
-      ctx.beginPath()
-      const r = fontSize * 0.35
-      ctx.roundRect(boxX, boxY, boxW, boxH, r)
-      ctx.fill()
-
-      ctx.fillStyle    = '#ffffff'
-      ctx.shadowColor  = 'rgba(0,0,0,0.4)'
-      ctx.shadowBlur   = 3
-      ctx.fillText(stamp, canvas.width - padding * 2, boxY + boxH - padding * 0.7)
-
-      canvas.toBlob(
-        (blob) => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')),
-        'image/jpeg',
-        0.88,
-      )
-    }
-    img.onerror = reject
-    img.src = objectUrl
-  })
 }
 
 export function SubmitJobForm({ jobId, checklist }: Props) {
@@ -144,8 +86,7 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
 
       // 2. Stamp + upload in background
       try {
-        const stamped     = await stampPhoto(file)
-        const stampedFile = new File([stamped], file.name, { type: 'image/jpeg' })
+        const stampedFile = await stampPhoto(file)
         const fd          = new FormData()
         fd.append('photo', stampedFile)
         const result = await uploadJobPhotoAction(jobId, fd, 'after')

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Camera, X, CheckCircle2, Loader2, RefreshCw, WifiOff } from 'lucide-react'
 import { uploadJobPhotoAction, deleteJobPhotoAction } from '@/actions/jobs'
 import { queuePhoto, flushPhotoQueue, type QueuedPhoto } from '@/lib/photoQueue'
+import { stampPhoto } from '@/lib/stampPhoto'
 
 type Phase = 'before' | 'after'
 type PhotoStatus = 'uploading' | 'uploaded' | 'queued' | 'failed'
@@ -109,10 +110,13 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
     }
   }
 
-  function addFiles(fileList: FileList | null) {
+  async function addFiles(fileList: FileList | null) {
     const files = Array.from(fileList ?? [])
     if (!files.length) return
-    for (const file of files) {
+    const takenAt = new Date()
+    for (const original of files) {
+      // Stamp before upload/queueing so the stored (and any offline-queued) copy carries the date + time
+      const file = await stampPhoto(original, takenAt)
       const id = `${Date.now()}-${Math.random()}`
       const entry: PhotoEntry = { id, localUrl: URL.createObjectURL(file), file, status: 'uploading', storagePath: null }
       setPhotos((p) => [...p, entry])

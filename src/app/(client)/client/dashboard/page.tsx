@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/server'
 import { ClientShell } from '@/components/portal/ClientShell'
 import { getUpcomingDates } from '@/lib/schedule'
 import { CalendarDays, CheckCircle2, History, MapPin } from 'lucide-react'
-import { CleanPhotos, loadCleanMedia } from '@/components/portal/client/CleanPhotos'
 
 function getBrisbaneGreeting(): string {
   const hour = parseInt(
@@ -90,7 +89,7 @@ export default async function ClientDashboardPage({
         .limit(50),
       (supabase as any)
         .from('job_assignments')
-        .select('id, scheduled_date, site_id, job_submissions(completed_at, completed_by_role, photo_urls, video_urls)')
+        .select('id, scheduled_date, site_id, job_submissions(completed_at, completed_by_role)')
         .eq('client_id', clientId)
         .eq('status', 'completed')
         .order('scheduled_date', { ascending: false })
@@ -99,7 +98,6 @@ export default async function ClientDashboardPage({
 
     const upcoming  = (upcomingJobs ?? []) as any[]
     const history   = (allHistory   ?? []) as any[]
-    const media     = await loadCleanMedia(supabase, history)
 
     // Build per-site data
     const siteData = sites.map((site: any) => {
@@ -227,7 +225,6 @@ export default async function ClientDashboardPage({
                           )}
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">Completed</p>
-                        <CleanPhotos media={media[job.id]} />
                       </div>
                     </div>
                   </div>
@@ -272,14 +269,12 @@ export default async function ClientDashboardPage({
     applyJobFilters(
       (supabase as any)
         .from('job_assignments')
-        .select('id, scheduled_date, job_submissions(completed_at, notes, completed_by_role, photo_urls, video_urls)')
+        .select('id, scheduled_date, job_submissions(completed_at, notes, completed_by_role)')
         .eq('status', 'completed')
         .order('scheduled_date', { ascending: false })
         .limit(100)
     ),
   ])
-
-  const media = await loadCleanMedia(supabase, (historyJobs ?? []) as any[])
 
   const lastSub = Array.isArray(lastJob?.job_submissions)
     ? (lastJob.job_submissions[0] ?? null)
@@ -394,10 +389,9 @@ export default async function ClientDashboardPage({
               <div key={job.id} className="py-3.5 border-b border-gray-50 last:border-0">
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 rounded-full bg-black flex-shrink-0 mt-1.5" />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-black">{formatDateAU(job.scheduled_date)}</p>
                     <p className="text-xs text-gray-400 mt-0.5">Completed</p>
-                    <CleanPhotos media={media[job.id]} />
                   </div>
                 </div>
               </div>
