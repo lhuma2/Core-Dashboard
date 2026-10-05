@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NewProposalButton } from '@/components/documents/NewProposalButton'
 import { AdminNewProposalButton } from '@/components/documents/AdminNewProposalButton'
 import { DeleteDocButton } from '@/components/documents/DeleteDocButton'
+import { RenameDocButton } from '@/components/documents/RenameDocButton'
 import { UploadCompanyDocButton } from '@/components/documents/UploadCompanyDocButton'
 import { DeleteCompanyDocButton } from '@/components/documents/DeleteCompanyDocButton'
 import { SignedDocsFolders } from '@/components/documents/SignedDocsFolders'
@@ -32,7 +33,7 @@ export default async function DocumentsPage() {
   const db = createAdminClient() as any
   const { data: docs } = await db
     .from('proposal_documents')
-    .select('id, kind, status, ref_number, client_name, updated_at')
+    .select('id, kind, status, ref_number, client_name, title, updated_at')
     .order('updated_at', { ascending: false })
 
   const all: any[] = docs ?? []
@@ -42,7 +43,7 @@ export default async function DocumentsPage() {
   // Signed documents + their folders
   const { data: signedRows } = await db
     .from('proposal_documents')
-    .select('id, kind, client_name, folder_id, signed_at, pdf_url')
+    .select('id, kind, client_name, title, folder_id, signed_at, pdf_url')
     .eq('status', 'signed')
     .order('signed_at', { ascending: false })
   const signedDocs: any[] = signedRows ?? []
@@ -113,7 +114,7 @@ export default async function DocumentsPage() {
                     <Icon className="w-4 h-4 text-[#00250e]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{d.client_name || 'Untitled'}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{d.title || d.client_name || 'Untitled'}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{KIND_LABEL[d.kind] ?? d.kind} · {d.ref_number}</p>
                   </div>
                   <span className={`text-[11px] font-semibold border rounded-full px-2.5 py-0.5 ${STATUS_STYLE[d.status] ?? STATUS_STYLE.draft}`}>
@@ -121,6 +122,7 @@ export default async function DocumentsPage() {
                   </span>
                   <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
                 </Link>
+                {d.status !== 'draft' && <RenameDocButton id={d.id} name={d.title || d.client_name || ''} />}
                 <DeleteDocButton id={d.id} />
               </div>
             )
