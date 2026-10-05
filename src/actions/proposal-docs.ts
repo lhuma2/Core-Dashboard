@@ -269,3 +269,15 @@ export async function restoreVersionAction(documentId: string, versionId: string
   revalidatePath(`/documents/${documentId}`)
   return { success: true }
 }
+
+// ─── Rename (display name only — never touches the signed content) ───────────
+
+export async function renameProposalDocAction(id: string, title: string) {
+  const db = createAdminClient() as any
+  const t = (title ?? '').trim()
+  const { error } = await db.from('proposal_documents').update({ title: t || null }).eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/documents')
+  revalidatePath(`/documents/${id}`)
+  return { success: true }
+}

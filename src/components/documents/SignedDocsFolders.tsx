@@ -7,8 +7,9 @@ import { Folder, FolderOpen, FilePen, FileText, Plus, Trash2, X, Loader2, Check,
 import { createClient } from '@/lib/supabase/client'
 import { createFolderAction, deleteFolderAction, moveDocToFolderAction, addFolderFileAction, deleteFolderFileAction } from '@/actions/folders'
 import { deleteProposalDocAction } from '@/actions/proposal-docs'
+import { RenameDocButton } from './RenameDocButton'
 
-type Doc = { id: string; client_name: string | null; kind: string; folder_id: string | null; signed_at: string | null; pdf_url?: string | null }
+type Doc = { id: string; client_name: string | null; title?: string | null; kind: string; folder_id: string | null; signed_at: string | null; pdf_url?: string | null }
 type FolderFile = { id: string; folder_id: string; name: string; file_url: string }
 type FolderT = { id: string; name: string }
 
@@ -77,9 +78,10 @@ export function SignedDocsFolders({ folders, signed, files }: { folders: FolderT
     <div {...dragProps(d.id)} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 cursor-grab active:cursor-grabbing">
       <div className="w-8 h-8 rounded-lg bg-[#00250e]/5 border border-[#00250e]/10 flex items-center justify-center flex-shrink-0"><FilePen className="w-4 h-4 text-[#00250e]" /></div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-gray-900 truncate">{d.client_name || 'Untitled'}</p>
+        <p className="text-sm font-semibold text-gray-900 truncate">{d.title || d.client_name || 'Untitled'}</p>
         <p className="text-xs text-gray-400">Signed{d.signed_at ? ` · ${new Date(d.signed_at).toLocaleDateString('en-AU')}` : ''}</p>
       </div>
+      <RenameDocButton id={d.id} name={d.title || d.client_name || ''} />
       <Link href={`/documents/${d.id}`} className="text-[11px] font-semibold text-[#00250e] border border-[#00250e]/20 rounded-full px-3 py-1 hover:bg-[#00250e] hover:text-white transition-colors flex-shrink-0">View</Link>
       {d.pdf_url && (
         <a href={`/api/documents/${d.id}/flatten`} title="Download the signed PDF with the signature and filled fields included"

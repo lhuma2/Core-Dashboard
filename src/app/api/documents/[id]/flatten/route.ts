@@ -26,7 +26,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: `Could not generate the PDF: ${e?.message ?? 'unknown error'}` }, { status: 500 })
   }
 
-  const filename = `${safe(doc.client_name || 'Signed Document')}${doc.status === 'signed' ? ' - Signed' : ''}.pdf`
+  const filename = `${safe(doc.title || doc.client_name || 'Signed Document')}${doc.status === 'signed' ? ' - Signed' : ''}.pdf`
   return new NextResponse(Buffer.from(flattened), {
     headers: {
       'Content-Type': 'application/pdf',
