@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isTemplateDocData } from '@/lib/documents/template'
+import { quoteClientName } from '@/lib/documents/quote'
 import { QuoteAcceptExperience } from '@/components/documents/template/QuoteAcceptExperience'
 
 export default async function QuotePage({ params }: { params: { code: string } }) {
@@ -39,7 +40,7 @@ export default async function QuotePage({ params }: { params: { code: string } }
       code={params.code}
       pdfUrl={doc.pdf_url}
       data={doc.data}
-      docTitle={doc.data.clientName || doc.client_name || 'Your quote'}
+      docTitle={quoteClientName(doc.data) || 'Your quote'}
       accepted={doc.status === 'accepted'}
       agreementCode={agreementCode}
     />
