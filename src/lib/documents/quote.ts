@@ -81,6 +81,9 @@ export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementDat
 export function agreementFromQuote(q: TemplateDocData, agreementRef: string): AgreementData & Record<string, any> {
   return {
     ...DEFAULT_AGREEMENT,
+    // Never carry the sample particulars (Northpoint, $5,400 / month…) onto a
+    // real client's agreement: anything the quote doesn't fill stays blank.
+    clientName: '', clientABN: '', premises: '', frequency: '', serviceFee: '',
     ...quoteToAgreementFields(q),
     proposalRef: q.refNumber ?? '',
     agreementRef,
