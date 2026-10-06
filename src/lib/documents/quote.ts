@@ -7,7 +7,7 @@
 // the owner saves their portal login, a welcome page. Residential and end-of-lease
 // clients are prompted on the Clients tab instead and never get a welcome page.
 
-import { fieldValue, type TemplateDocData } from './template'
+import { fieldValue, isChanged, type TemplateDocData } from './template'
 import { DEFAULT_AGREEMENT, type AgreementData } from './agreement'
 
 export type ClientType = 'commercial' | 'residential' | 'end_of_lease'
@@ -68,13 +68,25 @@ export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementDat
     if (explicit === 'none') continue
     const key = (explicit && KEYS.has(explicit) ? explicit : guessAgreementKey(f.label)) as AgreementKey | null
     if (!key) continue
-    const v = fieldValue(f, q.values).trim()
+    const raw = fieldValue(f, q.values)
+    const v = raw.trim()
     if (!v) continue
+    // The template's own placeholder ("Client Name") is never a real client name.
+    if (key === 'clientName' && !isChanged(f, raw)) continue
     // An explicit mapping wins over a guess; otherwise the first field wins.
     if (out[key] == null || explicit) out[key] = v.replace(/\s*\n\s*/g, key === 'premises' ? ', ' : ' ')
   }
-  if (!out.clientName && q.clientName?.trim()) out.clientName = q.clientName.trim()
+  if (!out.clientName) {
+    // The editor's "Client" box starts as the template's name; only use it once it's been changed.
+    const listed = q.clientName?.trim()
+    if (listed && listed !== q.templateName?.trim()) out.clientName = listed
+  }
   return out
+}
+
+/** The client's name as written on the quote, or '' if it hasn't been filled in. */
+export function quoteClientName(q: TemplateDocData): string {
+  return quoteToAgreementFields(q).clientName ?? ''
 }
 
 /** A full agreement for an accepted template quote. The start date is left for the client. */

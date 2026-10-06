@@ -6,7 +6,7 @@ import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { requireStaff } from '@/lib/require-staff'
 import { isTemplateDocData } from '@/lib/documents/template'
-import { agreementFromQuote, clientTypeOf, type ClientType } from '@/lib/documents/quote'
+import { agreementFromQuote, clientTypeOf, quoteClientName, type ClientType } from '@/lib/documents/quote'
 import { APP_URL, WORDMARK, EMAIL_RE, auDate, esc, uniqueSignCode } from '@/lib/documents/sign-code'
 
 // ─── Owner: send a template quote for the client to accept ────────────────────
@@ -25,12 +25,16 @@ export async function sendQuoteAction(id: string, toEmail: string, message?: str
   }
   if (doc.status === 'accepted') return { error: 'This quote has already been accepted.' }
 
-  const name = doc.data.clientName || doc.client_name || 'Quote'
-  const code: string = doc.sign_code ?? await uniqueSignCode(db, name)
+  // The name typed into the quote's client field, not the template's name.
+  const name = quoteClientName(doc.data)
+  const code: string = doc.sign_code ?? await uniqueSignCode(db, name || 'quote')
   const type = clientType ?? clientTypeOf(doc.data)
+  // If the documents-list name was never changed from the template's, use the client's.
+  const relabel = name && (!doc.data.clientName || doc.data.clientName === doc.data.templateName)
   const { error } = await db.from('proposal_documents').update({
     sign_code: code, signer_email: email, status: 'sent', sent_at: new Date().toISOString(),
-    data: { ...doc.data, quoteMode: true, clientType: type },
+    data: { ...doc.data, quoteMode: true, clientType: type, ...(relabel ? { clientName: name } : {}) },
+    ...(relabel ? { client_name: name } : {}),
   }).eq('id', id)
   if (error) return { error: error.message }
 
@@ -139,7 +143,7 @@ function quoteEmail(name: string, link: string, message?: string): string {
   const note = (message ?? '').trim()
   return shell(`
     <p style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2563eb;margin:0 0 12px;">Your quote</p>
-    <h1 style="font-size:24px;line-height:1.25;margin:0 0 12px;color:#0f172a;font-weight:800;">Hi ${esc(name)}, here&rsquo;s your quote.</h1>
+    <h1 style="font-size:24px;line-height:1.25;margin:0 0 12px;color:#0f172a;font-weight:800;">Hi${name ? ` ${esc(name)}` : ''}, here&rsquo;s your quote.</h1>
     <p style="font-size:14.5px;line-height:1.65;color:#475569;margin:0 0 ${note ? '18px' : '26px'};">
       Have a look through it. If you&rsquo;re happy, press <strong>Accept quote</strong> and we&rsquo;ll have your service agreement ready to sign straight away.
     </p>
@@ -150,7 +154,7 @@ function quoteEmail(name: string, link: string, message?: string): string {
 function agreementReadyEmail(name: string, link: string): string {
   return shell(`
     <p style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2563eb;margin:0 0 12px;">Quote accepted</p>
-    <h1 style="font-size:24px;line-height:1.25;margin:0 0 12px;color:#0f172a;font-weight:800;">Thanks ${esc(name)}, your agreement is ready.</h1>
+    <h1 style="font-size:24px;line-height:1.25;margin:0 0 12px;color:#0f172a;font-weight:800;">Thanks${name ? ` ${esc(name)}` : ''}, your agreement is ready.</h1>
     <p style="font-size:14.5px;line-height:1.65;color:#475569;margin:0 0 26px;">
       We&rsquo;ve filled in your service agreement from your quote. All that&rsquo;s left is to choose your start date and sign. If you&rsquo;ve already done that, you can ignore this email.
     </p>

@@ -121,7 +121,7 @@ export function SignExperience({
           <>
             <p className="text-[11px] font-bold tracking-[0.16em] uppercase text-blue-300 mb-2">Service Agreement</p>
             <h1 className="text-white text-2xl font-bold tracking-tight max-w-md mx-auto">
-              {data.clientName}, you&apos;re ready to sign.
+              {data.clientName ? <>{data.clientName}, you&apos;re</> : 'You’re'} ready to sign.
             </h1>
             <p className="text-slate-400 text-sm mt-2 max-w-sm mx-auto">
               Take a moment to read your agreement below. When you&apos;re happy, sign at the bottom — it takes about a minute.
