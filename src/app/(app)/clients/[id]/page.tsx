@@ -101,6 +101,22 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
   if (!clientRes.data) notFound()
 
   const portalLogin = await portalLoginFor(createAdminClient(), params.id)
+
+  // Quotes and service agreements made in Documents, plus the quote each agreement came from.
+  const adminDb = createAdminClient() as any
+  const { data: linkedDocs } = await adminDb.from('proposal_documents')
+    .select('id, kind, status, title, client_name, ref_number, source_id, signed_at, updated_at')
+    .eq('client_id', params.id)
+  const portalDocs: any[] = linkedDocs ?? []
+  const missingSources = Array.from(new Set(portalDocs.map((d) => d.source_id)
+    .filter((sid: string | null) => sid && !portalDocs.some((d) => d.id === sid))))
+  if (missingSources.length) {
+    const { data: srcDocs } = await adminDb.from('proposal_documents')
+      .select('id, kind, status, title, client_name, ref_number, source_id, signed_at, updated_at')
+      .in('id', missingSources)
+    portalDocs.push(...(srcDocs ?? []))
+  }
+  portalDocs.sort((a, b) => String(b.signed_at ?? b.updated_at).localeCompare(String(a.signed_at ?? a.updated_at)))
   // Welcome page is for commercial clients only.
   const isCommercial = !signedAgreement || clientTypeOf(signedAgreement.data) === 'commercial'
 
@@ -802,7 +818,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
 
       {/* Documents + Surveys side by side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <ClientDocuments clientId={params.id} documents={documents} />
+        <ClientDocuments clientId={params.id} documents={documents} portalDocs={portalDocs} />
         <ClientSurveys clientId={params.id} surveys={surveys} />
       </div>
     </div>

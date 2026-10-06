@@ -89,7 +89,14 @@ export async function linkOrCreateClient(db: any, doc: SignedAgreementRow): Prom
     clientId = newClient?.id ?? null
     created = !!clientId
   }
-  if (clientId) await db.from('proposal_documents').update({ client_id: clientId }).eq('id', doc.id)
+  if (clientId) {
+    await db.from('proposal_documents').update({ client_id: clientId }).eq('id', doc.id)
+    // The accepted quote it came from belongs on the client's profile too.
+    const { data: src } = await db.from('proposal_documents').select('source_id').eq('id', doc.id).maybeSingle()
+    if (src?.source_id) {
+      await db.from('proposal_documents').update({ client_id: clientId }).eq('id', src.source_id).is('client_id', null)
+    }
+  }
   return { clientId, created }
 }
 
