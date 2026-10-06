@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { withAgreementDefaults } from '@/lib/documents/agreement'
 import { SignExperience } from '@/components/documents/SignExperience'
@@ -21,6 +22,11 @@ export default async function SignPage({ params }: { params: { token: string } }
     .select('id, kind, data, signed_name, signed_at, pdf_url, client_name')
     .eq('sign_code', params.token)
     .maybeSingle()
+
+  // Quotes are accepted, not signed.
+  if (doc && doc.kind === 'proposal' && isTemplateDocData(doc.data) && doc.data.quoteMode) {
+    redirect(`/quote/${params.token}`)
+  }
 
   if (doc && doc.pdf_url && isTemplateDocData(doc.data)) {
     return (
@@ -66,5 +72,12 @@ export default async function SignPage({ params }: { params: { token: string } }
       ? { name: doc.signed_name, date: auDate(doc.signed_at) }
       : null
 
-  return <SignExperience token={params.token} data={data} alreadySigned={alreadySigned} />
+  return (
+    <SignExperience
+      token={params.token}
+      data={data}
+      alreadySigned={alreadySigned}
+      askStartDate={!!doc.data?.clientPicksStartDate}
+    />
+  )
 }

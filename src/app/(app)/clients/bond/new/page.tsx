@@ -4,10 +4,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createBondJobAction } from '@/actions/bondJobs'
 import { BondJobForm } from '@/components/clients/BondJobForm'
 import { Card } from '@/components/ui/Card'
+import { jobPrefillFromAgreement } from '@/lib/documents/agreement-client'
 
 export const dynamic = 'force-dynamic'
 
-export default async function NewBondJobPage() {
+export default async function NewBondJobPage({ searchParams }: { searchParams?: { from?: string } }) {
+  const prefill = await jobPrefillFromAgreement(searchParams?.from)
   const admin = createAdminClient()
   const { data: cleanerProfiles } = await (admin as any)
     .from('profiles')
@@ -37,7 +39,7 @@ export default async function NewBondJobPage() {
       </div>
 
       <Card>
-        <BondJobForm action={createBondJobAction} cleaners={cleaners} />
+        <BondJobForm prefill={prefill} action={createBondJobAction} cleaners={cleaners} />
       </Card>
     </div>
   )

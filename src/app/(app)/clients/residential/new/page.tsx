@@ -4,10 +4,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createResidentialJobAction } from '@/actions/residentialJobs'
 import { ResidentialJobForm } from '@/components/clients/ResidentialJobForm'
 import { Card } from '@/components/ui/Card'
+import { jobPrefillFromAgreement } from '@/lib/documents/agreement-client'
 
 export const dynamic = 'force-dynamic'
 
-export default async function NewResidentialJobPage() {
+export default async function NewResidentialJobPage({ searchParams }: { searchParams?: { from?: string } }) {
+  const prefill = await jobPrefillFromAgreement(searchParams?.from)
   const admin = createAdminClient()
   const { data: cleanerProfiles } = await (admin as any)
     .from('profiles')
@@ -37,7 +39,7 @@ export default async function NewResidentialJobPage() {
       </div>
 
       <Card>
-        <ResidentialJobForm action={createResidentialJobAction} cleaners={cleaners} />
+        <ResidentialJobForm prefill={prefill} action={createResidentialJobAction} cleaners={cleaners} />
       </Card>
     </div>
   )

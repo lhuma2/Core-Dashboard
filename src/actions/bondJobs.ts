@@ -1,5 +1,6 @@
 'use server'
 
+import { markAgreementClientAdded } from '@/lib/documents/agreement-client'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -57,6 +58,7 @@ export async function createBondJobAction(formData: FormData) {
   if (error) {
     return { error: { _form: [error.message] } }
   }
+  await markAgreementClientAdded(formData.get('from_doc'))
 
   revalidatePath('/clients')
   redirect('/clients?tab=bond')

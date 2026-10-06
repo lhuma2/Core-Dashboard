@@ -11,6 +11,8 @@ const PUBLIC_ROUTES = [
   '/api/cleaner-calendar',
   '/survey',
   '/sign',
+  '/quote',
+  '/welcome',
   '/onboard',
   '/compliance',
 ]

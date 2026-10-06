@@ -40,6 +40,9 @@ export interface TemplateField {
   letterSpacing: number         // em
   uppercase: boolean
   lineHeight: number            // multiple of size, for multi-line values
+  // Quotes: which service-agreement particular this field fills when the
+  // client accepts (see lib/documents/quote.ts). Unset = guessed from the label.
+  agreementKey?: string
 }
 
 export interface DocTemplate {
@@ -57,6 +60,11 @@ export interface TemplateDocData {
   template: DocTemplate          // snapshot, so later template edits don't move existing documents
   values: Record<string, string>
   signatures?: Record<string, string>
+  // Quote flow (sent with "Send quote"): the client accepts on /quote/<code>,
+  // which issues a prefilled service agreement for them to sign.
+  clientType?: 'commercial' | 'residential' | 'end_of_lease'
+  quoteMode?: boolean
+  acceptedAt?: string
 }
 
 export function isTemplateDocData(data: any): data is TemplateDocData {

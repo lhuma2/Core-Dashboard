@@ -44,7 +44,7 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
   }
   // Made from a company-document template: text boxes that edit the PDF directly.
   if (doc.pdf_url && isTemplateDocData(doc.data)) {
-    return <TemplateDocEditor id={doc.id} pdfUrl={doc.pdf_url} data={doc.data} status={doc.status} />
+    return <TemplateDocEditor id={doc.id} kind={doc.kind} pdfUrl={doc.pdf_url} data={doc.data} status={doc.status} />
   }
   // Older company-document proposals (fields dragged onto the PDF).
   if (doc.pdf_url) {

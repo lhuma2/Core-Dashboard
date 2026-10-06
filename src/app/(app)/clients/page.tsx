@@ -16,6 +16,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Plus } from 'lucide-react'
+import { SignedAgreementPrompts } from '@/components/clients/SignedAgreementPrompts'
 import type { ServiceType } from '@/types/app'
 
 interface SearchParams {
@@ -106,6 +107,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   return (
     <div className="space-y-5">
       <ClientsTabBar active="commercial" />
+      <SignedAgreementPrompts />
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -190,6 +192,7 @@ async function BondClientsTab() {
   return (
     <div className="space-y-5">
       <ClientsTabBar active="bond" />
+      <SignedAgreementPrompts />
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-gray-500">
@@ -245,6 +248,7 @@ async function ResidentialClientsTab() {
   return (
     <div className="space-y-5">
       <ClientsTabBar active="residential" />
+      <SignedAgreementPrompts />
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-gray-500">

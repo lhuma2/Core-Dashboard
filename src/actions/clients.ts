@@ -359,6 +359,8 @@ export async function updateClientAction(id: string, formData: FormData) {
   if (error) {
     return { error: { _form: [error.message] } }
   }
+  // Saving the profile counts as reviewing one made from a signed agreement.
+  await db2.from('clients').update({ needs_review: false }).eq('id', id).eq('needs_review', true)
 
   // Sync sites in place: update existing rows (keeping their id, scope, clean days and
   // scope-of-works image), insert new ones, delete only the ones removed in the form.

@@ -3,8 +3,17 @@
 import { useState } from 'react'
 import { X, Loader2, Send, Check } from 'lucide-react'
 import { sendCompanyDocForSignatureAction } from '@/actions/signing'
+import { sendQuoteAction } from '@/actions/quotes'
+import type { ClientType } from '@/lib/documents/quote'
 
-export function SendCompanyDocModal({ id, onClose }: { id: string; onClose: () => void }) {
+// `quote` is set for proposals: they can go out as a quote the client accepts
+// (which issues a prefilled service agreement) or, as before, for signature.
+export function SendCompanyDocModal({ id, onClose, quote }: {
+  id: string
+  onClose: () => void
+  quote?: { clientType: ClientType; accepted: boolean }
+}) {
+  const [mode, setMode] = useState<'quote' | 'sign'>(quote && !quote.accepted ? 'quote' : 'sign')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
@@ -13,7 +22,9 @@ export function SendCompanyDocModal({ id, onClose }: { id: string; onClose: () =
 
   async function send() {
     setErr(null); setBusy(true)
-    const res = await sendCompanyDocForSignatureAction(id, email, message || undefined)
+    const res = mode === 'quote'
+      ? await sendQuoteAction(id, email, message || undefined, quote?.clientType)
+      : await sendCompanyDocForSignatureAction(id, email, message || undefined)
     setBusy(false)
     if (res?.error) { setErr(res.error); return }
     setDone(true)
@@ -23,7 +34,7 @@ export function SendCompanyDocModal({ id, onClose }: { id: string; onClose: () =
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={onClose}>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl" onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">Send for signature</h3>
+          <h3 className="text-sm font-semibold text-gray-900">{mode === 'quote' ? 'Send quote' : 'Send for signature'}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-4 h-4" /></button>
         </div>
 
@@ -33,11 +44,29 @@ export function SendCompanyDocModal({ id, onClose }: { id: string; onClose: () =
               <Check className="w-5 h-5 text-emerald-600" />
             </div>
             <p className="text-sm font-semibold text-gray-900">Sent to {email}</p>
-            <p className="text-xs text-gray-500 mt-1">They'll get an email with a link to review and sign the document.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {mode === 'quote'
+                ? 'They’ll get an email with the quote and an Accept button. Accepting sends them the service agreement, filled in, to pick a start date and sign.'
+                : 'They’ll get an email with a link to review and sign the document.'}
+            </p>
             <button onClick={onClose} className="mt-5 inline-flex items-center gap-1.5 bg-[#003314] hover:bg-[#00250e] text-white text-sm font-semibold rounded-lg px-4 py-2">Done</button>
           </div>
         ) : (
           <div className="p-5 space-y-4">
+            {quote && (
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ['quote', 'Quote to accept', 'Accept → agreement to sign'],
+                  ['sign', 'For signature', 'They sign this document'],
+                ] as const).map(([m, label, sub]) => (
+                  <button key={m} type="button" onClick={() => setMode(m)} disabled={m === 'quote' && quote.accepted}
+                    className={`rounded-lg border-2 px-3 py-2 text-left transition-all disabled:opacity-40 ${mode === m ? 'border-[#00250e] bg-[#00250e]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <span className="block text-sm font-semibold text-gray-900">{label}</span>
+                    <span className="block text-[11px] text-gray-500">{m === 'quote' && quote.accepted ? 'Already accepted' : sub}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">Recipient email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value.trim())} placeholder="client@example.com"

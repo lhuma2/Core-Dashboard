@@ -11,12 +11,23 @@ interface CleanerOption {
   fullName: string
 }
 
+export interface JobPrefill {
+  fromDoc: string
+  client_name?: string
+  address?: string
+  contact_phone?: string
+  clean_date?: string
+  comments?: string
+}
+
 interface BondJobFormProps {
   action: (formData: FormData) => Promise<{ error?: Record<string, string[]> } | void>
   cleaners: CleanerOption[]
+  // Prefilled from a signed service agreement (Clients tab prompt).
+  prefill?: JobPrefill
 }
 
-export function BondJobForm({ action, cleaners }: BondJobFormProps) {
+export function BondJobForm({ action, cleaners, prefill }: BondJobFormProps) {
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(false)
 
@@ -47,6 +58,7 @@ export function BondJobForm({ action, cleaners }: BondJobFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {prefill && <input type="hidden" name="from_doc" value={prefill.fromDoc} />}
       {errors._form && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {errors._form[0]}
@@ -55,6 +67,7 @@ export function BondJobForm({ action, cleaners }: BondJobFormProps) {
 
       <Input
         name="client_name"
+        defaultValue={prefill?.client_name}
         label="Client name"
         placeholder="e.g. Jane Smith"
         error={errors.client_name?.[0]}
@@ -63,6 +76,7 @@ export function BondJobForm({ action, cleaners }: BondJobFormProps) {
 
       <Input
         name="address"
+        defaultValue={prefill?.address}
         label="Address of the clean"
         placeholder="Unit 4, 12 Example St, Suburb QLD"
         error={errors.address?.[0]}
@@ -71,6 +85,7 @@ export function BondJobForm({ action, cleaners }: BondJobFormProps) {
 
       <Input
         name="contact_phone"
+        defaultValue={prefill?.contact_phone}
         label="Contact number"
         placeholder="04xx xxx xxx"
         error={errors.contact_phone?.[0]}
@@ -80,6 +95,7 @@ export function BondJobForm({ action, cleaners }: BondJobFormProps) {
         <Input
           type="date"
           name="clean_date"
+          defaultValue={prefill?.clean_date}
           label="Date of clean"
           error={errors.clean_date?.[0]}
           required
@@ -149,6 +165,7 @@ export function BondJobForm({ action, cleaners }: BondJobFormProps) {
 
       <Textarea
         name="comments"
+        defaultValue={prefill?.comments}
         label="Comments"
         placeholder="Access details, special instructions, etc."
         rows={3}

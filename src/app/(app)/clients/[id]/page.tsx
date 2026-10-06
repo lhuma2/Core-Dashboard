@@ -12,6 +12,9 @@ import { SiteCleanerSelect } from '@/components/clients/SiteCleanerSelect'
 import { SendSurveyButton } from '@/components/clients/SendSurveyButton'
 import { ImportToPortalButton } from '@/components/clients/ImportToPortalButton'
 import { NewAgreementButton } from '@/components/clients/NewAgreementButton'
+import { ClientWelcomeCard } from '@/components/clients/ClientWelcomeCard'
+import { portalLoginFor } from '@/lib/documents/agreement-client'
+import { clientTypeOf } from '@/lib/documents/quote'
 import { Button } from '@/components/ui/Button'
 import { ActiveBadge, ServiceTypeBadge } from '@/components/ui/Badge'
 import { formatAUD, formatDate, formatTenure } from '@/lib/formatters'
@@ -96,6 +99,10 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
     .order('signed_at', { ascending: false }).limit(1).maybeSingle()
 
   if (!clientRes.data) notFound()
+
+  const portalLogin = await portalLoginFor(createAdminClient(), params.id)
+  // Welcome page is for commercial clients only.
+  const isCommercial = !signedAgreement || clientTypeOf(signedAgreement.data) === 'commercial'
 
   const toPublicUrl = (path: string) => (supabase as any).storage.from('job-photos').getPublicUrl(path).data.publicUrl as string
 
@@ -212,6 +219,18 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
           )}
         </div>
       </div>
+
+      {isCommercial && (
+        <ClientWelcomeCard
+          clientId={params.id}
+          needsReview={!!client.needs_review}
+          login={portalLogin}
+          contactEmail={client.contact_email ?? null}
+          contactName={client.contact_name ?? null}
+          welcomeSentAt={client.welcome_sent_at ?? null}
+          welcomeCode={client.welcome_code ?? null}
+        />
+      )}
 
       {/* KPI tiles */}
       {mrr > 0 && (
