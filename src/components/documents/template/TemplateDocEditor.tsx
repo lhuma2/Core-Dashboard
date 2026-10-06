@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Check, Loader2, Download, Send, RotateCcw, PenLine, AlertCircle } from 'lucide-react'
 import { fieldValue, isChanged, sortFields, type TemplateDocData } from '@/lib/documents/template'
+import { CLIENT_TYPE_LABELS, clientTypeOf, type ClientType } from '@/lib/documents/quote'
 import { saveTemplateDocAction } from '@/actions/doc-templates'
 import { saveFlattenedPdfAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
@@ -14,12 +15,14 @@ import { TemplatePage, useTemplateFonts } from './TemplatePage'
 // template: text boxes on the left, the document on the right, and every edit
 // drawn straight onto the page in the template's own font and colour.
 export function TemplateDocEditor({
-  id, pdfUrl, data, status,
-}: { id: string; pdfUrl: string; data: TemplateDocData; status?: string }) {
+  id, kind, pdfUrl, data, status,
+}: { id: string; kind?: string; pdfUrl: string; data: TemplateDocData; status?: string }) {
+  const isQuote = kind === 'proposal'
   const fields = sortFields(data.template.fields)
   const { pages, message } = usePdfPages(pdfUrl)
   const [values, setValues] = useState<Record<string, string>>(data.values ?? {})
   const [clientName, setClientName] = useState(data.clientName ?? '')
+  const [clientType, setClientType] = useState<ClientType>(clientTypeOf(data))
   const [activeId, setActiveId] = useState<string | null>(null)
   const [saved, setSaved] = useState<'saved' | 'saving' | 'error'>('saved')
   const [showSend, setShowSend] = useState(false)
@@ -34,11 +37,11 @@ export function TemplateDocEditor({
     if (firstRun.current) { firstRun.current = false; return }
     setSaved('saving')
     const t = setTimeout(async () => {
-      const res = await saveTemplateDocAction(id, { clientName, values })
+      const res = await saveTemplateDocAction(id, { clientName, values, ...(isQuote ? { clientType } : {}) })
       setSaved(res?.error ? 'error' : 'saved')
     }, 600)
     return () => clearTimeout(t)
-  }, [values, clientName, id])
+  }, [values, clientName, clientType, id, isQuote])
 
   // Bring the field being typed in into view on the document.
   const reveal = (fid: string) => {
@@ -91,7 +94,7 @@ export function TemplateDocEditor({
           </button>
         </div>
       </div>
-      {showSend && <SendCompanyDocModal id={id} onClose={() => setShowSend(false)} />}
+      {showSend && <SendCompanyDocModal id={id} onClose={() => setShowSend(false)} quote={isQuote ? { clientType, accepted: status === 'accepted' } : undefined} />}
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left: one text box per editable part of the template */}
@@ -101,6 +104,20 @@ export function TemplateDocEditor({
             <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="e.g. Northpoint Commercial"
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00250e]/25 focus:border-[#00250e]" />
           </label>
+          {isQuote && (
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold text-gray-700">Client type</span>
+              <select value={clientType} onChange={(e) => setClientType(e.target.value as ClientType)}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00250e]/25 focus:border-[#00250e]">
+                {(Object.keys(CLIENT_TYPE_LABELS) as ClientType[]).map((t) => <option key={t} value={t}>{CLIENT_TYPE_LABELS[t]}</option>)}
+              </select>
+              <span className="block text-[11px] text-gray-400 leading-snug">
+                {clientType === 'commercial'
+                  ? 'Once they sign, a client profile is created and you can send them the portal welcome page.'
+                  : 'Once they sign, you’re prompted to add them on the Clients tab. No portal welcome page.'}
+              </span>
+            </label>
+          )}
           <div className="border-t border-gray-100" />
           {textFields.length === 0 && <p className="text-sm text-gray-400">This template has no text fields.</p>}
           {textFields.map((f) => {

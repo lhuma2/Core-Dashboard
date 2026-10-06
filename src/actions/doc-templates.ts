@@ -74,13 +74,13 @@ export async function createProposalFromTemplateAction(companyDocId: string) {
 
 // ─── Autosave from the text-box editor ───────────────────────────────────────
 
-export async function saveTemplateDocAction(id: string, patch: { clientName: string; values: Record<string, string> }) {
+export async function saveTemplateDocAction(id: string, patch: { clientName: string; values: Record<string, string>; clientType?: TemplateDocData['clientType'] }) {
   const denied = await requireStaff()
   if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { data: doc } = await db.from('proposal_documents').select('data').eq('id', id).single()
   if (!doc) return { error: 'Document not found.' }
-  const data = { ...(doc.data ?? {}), clientName: patch.clientName, values: patch.values }
+  const data = { ...(doc.data ?? {}), clientName: patch.clientName, values: patch.values, ...(patch.clientType ? { clientType: patch.clientType } : {}) }
   const { error } = await db.from('proposal_documents')
     .update({ data, client_name: patch.clientName || doc.data?.templateName || 'Untitled' })
     .eq('id', id)

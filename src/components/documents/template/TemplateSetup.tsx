@@ -8,6 +8,7 @@ import {
   type DocTemplate, type TemplateField, type TemplateFont,
 } from '@/lib/documents/template'
 import { saveCompanyDocTemplateAction } from '@/actions/doc-templates'
+import { AGREEMENT_KEY_OPTIONS, guessAgreementKey } from '@/lib/documents/quote'
 import { usePdfPages, type PdfPage, type TextRun } from './usePdfPages'
 import { TemplatePage, useTemplateFonts } from './TemplatePage'
 
@@ -202,6 +203,15 @@ export function TemplateSetup({
                           {f.multiline
                             ? <textarea rows={3} className={input} value={f.defaultValue} onChange={(e) => update(f.id, { defaultValue: e.target.value })} />
                             : <input className={input} value={f.defaultValue} onChange={(e) => update(f.id, { defaultValue: e.target.value })} placeholder="e.g. Name" />}
+                        </label>
+                        <label className="block space-y-1"><span className={small}>On the service agreement (when a quote is accepted)</span>
+                          <select className={input} value={f.agreementKey ?? ''} onChange={(e) => update(f.id, { agreementKey: e.target.value || undefined })}>
+                            {AGREEMENT_KEY_OPTIONS.map((o) => {
+                              const guess = o.value === '' ? guessAgreementKey(f.label) : null
+                              const guessLabel = guess ? AGREEMENT_KEY_OPTIONS.find((x) => x.value === guess)?.label : null
+                              return <option key={o.value} value={o.value}>{o.value === '' ? `${o.label}${guessLabel ? ` (${guessLabel})` : ' (nothing)'}` : o.label}</option>
+                            })}
+                          </select>
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                           <label className="col-span-2 space-y-1"><span className={small}>Font</span>

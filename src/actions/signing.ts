@@ -6,45 +6,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { withAgreementDefaults, type AgreementData } from '@/lib/documents/agreement'
-
-// The client-facing signing link MUST use the branded public domain — never a
-// bare *.vercel.app alias (which may 404 or sit behind Vercel auth). Pinned so a
-// misconfigured NEXT_PUBLIC_APP_URL can't break every client's link.
-const APP_URL = 'https://portal.corecleaning.services'
-const OWNER_EMAIL = 'admin@corecleaning.services'
-const WORDMARK = `${APP_URL}/proposal-assets/wordmark-white.png`
-
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
-
-// Unambiguous lowercase alphabet (no 0/o/1/l/i) for the random suffix.
-const CODE_ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
-
-/** Display date like "3 July 2026" in Brisbane time. */
-function auDate(iso?: string): string {
-  return new Date(iso ?? Date.now()).toLocaleDateString('en-AU', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Brisbane',
-  })
-}
-
-/** Friendly, unguessable link code, e.g. "northpoint-commercial-k7m2qp". */
-function makeSignCode(clientName: string): string {
-  const slug = (clientName || 'agreement')
-    .toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '')
-    .trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').slice(0, 24).replace(/-$/, '')
-  let rand = ''
-  for (let i = 0; i < 6; i++) rand += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
-  return `${slug || 'agreement'}-${rand}`
-}
-
-/** Generate a sign_code that isn't already taken (collisions are near-impossible; retry to be safe). */
-async function uniqueSignCode(db: any, clientName: string): Promise<string> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = makeSignCode(clientName)
-    const { data: clash } = await db.from('proposal_documents').select('id').eq('sign_code', code).maybeSingle()
-    if (!clash) return code
-  }
-  return `${makeSignCode(clientName)}-${Date.now().toString(36)}`
-}
+import { linkOrCreateClient } from '@/lib/documents/agreement-client'
+import { CLIENT_TYPE_LABELS, clientTypeOf, type ClientType } from '@/lib/documents/quote'
+import { APP_URL, OWNER_EMAIL, WORDMARK, EMAIL_RE, auDate, uniqueSignCode } from '@/lib/documents/sign-code'
 
 // ─── Issue the agreement for signature: mint a unique link + email the client ──
 export async function sendForSignatureAction(id: string, toEmail: string, message?: string) {
@@ -192,28 +156,6 @@ function companyDocInviteEmail(title: string, link: string, message?: string): s
   </div>`
 }
 
-// Best-effort parsers for turning agreement particulars into client fields on sign.
-function parseMoney(s?: string): number | null {
-  if (!s) return null
-  const n = parseFloat(String(s).replace(/,/g, '').replace(/[^0-9.]/g, ''))
-  return isNaN(n) ? null : n
-}
-function parseDateLoose(s?: string): string | null {
-  const v = (s ?? '').trim()
-  if (!v) return null
-  const d = new Date(v)
-  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0]
-}
-function parseAddress(premises?: string): { address: string | null; suburb: string | null; state: string | null; postcode: string | null } {
-  const p = (premises ?? '').trim()
-  if (!p || /multiple sites/i.test(p)) return { address: null, suburb: null, state: null, postcode: null }
-  const m = p.match(/^(.*?),\s*([A-Za-z .'-]+?)\s+(QLD|NSW|VIC|SA|WA|TAS|NT|ACT)\s+(\d{4})\s*$/i)
-  if (m) return { address: m[1].trim(), suburb: m[2].trim(), state: m[3].toUpperCase(), postcode: m[4] }
-  const m2 = p.match(/^(.*?)\s+(QLD|NSW|VIC|SA|WA|TAS|NT|ACT)\s+(\d{4})\s*$/i)
-  if (m2) return { address: m2[1].trim(), suburb: null, state: m2[2].toUpperCase(), postcode: m2[3] }
-  return { address: p, suburb: null, state: null, postcode: null }
-}
-
 // ─── Client submits their signature (+ optional onboarding details) ────────────
 export interface SignerDetails {
   abn?: string
@@ -224,7 +166,7 @@ export interface SignerDetails {
   notes?: string
 }
 
-export async function submitSignatureAction(code: string, typedName: string, details?: SignerDetails) {
+export async function submitSignatureAction(code: string, typedName: string, details?: SignerDetails, startDate?: string) {
   const name = (typedName ?? '').trim().replace(/\s+/g, ' ')
   if (name.length < 2) return { error: 'Please type your full name to sign.' }
 
@@ -243,69 +185,55 @@ export async function submitSignatureAction(code: string, typedName: string, det
   if (!doc) return { error: 'This signing link is not valid.' }
   if (doc.signed_at) return { success: true, alreadySigned: true, date: auDate(doc.signed_at) }
 
+  // Agreements issued from an accepted quote: the client picks their start date.
+  let newData: any = { ...(doc.data ?? {}) }
+  if (newData.clientPicksStartDate) {
+    const iso = (startDate ?? '').trim()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return { error: 'Please choose your start date.' }
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' })
+    if (iso < today) return { error: 'Your start date can’t be in the past.' }
+    newData.commencementDate = auDate(iso + 'T12:00:00+10:00')
+    newData.commencementDateIso = iso
+  }
+  // The ABN the client typed goes onto the contract itself.
+  if (d.abn) newData.clientABN = d.abn
+
   const h = headers()
   const ip = (h.get('x-forwarded-for') ?? '').split(',')[0].trim() || null
   const signedAt = new Date().toISOString()
 
-  // The ABN the client typed goes onto the contract itself.
-  const newData = d.abn ? { ...(doc.data ?? {}), clientABN: d.abn } : doc.data
-
-  const { error } = await db.from('proposal_documents').update({
+  const { data: updated, error } = await db.from('proposal_documents').update({
     signed_name: name, signed_at: signedAt, signed_ip: ip, status: 'signed',
     onboarding: d, data: newData,
-  }).eq('id', doc.id)
+  }).eq('id', doc.id).is('signed_at', null).select('id')
   if (error) return { error: error.message }
+  if (!updated?.length) return { success: true, alreadySigned: true, date: auDate(signedAt) }
 
   const agreement = withAgreementDefaults(newData)
+  const clientType = clientTypeOf(newData)
 
-  // Onboarding-on-sign: if the agreement isn't linked to a client yet, create the
-  // client profile from the agreement (or link to an existing client of the same
-  // name). Anything we can't read reliably is left blank for the owner to fill.
+  // Onboarding-on-sign. Commercial: link to an existing client of the same name,
+  // or create the profile from the agreement and flag it for review on the Clients
+  // tab. Residential / end of lease live in their own tables, so those are only
+  // prompted on the Clients tab (prefilled) rather than created here.
   let clientId: string | null = doc.client_id
   let createdNewClient = false
-  if (!clientId) {
-    const { data: existing } = await db.from('clients')
-      .select('id, abn, billing_email, po_number, site_contact_name, site_contact_phone')
-      .ilike('business_name', agreement.clientName).limit(1).maybeSingle()
-    if (existing?.id) {
-      clientId = existing.id
-      // Fill only the fields the existing client is missing — never clobber.
-      await db.from('clients').update({
-        abn:                existing.abn                ?? d.abn,
-        billing_email:      existing.billing_email      ?? d.billingEmail,
-        po_number:          existing.po_number          ?? d.poNumber,
-        site_contact_name:  existing.site_contact_name  ?? d.siteContactName,
-        site_contact_phone: existing.site_contact_phone ?? d.siteContactPhone,
-      }).eq('id', clientId)
-    } else {
-      const addr = parseAddress(agreement.premises)
-      const monthly = parseMoney(agreement.serviceFee)
-      const { data: newClient } = await db.from('clients').insert({
-        business_name: agreement.clientName,
-        address: addr.address, suburb: addr.suburb, state: addr.state, postcode: addr.postcode,
-        contact_name: name, contact_email: doc.signer_email || null,
-        monthly_value: monthly,
-        annual_value: monthly != null ? Math.round(monthly * 12 * 100) / 100 : null,
-        start_date: parseDateLoose(agreement.commencementDate),
-        abn: d.abn, billing_email: d.billingEmail, po_number: d.poNumber,
-        site_contact_name: d.siteContactName, site_contact_phone: d.siteContactPhone,
-        notes: d.notes,
-        active: true, is_multi_site: false, service_type: [],
-      }).select('id').single()
-      clientId = newClient?.id ?? null
-      createdNewClient = !!clientId
-    }
-    if (clientId) await db.from('proposal_documents').update({ client_id: clientId }).eq('id', doc.id)
+  if (!clientId && clientType === 'commercial') {
+    const res = await linkOrCreateClient(db, { ...doc, signed_name: name, data: newData, onboarding: d })
+    clientId = res.clientId
+    createdNewClient = res.created
   }
 
   // Notify the owner — push + email (best-effort; never block the signer on these).
-  const ownerUrl = clientId ? `/clients/${clientId}` : `/documents/${doc.id}`
+  const ownerUrl = clientId ? `/clients/${clientId}` : clientType === 'commercial' ? `/documents/${doc.id}` : '/clients'
   sendPushToRole('admin', {
     title: `${agreement.clientName} signed the agreement`,
-    body:  createdNewClient ? 'New client profile created — review it' : `${name} · ${agreement.serviceFee}`,
+    body:  createdNewClient ? 'New client profile created — review it'
+      : clientType !== 'commercial' ? `${CLIENT_TYPE_LABELS[clientType]} — add them on the Clients tab`
+      : `${name} · ${agreement.serviceFee}`,
     url:   ownerUrl,
   }).catch(() => {})
-  sendEmail(OWNER_EMAIL, `Signed — ${agreement.clientName}`, signedOwnerEmail(agreement, name, signedAt, doc.id, createdNewClient ? clientId : null)).catch(() => {})
+  sendEmail(OWNER_EMAIL, `Signed — ${agreement.clientName}`, signedOwnerEmail(agreement, name, signedAt, doc.id, createdNewClient ? clientId : null, clientType)).catch(() => {})
 
   revalidatePath('/documents'); revalidatePath(`/documents/${doc.id}`); revalidatePath('/clients')
   if (clientId) revalidatePath(`/clients/${clientId}`)
@@ -403,7 +331,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
         <p style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2563eb;margin:0 0 12px;">Service Agreement${a.agreementRef ? ` &middot; ${a.agreementRef}` : ''}</p>
         <h1 style="font-size:25px;line-height:1.22;margin:0 0 12px;color:#0f172a;font-weight:800;letter-spacing:-.01em;">Hi ${first}, you&rsquo;re ready to sign.</h1>
         <p style="font-size:14.5px;line-height:1.65;color:#475569;margin:0 0 ${note ? '18px' : '26px'};">
-          We&rsquo;ve prepared your commercial cleaning service agreement. Give it a read, and when you&rsquo;re happy, sign securely online &mdash; it takes about a minute, with no account or app to download.
+          We&rsquo;ve prepared your cleaning service agreement. Give it a read, and when you&rsquo;re happy, sign securely online &mdash; it takes about a minute, with no account or app to download.
         </p>
         ${note ? `<div style="background:#f8fafc;border-left:3px solid #2563eb;border-radius:8px;padding:13px 16px;margin:0 0 26px;font-size:14px;color:#334155;line-height:1.55;">${note.replace(/</g, '&lt;').replace(/\n/g, '<br/>')}</div>` : ''}
         ${summary ? `<div style="border:1px solid #eef2f6;border-radius:14px;padding:2px 18px 10px;margin:0 0 28px;">
@@ -426,7 +354,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
   </div>`
 }
 
-function signedOwnerEmail(a: AgreementData, name: string, signedAtIso: string, docId: string, newClientId?: string | null): string {
+function signedOwnerEmail(a: AgreementData, name: string, signedAtIso: string, docId: string, newClientId?: string | null, clientType: ClientType = 'commercial'): string {
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto;padding:28px 18px;color:#0f172a;">
     <div style="background:#00250e;border-radius:12px 12px 0 0;padding:22px 26px;">
@@ -439,9 +367,14 @@ function signedOwnerEmail(a: AgreementData, name: string, signedAtIso: string, d
         <tr><td style="padding:6px 0;color:#94a3b8;">When</td><td style="padding:6px 0;text-align:right;font-weight:600;">${auDate(signedAtIso)}</td></tr>
         <tr><td style="padding:6px 0;color:#94a3b8;">Service fee</td><td style="padding:6px 0;text-align:right;font-weight:600;">${a.serviceFee}</td></tr>
         <tr><td style="padding:6px 0;color:#94a3b8;">Site</td><td style="padding:6px 0;text-align:right;font-weight:600;">${a.premises}</td></tr>
+        ${a.commencementDate ? `<tr><td style="padding:6px 0;color:#94a3b8;">Start date</td><td style="padding:6px 0;text-align:right;font-weight:600;">${a.commencementDate}</td></tr>` : ''}
       </table>
-      ${newClientId ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-top:18px;font-size:13px;color:#166534;line-height:1.5;">
-        <strong>New client profile created</strong> from this agreement. A few fields (cleaner cost, exact schedule, scope) need finishing — open the profile to complete it.
+      ${clientType !== 'commercial' ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-top:18px;font-size:13px;color:#1e40af;line-height:1.5;">
+        <strong>${CLIENT_TYPE_LABELS[clientType]} client.</strong> They're waiting on your Clients tab — add them there with the details prefilled.
+      </div>
+      <a href="${APP_URL}/clients" style="display:inline-block;margin-top:14px;background:#00250e;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Open Clients →</a>` : ''}
+      ${clientType !== 'commercial' ? '' : newClientId ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-top:18px;font-size:13px;color:#166534;line-height:1.5;">
+        <strong>New client profile created</strong> from this agreement. A few fields (cleaner cost, exact schedule, scope) need finishing. Open the profile to complete it, then set their portal login and send the welcome page.
       </div>
       <a href="${APP_URL}/clients/${newClientId}" style="display:inline-block;margin-top:14px;background:#00250e;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Open the client profile →</a>`
       : `<a href="${APP_URL}/documents/${docId}" style="display:inline-block;margin-top:18px;background:#00250e;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">View the signed agreement →</a>`}
