@@ -5,6 +5,7 @@ import { Loader2, Check, ShieldCheck, PenLine, Download, Lock, CalendarDays } fr
 import { AgreementDocument, type SignatureFill } from '@/components/documents/render/AgreementDocument'
 import type { AgreementData } from '@/lib/documents/agreement'
 import { submitSignatureAction, submitOnboardingAction } from '@/actions/signing'
+import { clientTypeOf } from '@/lib/documents/quote'
 
 const WORDMARK_WHITE = '/proposal-assets/wordmark-white.png'
 
@@ -32,6 +33,8 @@ export function SignExperience({
     [],
   )
   const hasName = name.trim().length >= 2
+  // ABN, billing email and PO numbers are business questions; homes skip them.
+  const isCommercial = clientTypeOf(data) === 'commercial'
   const [startDate, setStartDate] = useState('')
   const minStart = useMemo(() => new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' }), [])
   const needsDate = askStartDate && !alreadySigned
@@ -191,6 +194,9 @@ export function SignExperience({
               >
                 {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing…</> : <><ShieldCheck className="w-4 h-4" /> Sign &amp; onboard</>}
               </button>
+              {needsDate && !hasDate && (
+                <p className="text-[12px] text-amber-700 text-center mt-2">Choose your start date above to sign.</p>
+              )}
               <p className="text-[11px] text-gray-400 text-center mt-3">
                 You&apos;ll answer a couple of quick questions right after. This electronic signature is legally binding.
               </p>
@@ -208,11 +214,13 @@ export function SignExperience({
               </div>
               <p className="text-xs text-gray-500 mb-4">A few quick details so we can set you up. All optional — skip anything you like.</p>
               <div className="space-y-2.5">
-                <input value={details.abn} onChange={(e) => setD('abn', e.target.value)} inputMode="numeric" placeholder="Your ABN (added to your contract)" className={inputCls} />
-                <input value={details.billingEmail} onChange={(e) => setD('billingEmail', e.target.value)} type="email" placeholder="Billing / accounts email" className={inputCls} />
-                <input value={details.poNumber} onChange={(e) => setD('poNumber', e.target.value)} placeholder="PO number (if you use them)" className={inputCls} />
+                {isCommercial && (<>
+                  <input value={details.abn} onChange={(e) => setD('abn', e.target.value)} inputMode="numeric" placeholder="Your ABN (added to your contract)" className={inputCls} />
+                  <input value={details.billingEmail} onChange={(e) => setD('billingEmail', e.target.value)} type="email" placeholder="Billing / accounts email" className={inputCls} />
+                  <input value={details.poNumber} onChange={(e) => setD('poNumber', e.target.value)} placeholder="PO number (if you use them)" className={inputCls} />
+                </>)}
                 <div className="grid grid-cols-2 gap-2">
-                  <input value={details.siteContactName} onChange={(e) => setD('siteContactName', e.target.value)} placeholder="Site contact" className={inputCls} />
+                  <input value={details.siteContactName} onChange={(e) => setD('siteContactName', e.target.value)} placeholder={isCommercial ? 'Site contact' : 'Contact name'} className={inputCls} />
                   <input value={details.siteContactPhone} onChange={(e) => setD('siteContactPhone', e.target.value)} type="tel" placeholder="Contact phone" className={inputCls} />
                 </div>
                 <textarea value={details.notes} onChange={(e) => setD('notes', e.target.value)} rows={2} placeholder="Anything else we should know? (access, alarm, pets…)" className={inputCls + ' resize-none'} />

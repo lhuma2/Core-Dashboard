@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { fontFromPdfName, type TemplateFont } from '@/lib/documents/template'
 
-const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
+const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/legacy/build/pdf.worker.min.mjs'
 
 // A run of real (selectable) text in the PDF — only vector PDFs have these;
 // image-only exports (most of ours) come back with none.
@@ -35,13 +35,13 @@ export function usePdfPages(pdfUrl: string, { scale = 1.6, forSetup = false } = 
       try {
         try {
           const head = await fetch(pdfUrl, { method: 'HEAD' })
-          if (head.ok && Number(head.headers.get('content-length') ?? '') === 0) {
+          if (head.ok && head.headers.get('content-length') === '0') {
             if (!cancelled) setMessage('This document is empty (0 bytes), so the upload didn’t complete. Remove it under Company Documents and upload it again.')
             return
           }
         } catch { /* best-effort */ }
 
-        const pdfjs: any = await import('pdfjs-dist')
+        const pdfjs: any = await import('pdfjs-dist/legacy/build/pdf.mjs')
         pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER
         const pdf = await pdfjs.getDocument({ url: pdfUrl }).promise
         if (cancelled) return

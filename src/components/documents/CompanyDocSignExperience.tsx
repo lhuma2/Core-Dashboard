@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Loader2, Check, PenLine, GripVertical } from 'lucide-react'
 import { submitCompanyDocSignatureAction } from '@/actions/signing'
 
-const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
+const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/legacy/build/pdf.worker.min.mjs'
 const DOC_FONT = 'Arial, "Helvetica Neue", Helvetica, "Liberation Sans", Arimo, sans-serif'
 const SIGN_FONT = '"Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive'
 
@@ -63,7 +63,7 @@ export function CompanyDocSignExperience({
     let cancelled = false
     ;(async () => {
       try {
-        const pdfjs: any = await import('pdfjs-dist')
+        const pdfjs: any = await import('pdfjs-dist/legacy/build/pdf.mjs')
         pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER
         const pdf = await pdfjs.getDocument({ url: pdfUrl }).promise
         if (cancelled) return

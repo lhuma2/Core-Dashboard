@@ -1,17 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Loader2, Send, Check } from 'lucide-react'
+import { X, Loader2, Send, Check, AlertTriangle } from 'lucide-react'
 import { sendCompanyDocForSignatureAction } from '@/actions/signing'
 import { sendQuoteAction } from '@/actions/quotes'
 import type { ClientType } from '@/lib/documents/quote'
+import type { AgreementData } from '@/lib/documents/agreement'
 
 // `quote` is set for proposals: they can go out as a quote the client accepts
 // (which issues a prefilled service agreement) or, as before, for signature.
 export function SendCompanyDocModal({ id, onClose, quote }: {
   id: string
   onClose: () => void
-  quote?: { clientType: ClientType; accepted: boolean }
+  quote?: { clientType: ClientType; accepted: boolean; agreement?: Partial<AgreementData> }
 }) {
   const [mode, setMode] = useState<'quote' | 'sign'>(quote && !quote.accepted ? 'quote' : 'sign')
   const [email, setEmail] = useState('')
@@ -65,6 +66,28 @@ export function SendCompanyDocModal({ id, onClose, quote }: {
                     <span className="block text-[11px] text-gray-500">{m === 'quote' && quote.accepted ? 'Already accepted' : sub}</span>
                   </button>
                 ))}
+              </div>
+            )}
+            {mode === 'quote' && quote?.agreement && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Their service agreement will say</p>
+                {([
+                  ['Client', quote.agreement.clientName],
+                  ['Site', quote.agreement.premises],
+                  ['Frequency', quote.agreement.frequency],
+                  ['Service fee', quote.agreement.serviceFee],
+                ] as const).map(([k, v]) => (
+                  <div key={k} className="flex items-start justify-between gap-3 text-xs py-0.5">
+                    <span className="text-gray-400 flex-shrink-0">{k}</span>
+                    {v ? <span className="text-gray-900 font-medium text-right break-words min-w-0">{v}</span>
+                      : <span className="text-amber-700 font-medium inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Blank</span>}
+                  </div>
+                ))}
+                {!(quote.agreement.clientName && quote.agreement.premises && quote.agreement.serviceFee) && (
+                  <p className="text-[11px] text-amber-700 mt-1.5 leading-snug">
+                    Fill these in on the quote, or set which agreement field each quote box fills in the template setup.
+                  </p>
+                )}
               </div>
             )}
             <div>

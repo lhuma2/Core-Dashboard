@@ -37,7 +37,7 @@ const AGREEMENT_SCOPE: ScopeGroup[] = [
 
 export const DEFAULT_AGREEMENT: AgreementData = {
   providerName: 'Core Cleaning',
-  providerABN: '',
+  providerABN: '45 344 135 153',
   clientName: 'Northpoint Commercial',
   clientABN: '00 000 000 000',
   premises: '6–12 Bunya Park Drive, Eatons Hill QLD 4037',
@@ -85,6 +85,7 @@ export function withAgreementDefaults(data: Partial<AgreementData> | null | unde
   return {
     ...DEFAULT_AGREEMENT,
     ...(data ?? {}),
+    providerABN: data?.providerABN?.trim() || DEFAULT_AGREEMENT.providerABN,
     scopeGroups: data?.scopeGroups?.length ? data.scopeGroups : DEFAULT_AGREEMENT.scopeGroups,
     additionalServices: data?.additionalServices?.length ? data.additionalServices : DEFAULT_AGREEMENT.additionalServices,
   }

@@ -1,5 +1,6 @@
 ﻿import type { CSSProperties } from 'react'
 import { AGREEMENT_CLAUSES, type AgreementData } from '@/lib/documents/agreement'
+import { clientTypeOf } from '@/lib/documents/quote'
 
 // Faithful recreation of the Service Agreement (7 × A4 pages).
 
@@ -70,6 +71,8 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
   const c1to6 = AGREEMENT_CLAUSES.slice(0, 6)
   const c7to13 = AGREEMENT_CLAUSES.slice(6, 13)
   const c14to19 = AGREEMENT_CLAUSES.slice(13, 19)
+  const t = clientTypeOf(data)
+  const service = t === 'residential' ? 'residential cleaning' : t === 'end_of_lease' ? 'end of lease cleaning' : 'commercial cleaning'
 
   return (
     <div data-doc-root style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28 }}>
@@ -84,14 +87,14 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
             <div style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11, letterSpacing: '.16em', color: '#64748B', lineHeight: 1.8 }}><div>AGREEMENT</div><div style={{ color: '#E2E8F0' }}>{data.agreementRef}</div></div>
           </div>
           <div style={{ marginTop: 'auto' }}>
-            <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: '.28em', textTransform: 'uppercase', color: '#7C8BA1', marginBottom: 26 }}>Commercial Cleaning</div>
+            <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: '.28em', textTransform: 'uppercase', color: '#7C8BA1', marginBottom: 26 }}>{service}</div>
             <h1 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 74, lineHeight: 0.98, letterSpacing: '-.03em', margin: 0, color: '#fff' }}>Service<br />Agreement</h1>
             <div style={{ width: 64, height: 3, background: '#fff', margin: '36px 0 26px' }} />
-            <p style={{ fontSize: 15.5, lineHeight: 1.7, color: '#94A3B8', maxWidth: 480, margin: 0 }}>This Agreement sets out the terms on which Core Cleaning will provide commercial cleaning services to the Client identified below.</p>
+            <p style={{ fontSize: 15.5, lineHeight: 1.7, color: '#94A3B8', maxWidth: 480, margin: 0 }}>This Agreement sets out the terms on which Core Cleaning will provide {service} services to the Client identified below.</p>
           </div>
           <div style={{ marginTop: 60, paddingTop: 30, borderTop: '1px solid rgba(255,255,255,.12)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             <div><div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: '#64748B', marginBottom: 8 }}>Between</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{data.providerName}</div><div style={{ fontSize: 13, color: '#94A3B8' }}>ABN {data.providerABN}</div></div>
-            <div><div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: '#64748B', marginBottom: 8 }}>And</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{data.clientName}</div><div style={{ fontSize: 13, color: '#94A3B8' }}>ABN {data.clientABN}</div></div>
+            <div><div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: '#64748B', marginBottom: 8 }}>And</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{data.clientName}</div><div style={{ fontSize: 13, color: '#94A3B8' }}>{data.clientABN ? `ABN ${data.clientABN}` : '\u00a0'}</div></div>
             <div><div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: '#64748B', marginBottom: 8 }}>Date</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{data.agreementDate}</div></div>
             <div><div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: '#64748B', marginBottom: 8 }}>Governing law</div><div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Queensland, Australia</div></div>
           </div>
@@ -108,13 +111,13 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
         </div>
         <div style={{ marginTop: 30, border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
           <PRow k="Service Provider">{data.providerName} · ABN {data.providerABN}</PRow>
-          <PRow k="Client">{data.clientName} · ABN {data.clientABN}</PRow>
+          <PRow k="Client">{data.clientName}{data.clientABN ? ` · ABN ${data.clientABN}` : ''}</PRow>
           <PRow k="Premises / Site">{data.premises}</PRow>
-          <PRow k="Services">Commercial cleaning per Schedule 1 and accepted Proposal {data.proposalRef}</PRow>
+          <PRow k="Services">{service.charAt(0).toUpperCase() + service.slice(1)} per Schedule 1 and accepted Proposal {data.proposalRef}</PRow>
           <PRow k="Frequency">{data.frequency}</PRow>
           <PRow k="Commencement">{data.commencementDate || '—'}</PRow>
           <PRow k="Initial Term">{data.initialTerm}</PRow>
-          <PRow k="Service Fee">{data.serviceFee} <span style={{ color: '#94A3B8' }}>(excl. GST)</span></PRow>
+          <PRow k="Service Fee">{data.serviceFee}{!/gst/i.test(data.serviceFee ?? '') && <span style={{ color: '#94A3B8' }}> (excl. GST)</span>}</PRow>
           <PRow k="Payment Terms">{data.paymentTerms}</PRow>
           <PRow k="Price Review">Annually, in line with Queensland CPI, minimum 30 days&apos; written notice</PRow>
           <PRow k="Special Conditions" last>{data.specialConditions}</PRow>
@@ -193,7 +196,7 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
           <div data-sign-client style={{ border: `1px solid ${signature ? NAVY : '#E2E8F0'}`, borderRadius: 12, padding: 30, background: signature ? '#F8FAFC' : undefined }}>
             <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 18 }}>Client</div>
             <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 16 }}>{data.clientName}</div>
-            <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 30 }}>ABN {data.clientABN}</div>
+            <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 30 }}>{data.clientABN ? `ABN ${data.clientABN}` : '\u00a0'}</div>
             <div style={{ borderBottom: `1px solid ${NAVY}`, height: 38, display: 'flex', alignItems: 'flex-end' }}>
               {signature && <span style={{ fontFamily: SCRIPT, fontSize: 30, lineHeight: 1, color: NAVY, paddingBottom: 2 }}>{signature.name}</span>}
             </div>

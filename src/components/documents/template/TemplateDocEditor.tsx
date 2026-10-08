@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Check, Loader2, Download, Send, RotateCcw, PenLine, AlertCircle } from 'lucide-react'
 import { fieldValue, isChanged, sortFields, type TemplateDocData } from '@/lib/documents/template'
-import { CLIENT_TYPE_LABELS, clientTypeOf, type ClientType } from '@/lib/documents/quote'
+import { CLIENT_TYPE_LABELS, clientTypeOf, quoteToAgreementFields, type ClientType } from '@/lib/documents/quote'
 import { saveTemplateDocAction } from '@/actions/doc-templates'
 import { saveFlattenedPdfAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
@@ -15,8 +15,8 @@ import { TemplatePage, useTemplateFonts } from './TemplatePage'
 // template: text boxes on the left, the document on the right, and every edit
 // drawn straight onto the page in the template's own font and colour.
 export function TemplateDocEditor({
-  id, kind, pdfUrl, data, status,
-}: { id: string; kind?: string; pdfUrl: string; data: TemplateDocData; status?: string }) {
+  id, kind, pdfUrl, data, status, agreement,
+}: { id: string; kind?: string; pdfUrl: string; data: TemplateDocData; status?: string; agreement?: { id: string; status: string } | null }) {
   const isQuote = kind === 'proposal'
   const fields = sortFields(data.template.fields)
   const { pages, message } = usePdfPages(pdfUrl)
@@ -94,7 +94,19 @@ export function TemplateDocEditor({
           </button>
         </div>
       </div>
-      {showSend && <SendCompanyDocModal id={id} onClose={() => setShowSend(false)} quote={isQuote ? { clientType, accepted: status === 'accepted' } : undefined} />}
+      {isQuote && (status === 'accepted' || status === 'sent') && (
+        <div className={`flex flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs border-b ${status === 'accepted' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-blue-50 border-blue-100 text-blue-800'}`}>
+          <span>
+            {status === 'accepted'
+              ? `Quote accepted${data.acceptedAt ? ` on ${new Date(data.acceptedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. ${agreement?.status === 'signed' ? 'The service agreement has been signed.' : 'Waiting for them to sign the service agreement.'}`
+              : 'Quote sent. Waiting for the client to accept it.'}
+          </span>
+          {agreement && (
+            <Link href={`/documents/${agreement.id}`} className="font-semibold underline underline-offset-2">Open the service agreement</Link>
+          )}
+        </div>
+      )}
+      {showSend && <SendCompanyDocModal id={id} onClose={() => setShowSend(false)} quote={isQuote ? { clientType, accepted: status === 'accepted', agreement: quoteToAgreementFields({ ...data, clientName, values }) } : undefined} />}
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left: one text box per editable part of the template */}

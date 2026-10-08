@@ -44,7 +44,12 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
   }
   // Made from a company-document template: text boxes that edit the PDF directly.
   if (doc.pdf_url && isTemplateDocData(doc.data)) {
-    return <TemplateDocEditor id={doc.id} kind={doc.kind} pdfUrl={doc.pdf_url} data={doc.data} status={doc.status} />
+    // An accepted quote links to the service agreement it issued.
+    const { data: agr } = doc.kind === 'proposal'
+      ? await db.from('proposal_documents').select('id, status').eq('source_id', doc.id).eq('kind', 'agreement')
+        .order('created_at', { ascending: true }).limit(1).maybeSingle()
+      : { data: null }
+    return <TemplateDocEditor id={doc.id} kind={doc.kind} pdfUrl={doc.pdf_url} data={doc.data} status={doc.status} agreement={agr ?? null} />
   }
   // Older company-document proposals (fields dragged onto the PDF).
   if (doc.pdf_url) {
