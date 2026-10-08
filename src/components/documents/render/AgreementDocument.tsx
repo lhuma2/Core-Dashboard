@@ -117,7 +117,7 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
           <PRow k="Frequency">{data.frequency}</PRow>
           <PRow k="Commencement">{data.commencementDate || '—'}</PRow>
           <PRow k="Initial Term">{data.initialTerm}</PRow>
-          <PRow k="Service Fee">{data.serviceFee}{!/gst/i.test(data.serviceFee ?? '') && <span style={{ color: '#94A3B8' }}> (excl. GST)</span>}</PRow>
+          <PRow k="Service Fee">{data.serviceFee}{!/gst/i.test(data.serviceFee ?? '') && <span style={{ color: '#94A3B8' }}> (incl. GST)</span>}</PRow>
           <PRow k="Payment Terms">{data.paymentTerms}</PRow>
           <PRow k="Price Review">Annually, in line with Queensland CPI, minimum 30 days&apos; written notice</PRow>
           <PRow k="Special Conditions" last>{data.specialConditions}</PRow>
