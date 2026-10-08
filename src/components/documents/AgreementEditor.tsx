@@ -48,7 +48,11 @@ export function AgreementEditor({ id, initialData, status, signCode, clients = [
 
   const set = useCallback(<K extends keyof AgreementData>(key: K, val: AgreementData[K]) => setData(prev => ({ ...prev, [key]: val })), [])
 
+  const firstRun = useRef(true)
   useEffect(() => {
+    // Don't save on open — only when something is actually edited.
+    if (firstRun.current) { firstRun.current = false; return }
+    if (status === 'signed') return
     setSaved('saving')
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(async () => { await saveAgreementDocAction(id, data); setSaved('saved') }, 800)

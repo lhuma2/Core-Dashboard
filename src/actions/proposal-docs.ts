@@ -204,6 +204,10 @@ export async function createAgreementForClientAction(clientId: string) {
 
 export async function saveAgreementDocAction(id: string, data: any, snapshotLabel?: string) {
   const db = createAdminClient() as any
+  // A signed agreement is final: never let an open editor tab overwrite what was signed
+  // (start date, ABN and signature details are stamped on at signing).
+  const { data: cur } = await db.from('proposal_documents').select('signed_at').eq('id', id).maybeSingle()
+  if (cur?.signed_at) return { error: 'This agreement has been signed and can no longer be edited.' }
   const { error } = await db.from('proposal_documents').update({
     data, client_name: data.clientName, ref_number: data.agreementRef,
   }).eq('id', id)

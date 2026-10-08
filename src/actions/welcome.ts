@@ -25,6 +25,22 @@ export async function saveClientPortalLoginAction(clientId: string, input: { ema
   const { data: client } = await db.from('clients').select('id').eq('id', clientId).maybeSingle()
   if (!client) return { error: 'Client not found.' }
 
+  // Setting a login on an email that's already in use takes over that account,
+  // so never touch a staff login or another client's login.
+  const { data: taken } = await db.from('profiles')
+    .select('role, linked_client_id').ilike('email', email.replace(/[\\%_]/g, (c) => '\\' + c))
+  if ((taken ?? []).some((p: any) => p.role !== 'client')) {
+    return { error: 'That email is already a staff login. Use the client’s own email.' }
+  }
+  if ((taken ?? []).some((p: any) => p.linked_client_id && p.linked_client_id !== clientId)) {
+    return { error: 'That email is already the portal login for another client.' }
+  }
+  const { data: list } = await db.auth.admin.listUsers({ perPage: 1000 })
+  const authUser = (list?.users ?? []).find((u: any) => (u.email ?? '').toLowerCase() === email)
+  if (authUser && ((authUser.user_metadata?.role as string) ?? 'admin') !== 'client') {
+    return { error: 'That email is already a staff login. Use the client’s own email.' }
+  }
+
   const res = await createPortalUserAction({ email, password, fullName, role: 'client', linkedClientId: clientId })
   if ((res as any)?.error) return { error: (res as any).error as string }
 

@@ -71,8 +71,10 @@ export async function middleware(request: NextRequest) {
     // API routes are allowed for any authenticated user — they handle auth internally
     if (pathname.startsWith('/api/')) return supabaseResponse
 
-    // Non-admin visiting a route outside their allowed prefix → send home
-    if (role !== 'admin') {
+    // Non-admin visiting a route outside their allowed prefix → send home.
+    // Public pages (quote, signing, welcome links…) stay open to everyone, so a
+    // client who is already signed in can still open a link we emailed them.
+    if (role !== 'admin' && !isPublicRoute) {
       const allowed = ROLE_ALLOWED[role] ?? []
       const isAllowed = allowed.some((prefix) => pathname.startsWith(prefix))
       if (!isAllowed) {

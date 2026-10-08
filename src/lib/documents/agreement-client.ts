@@ -53,10 +53,16 @@ export async function linkOrCreateClient(db: any, doc: SignedAgreementRow): Prom
   if (doc.client_id) return { clientId: doc.client_id, created: false }
   const agreement = withAgreementDefaults(doc.data)
   const d = doc.onboarding ?? {}
+  // A quote with no client name filled in still needs a usable profile name.
+  const businessName = agreement.clientName?.trim() || doc.signed_name?.trim() || 'New client'
+  // Exact, case-insensitive match (escape LIKE wildcards such as "_" in "Smith_Co").
+  const namePattern = businessName.replace(/[\\%_]/g, (c) => '\\' + c)
 
-  const { data: existing } = await db.from('clients')
-    .select('id, abn, billing_email, po_number, site_contact_name, site_contact_phone')
-    .ilike('business_name', agreement.clientName).limit(1).maybeSingle()
+  const { data: existing } = agreement.clientName?.trim()
+    ? await db.from('clients')
+      .select('id, abn, billing_email, po_number, site_contact_name, site_contact_phone')
+      .ilike('business_name', namePattern).limit(1).maybeSingle()
+    : { data: null }
 
   let clientId: string | null = null
   let created = false
@@ -73,7 +79,7 @@ export async function linkOrCreateClient(db: any, doc: SignedAgreementRow): Prom
     const addr = parseAddress(agreement.premises)
     const monthly = parseMonthlyFee(agreement.serviceFee)
     const { data: newClient, error } = await db.from('clients').insert({
-      business_name: agreement.clientName,
+      business_name: businessName,
       address: addr.address, suburb: addr.suburb, state: addr.state, postcode: addr.postcode,
       contact_name: doc.signed_name || null, contact_email: doc.signer_email || null,
       monthly_value: monthly,

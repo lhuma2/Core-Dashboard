@@ -6,7 +6,7 @@ import { ArrowLeft, Check, Loader2, Download, GripVertical, X, User, DollarSign,
 import { saveProposalDocAction, saveFlattenedPdfAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
 
-const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs'
+const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/legacy/build/pdf.worker.min.mjs'
 
 type FieldType = 'address' | 'fullName' | 'contactNumber' | 'clientName' | 'quotedPrice' | 'date' | 'text' | 'signature'
 type BgStyle = 'white' | 'dark' | 'none'
@@ -125,14 +125,14 @@ export function CompanyDocEditor({
         // here and say so plainly instead of a generic "could not render" message.
         try {
           const head = await fetch(pdfUrl, { method: 'HEAD' })
-          const len = Number(head.headers.get('content-length') ?? '')
-          if (head.ok && len === 0) {
+          const len = head.headers.get('content-length')
+          if (head.ok && len === '0') {
             if (!cancelled) setLoadingMsg('This document is empty (0 bytes) — the upload didn’t complete. Delete it under Company Documents and re-upload the file (make sure it’s fully downloaded if it’s in OneDrive/Dropbox first).')
             return
           }
         } catch { /* HEAD check is best-effort — fall through to the real render attempt */ }
 
-        const pdfjs: any = await import('pdfjs-dist')
+        const pdfjs: any = await import('pdfjs-dist/legacy/build/pdf.mjs')
         pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER
         const pdf = await pdfjs.getDocument({ url: pdfUrl }).promise
         if (cancelled) return
