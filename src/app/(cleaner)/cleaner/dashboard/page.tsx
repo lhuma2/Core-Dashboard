@@ -258,6 +258,26 @@ export default async function CleanerDashboard({
       frequency: s.frequency ?? null, serviceDays: s.service_days ?? [], startDate: s.start_date ?? s.clients?.start_date ?? null,
     })),
   ]
+  // Cleans on these clients/sites handed to someone else this week (Team → Manage Jobs
+  // cover). Read via admin (RLS only shows a cleaner their own jobs) so the regular
+  // cleaner sees "covered by …" with its real status instead of a clean still to do.
+  const coverByKey = new Map<string, any>()
+  const myClientIds = accepted.map((c: any) => c.id)
+  const mySiteIds = assignedSites.map((s: any) => s.id)
+  if (myClientIds.length || mySiteIds.length) {
+    const ors = [
+      myClientIds.length ? `and(client_id.in.(${myClientIds.join(',')}),site_id.is.null)` : null,
+      mySiteIds.length ? `site_id.in.(${mySiteIds.join(',')})` : null,
+    ].filter(Boolean).join(',')
+    const { data: coverJobs } = await adminDb
+      .from('job_assignments')
+      .select('client_id, site_id, scheduled_date, status, profiles(full_name)')
+      .gte('scheduled_date', weekStart).lte('scheduled_date', weekEnd)
+      .neq('cleaner_id', profile.id)
+      .or(ors)
+    for (const j of coverJobs ?? []) coverByKey.set(`${j.client_id}::${j.site_id ?? ''}::${j.scheduled_date}`, j)
+  }
+
   for (const src of scheduleSources) {
     if (!src.frequency || src.frequency === 'adhoc') continue // getUpcomingDates handles day-less one-off / quarterly / annual
     const occurrences = getUpcomingDates({
@@ -269,12 +289,13 @@ export default async function CleanerDashboard({
       if (dateStr < today) continue // don't fabricate history for days never actioned
       const key = `${src.clientId}::${src.siteId ?? ''}::${dateStr}`
       if (coveredScheduleKeys.has(key)) continue // a real job row already covers this day
+      const cover = coverByKey.get(key)
       weekByDate[dateStr]?.push({
         id: `sched-${src.clientId}-${src.siteId ?? 'main'}-${dateStr}`,
         href: `/cleaner/clients/${src.clientId}${src.siteId ? `?site=${src.siteId}` : ''}`,
-        clientName: src.label,
+        clientName: cover ? `${src.label} · covered by ${cover.profiles?.full_name ?? 'another cleaner'}` : src.label,
         address: [src.address, src.suburb].filter(Boolean).join(', ') || null,
-        statusKey: 'not_started',
+        statusKey: cover?.status ?? 'not_started',
         jobType: 'commercial',
         time: null,
       })

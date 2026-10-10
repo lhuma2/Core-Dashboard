@@ -181,7 +181,9 @@ export default async function DashboardPage() {
   // Build a lookup of clientId::date → job for all past job records
   const pastJobMap = new Map<string, any>()
   for (const job of pastJobs) {
-    pastJobMap.set(`${job.client_id}::${job.scheduled_date}`, job)
+    // A covered day can have two rows (regular cleaner's + cover's) — a completed one wins
+    const key = `${job.client_id}::${job.scheduled_date}`
+    if (pastJobMap.get(key)?.status !== 'completed') pastJobMap.set(key, job)
   }
 
   // Walk each client's schedule backwards 7 days, find gaps
