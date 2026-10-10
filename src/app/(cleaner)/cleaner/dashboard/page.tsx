@@ -101,12 +101,14 @@ export default async function CleanerDashboard({
   // Fetch clients + active jobs (weekend-aware) + past not-started jobs + this week's
   // real jobs (both regular and bond cleans) in parallel
   const [
-    { data: clients }, { data: activeJobs }, { data: missedJobsRaw },
+    { data: clients, error: clientsErr }, { data: activeJobs }, { data: missedJobsRaw },
     { data: weekJobs }, { data: weekBondJobs }, { data: weekResidentialJobs },
   ] = await Promise.all([
     (supabase as any)
       .from('clients')
-      .select('id, business_name, address, suburb, frequency, service_days, start_date, assignment_accepted')
+      // '*' rather than a column list: if any listed column were missing from the live
+      // table, PostgREST fails the whole query and every client silently vanishes.
+      .select('*')
       .eq('assigned_cleaner_id', profile.id)
       .eq('active', true)
       .order('business_name'),
@@ -206,9 +208,12 @@ export default async function CleanerDashboard({
     })
   }
 
+  if (clientsErr) console.error('[cleaner-dashboard] clients query failed:', clientsErr.message)
   const allClients: any[] = clients ?? []
-  const pending  = allClients.filter((c) => !c.assignment_accepted)
-  const accepted = allClients.filter((c) => c.assignment_accepted)
+  // Only an explicit `false` is a pending assignment; a missing/NULL flag counts as
+  // accepted so a client can never be hidden from its assigned cleaner by it.
+  const pending  = allClients.filter((c) => c.assignment_accepted === false)
+  const accepted = allClients.filter((c) => c.assignment_accepted !== false)
   const inProgressJob = (activeJobs ?? [])[0] ?? null
 
   // Recurring residential templates assigned to this cleaner — expanded into

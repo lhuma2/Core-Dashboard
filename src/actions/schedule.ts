@@ -19,8 +19,8 @@ async function canAccessClient(db: any, profile: any, clientId: string): Promise
   if (!profile) return false
   if (['admin', 'manager'].includes(profile.role)) return true
   const { data: c } = await db.from('clients')
-    .select('id').eq('id', clientId).eq('assigned_cleaner_id', profile.id).eq('assignment_accepted', true).maybeSingle()
-  if (c) return true
+    .select('*').eq('id', clientId).eq('assigned_cleaner_id', profile.id).maybeSingle()
+  if (c && c.assignment_accepted !== false) return true
   const { data: s } = await db.from('client_sites')
     .select('id').eq('client_id', clientId).eq('assigned_cleaner_id', profile.id).limit(1)
   return !!(s && s.length)
