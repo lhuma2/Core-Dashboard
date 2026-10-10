@@ -101,12 +101,14 @@ export default async function CleanerDashboard({
   // Fetch clients + active jobs (weekend-aware) + past not-started jobs + this week's
   // real jobs (both regular and bond cleans) in parallel
   const [
-    { data: clients }, { data: activeJobs }, { data: missedJobsRaw },
+    { data: clients, error: clientsErr }, { data: activeJobs }, { data: missedJobsRaw },
     { data: weekJobs }, { data: weekBondJobs }, { data: weekResidentialJobs },
   ] = await Promise.all([
     (supabase as any)
       .from('clients')
-      .select('id, business_name, address, suburb, frequency, service_days, start_date, assignment_accepted')
+      // '*' rather than a column list: if any listed column were missing from the live
+      // table, PostgREST fails the whole query and every client silently vanishes.
+      .select('*')
       .eq('assigned_cleaner_id', profile.id)
       .eq('active', true)
       .order('business_name'),
@@ -144,6 +146,19 @@ export default async function CleanerDashboard({
       .gte('clean_date', weekStart)
       .lte('clean_date', weekEnd),
   ])
+
+  // A cleaner assigned only to a SITE can't read the parent client row under RLS, so
+  // the clients(...) embed on their own job rows comes back null and the card shows
+  // "Job". Fill those in via admin, limited to clients on this cleaner's own jobs.
+  const adminDb = createAdminClient() as any
+  const ownJobs: any[] = [...(activeJobs ?? []), ...(missedJobsRaw ?? []), ...(weekJobs ?? [])]
+  const missingClientIds = Array.from(new Set(ownJobs.filter((j) => !j.clients && j.client_id).map((j) => j.client_id)))
+  if (missingClientIds.length) {
+    const { data: names } = await adminDb
+      .from('clients').select('id, business_name, address, suburb').in('id', missingClientIds)
+    const byId = new Map<string, any>((names ?? []).map((c: any) => [c.id, c]))
+    for (const j of ownJobs) if (!j.clients && byId.has(j.client_id)) j.clients = byId.get(j.client_id)
+  }
 
   const weekByDate: Record<string, WeekEntry[]> = {}
   for (const d of weekDates) weekByDate[d] = []
@@ -193,9 +208,12 @@ export default async function CleanerDashboard({
     })
   }
 
+  if (clientsErr) console.error('[cleaner-dashboard] clients query failed:', clientsErr.message)
   const allClients: any[] = clients ?? []
-  const pending  = allClients.filter((c) => !c.assignment_accepted)
-  const accepted = allClients.filter((c) => c.assignment_accepted)
+  // Only an explicit `false` is a pending assignment; a missing/NULL flag counts as
+  // accepted so a client can never be hidden from its assigned cleaner by it.
+  const pending  = allClients.filter((c) => c.assignment_accepted === false)
+  const accepted = allClients.filter((c) => c.assignment_accepted !== false)
   const inProgressJob = (activeJobs ?? [])[0] ?? null
 
   // Recurring residential templates assigned to this cleaner — expanded into
@@ -209,7 +227,6 @@ export default async function CleanerDashboard({
 
   // Sites this cleaner is assigned to individually (multi-site clients). The parent client may
   // not be assigned to them at the client level, so fetch via admin scoped to this cleaner.
-  const adminDb = createAdminClient() as any
   const { data: mySitesRaw } = await adminDb
     .from('client_sites')
     .select('id, site_name, address, suburb, client_id, frequency, service_days, start_date, clients(business_name, active, start_date)')

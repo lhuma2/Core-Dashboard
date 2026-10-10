@@ -62,12 +62,12 @@ export async function GET(req: NextRequest) {
 
   const { data: clients } = await (supabase as any)
     .from('clients')
-    .select('id, business_name, address, suburb, frequency, service_days, start_date')
+    .select('*')
     .eq('assigned_cleaner_id', profile.id)
     .eq('active', true)
-    .eq('assignment_accepted', true)
 
-  const schedule = buildSchedule(clients ?? [], 90)
+  // Same rule as the dashboard: only an explicit `false` is a not-yet-accepted client
+  const schedule = buildSchedule((clients ?? []).filter((c: any) => c.assignment_accepted !== false), 90)
 
   const rows: string[] = [
     'BEGIN:VCALENDAR',

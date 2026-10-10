@@ -56,7 +56,7 @@ export default async function CleanerClientPage({ params, searchParams }: { para
     .from('client_sites').select('*').eq('client_id', params.id).order('sort_order', { ascending: true })
   const sites = (sitesRaw ?? []) as any[]
   const mySites = sites.filter((s) => s.assigned_cleaner_id === profile.id)
-  const clientAssigned = client.assigned_cleaner_id === profile.id && client.assignment_accepted
+  const clientAssigned = client.assigned_cleaner_id === profile.id && client.assignment_accepted !== false
 
   // Must be assigned to the client, or to at least one of its sites.
   if (!clientAssigned && mySites.length === 0) notFound()
