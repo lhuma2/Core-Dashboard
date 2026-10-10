@@ -6,9 +6,22 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { clientSchema } from '@/lib/validations/client.schema'
 import { calculateMonthlyValue, calculateAnnualValue, visitsPerMonth } from '@/lib/billing'
-import { sendPushToRole } from '@/lib/push'
+import { sendPushToRole, sendPushToUser } from '@/lib/push'
 import type { FrequencyType, ServiceType, AdditionalService } from '@/types/app'
 import { calcAdditionalMonthlyRevenue, calcAdditionalMonthlyLabour } from '@/types/app'
+
+// Let a newly assigned cleaner know there's a client waiting for them to accept
+// on their dashboard (same notice the manager portal's assign action sends).
+async function notifyCleanerAssigned(cleanerId: string, businessName: string | null | undefined) {
+  const { data: cleaner } = await (createAdminClient() as any)
+    .from('profiles').select('user_id').eq('id', cleanerId).maybeSingle()
+  if (!cleaner?.user_id) return
+  await sendPushToUser(cleaner.user_id, {
+    title: 'New Client Assigned',
+    body:  `You've been assigned to ${businessName ?? 'a new client'}. Tap to view your dashboard.`,
+    url:   '/cleaner/dashboard',
+  })
+}
 
 function parseSites(raw: string | null): any[] {
   if (!raw) return []
@@ -180,7 +193,9 @@ export async function createClientAction(formData: FormData) {
       notes:                   site.notes     || null,
       sort_order:              idx,
     }))
-    await db.from('client_sites').insert(siteInserts)
+    const { error: siteErr } = await db.from('client_sites').insert(siteInserts)
+    // The client itself saved; send them to it rather than to a blank form, but say so.
+    if (siteErr) return { error: { _form: [`Client saved, but its sites didn't: ${siteErr.message}. Open the client and add the sites again.`] } }
   }
 
   if (error) {
@@ -212,6 +227,10 @@ export async function createClientAction(formData: FormData) {
       })
     }
     // Non-fatal: if portal creation fails, client record is still saved
+  }
+
+  if (!isMultiSite && assigned_cleaner_id) {
+    notifyCleanerAssigned(assigned_cleaner_id, parsed.data.business_name).catch(() => {})
   }
 
   // Push notification to all managers
@@ -322,6 +341,14 @@ export async function updateClientAction(id: string, formData: FormData) {
     : null
 
   const db2 = supabase as any
+
+  // A different cleaner must accept the client themselves before it becomes one of
+  // their clients, so a change of cleaner resets acceptance (otherwise the new cleaner
+  // would inherit the previous cleaner's accepted state, or never be asked).
+  const newCleanerId: string | null = isMultiSite ? null : (aci || null)
+  const { data: before } = await db2.from('clients').select('assigned_cleaner_id').eq('id', id).maybeSingle()
+  const cleanerChanged = (before?.assigned_cleaner_id ?? null) !== newCleanerId
+
   const { error } = await db2
     .from('clients')
     .update({
@@ -348,7 +375,8 @@ export async function updateClientAction(id: string, formData: FormData) {
       days_per_week:           isMultiSite ? null : (dpw ?? null),
       scope_of_work:           isMultiSite ? null : (sow || null),
       access_details:          isMultiSite ? null : (ad || null),
-      assigned_cleaner_id:     isMultiSite ? null : (aci || null),
+      assigned_cleaner_id:     newCleanerId,
+      ...(cleanerChanged ? { assignment_accepted: false } : {}),
       additional_services:     additionalServicesUpd,
       monthly_labour_cost:     monthly_labour_cost_upd,
       monthly_profit:          monthly_profit_upd,
@@ -358,6 +386,9 @@ export async function updateClientAction(id: string, formData: FormData) {
 
   if (error) {
     return { error: { _form: [error.message] } }
+  }
+  if (cleanerChanged && newCleanerId) {
+    notifyCleanerAssigned(newCleanerId, rest.business_name).catch(() => {})
   }
   // Saving the profile counts as reviewing one made from a signed agreement.
   await db2.from('clients').update({ needs_review: false }).eq('id', id).eq('needs_review', true)
@@ -394,12 +425,16 @@ export async function updateClientAction(id: string, formData: FormData) {
       const site = sitesData[idx]
       if (site.dbId && existingIds.has(site.dbId)) {
         keptIds.add(site.dbId)
-        await db2.from('client_sites').update(siteRow(site, idx)).eq('id', site.dbId).eq('client_id', id)
+        const { error: upErr } = await db2.from('client_sites').update(siteRow(site, idx)).eq('id', site.dbId).eq('client_id', id)
+        if (upErr) return { error: { _form: [`Couldn't save site "${site.site_name || idx + 1}": ${upErr.message}`] } }
       } else {
         inserts.push({ client_id: id, ...siteRow(site, idx) })
       }
     }
-    if (inserts.length > 0) await db2.from('client_sites').insert(inserts)
+    if (inserts.length > 0) {
+      const { error: insErr } = await db2.from('client_sites').insert(inserts)
+      if (insErr) return { error: { _form: [`Couldn't add new sites: ${insErr.message}`] } }
+    }
 
     const removedIds = Array.from(existingIds).filter((sid) => !keptIds.has(sid))
     if (removedIds.length > 0) await db2.from('client_sites').delete().in('id', removedIds)

@@ -48,12 +48,25 @@ export async function acceptClientAssignmentAction(
   clientId: string,
 ): Promise<{ success?: boolean; error?: string }> {
   const supabase = createClient()
-  const { error } = await (supabase as any)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not signed in.' }
+  const { data: profile } = await (supabase as any)
+    .from('profiles').select('id').eq('user_id', user.id).maybeSingle()
+  if (!profile?.id) return { error: 'Not signed in.' }
+
+  // RLS only lets admin/manager update clients, so the cleaner's own session can't
+  // flip this flag: that update matches no rows and returns no error, leaving the
+  // client stuck as a pending assignment. Write via the service-role client, scoped
+  // to a client that is actually assigned to this cleaner.
+  const { data, error } = await (createAdminClient() as any)
     .from('clients')
     .update({ assignment_accepted: true })
     .eq('id', clientId)
+    .eq('assigned_cleaner_id', profile.id)
+    .select('id')
 
   if (error) return { error: error.message }
+  if (!data?.length) return { error: 'This client is no longer assigned to you.' }
   revalidatePath('/cleaner/dashboard')
   revalidatePath(`/cleaner/clients/${clientId}`)
   return { success: true }
