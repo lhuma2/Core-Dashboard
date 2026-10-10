@@ -259,7 +259,7 @@ export default async function CleanerDashboard({
     })),
   ]
   for (const src of scheduleSources) {
-    if (!src.serviceDays.length || !src.frequency || src.frequency === 'adhoc') continue
+    if (!src.frequency || src.frequency === 'adhoc') continue // getUpcomingDates handles day-less one-off / quarterly / annual
     const occurrences = getUpcomingDates({
       id: src.clientId, business_name: src.label, address: src.address, suburb: src.suburb,
       frequency: src.frequency, service_days: src.serviceDays, start_date: src.startDate,

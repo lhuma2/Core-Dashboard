@@ -3,6 +3,7 @@ export const revalidate = 0
 
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { PortalShell } from '@/components/portal/PortalShell'
 import { JobStartFlow } from '@/components/portal/cleaner/JobStartFlow'
 import { FlagModal } from '@/components/portal/cleaner/FlagModal'
@@ -43,14 +44,21 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
     .eq('job_id', params.id)
     .single()
 
-  const client  = job.clients
+  // A cleaner assigned only to a site can't read the parent client under RLS, so the
+  // embed is null; this job is theirs (filtered by cleaner_id above), so read it via admin.
+  const client  = job.clients ?? (job.client_id
+    ? (await (createAdminClient() as any).from('clients')
+        .select('id, business_name, address, suburb, state, postcode').eq('id', job.client_id).maybeSingle()).data
+    : null)
   const site    = job.client_sites
   const status  = statusLabel(job.status)
   const checklist: { id: string; label: string; required?: boolean }[] = job.checklist ?? []
 
   // For a site-scoped job (multi-site client), everything the cleaner sees must be the SITE's
   // — its name, address and lockbox — never the parent client's head-office details.
-  const displayName  = site?.site_name ? `${client?.business_name} — ${site.site_name}` : client?.business_name
+  const displayName  = site?.site_name
+    ? [client?.business_name, site.site_name].filter(Boolean).join(' — ')
+    : (client?.business_name ?? 'Job')
   const addrLine     = site?.address
     ? [site.address, site.suburb].filter(Boolean).join(', ')
     : (client?.address ? [client.address, client.suburb].filter(Boolean).join(', ') : null)
@@ -157,7 +165,7 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
         )}
 
         {job.status !== 'completed' && (
-          <FlagModal jobId={job.id} clientId={client?.id ?? ''} />
+          <FlagModal jobId={job.id} clientId={job.client_id} />
         )}
 
         {job.status === 'completed' && (

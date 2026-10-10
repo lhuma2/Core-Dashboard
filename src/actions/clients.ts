@@ -23,6 +23,43 @@ async function notifyCleanerAssigned(cleanerId: string, businessName: string | n
   })
 }
 
+// A cleaner only sees cleans on their timetable for a schedule the portal can work out:
+// a first clean date, plus clean days for anything that repeats weekly/fortnightly/
+// monthly (one-off, quarterly and annual run off the first clean date alone). Refuse
+// to save an assignment that would leave the cleaner with nothing on their timetable.
+const DAYLESS_FREQUENCIES = ['one_off', 'quarterly', 'annual', 'adhoc']
+function scheduleProblem(label: string, s: { cleanerId?: string | null; frequency?: string | null; serviceDays?: string[]; startDate?: string | null }): string | null {
+  if (!s.cleanerId) return null
+  if (!s.frequency) return `${label}: pick a frequency so the assigned cleaner's timetable shows the cleans.`
+  if (!s.startDate) return `${label}: set the first clean date so the assigned cleaner's timetable shows the cleans.`
+  if (!DAYLESS_FREQUENCIES.includes(s.frequency) && !(s.serviceDays ?? []).length) {
+    return `${label}: pick the clean days so the assigned cleaner's timetable shows the cleans.`
+  }
+  return null
+}
+
+function assignmentScheduleError(opts: {
+  isMultiSite: boolean; sites: any[]; cleanerId?: string | null; frequency?: string | null
+  serviceDays: string[]; startDate?: string | null
+  onlySite?: (site: any) => boolean   // on edit, only check sites whose cleaner is new/changed
+}) {
+  if (!opts.isMultiSite) {
+    return scheduleProblem('Assigned cleaner', opts)
+  }
+  for (let i = 0; i < opts.sites.length; i++) {
+    const site = opts.sites[i]
+    if (opts.onlySite && !opts.onlySite(site)) continue
+    const problem = scheduleProblem(site.site_name || `Site ${i + 1}`, {
+      cleanerId:   site.assigned_cleaner_id || null,
+      frequency:   site.frequency || null,
+      serviceDays: Array.isArray(site.service_days) ? site.service_days : [],
+      startDate:   site.start_date || opts.startDate || null,
+    })
+    if (problem) return problem
+  }
+  return null
+}
+
 function parseSites(raw: string | null): any[] {
   if (!raw) return []
   try { return JSON.parse(raw) } catch { return [] }
@@ -84,6 +121,12 @@ export async function createClientAction(formData: FormData) {
   const addLabMonth = calcAdditionalMonthlyLabour(additionalServices)
 
   const { frequency, rate_per_visit, days_per_week, scope_of_work, access_details, assigned_cleaner_id, ...rest } = parsed.data
+
+  const schedErr = assignmentScheduleError({
+    isMultiSite, sites: sitesData, cleanerId: assigned_cleaner_id, frequency,
+    serviceDays, startDate: rest.start_date,
+  })
+  if (schedErr) return { error: { _form: [schedErr] } }
 
   // For multi-site, sum monthly value across all sites
   const multiSiteMonthly = isMultiSite && sitesData.length > 0
@@ -292,6 +335,21 @@ export async function updateClientAction(id: string, formData: FormData) {
 
   const { frequency, rate_per_visit, days_per_week: dpw, scope_of_work: sow, access_details: ad, assigned_cleaner_id: aci, ...rest } = parsed.data
 
+  // On edit, only hold the save up for an assignment that is new or changed, so an
+  // older client with an incomplete schedule can still be edited for other things.
+  const { data: beforeClient } = await (supabase as any)
+    .from('clients').select('assigned_cleaner_id').eq('id', id).maybeSingle()
+  const { data: beforeSites } = await (supabase as any)
+    .from('client_sites').select('id, assigned_cleaner_id').eq('client_id', id)
+  const prevSiteCleaner = new Map<string, string | null>((beforeSites ?? []).map((r: any) => [r.id, r.assigned_cleaner_id ?? null]))
+  const clientCleanerChanged = (beforeClient?.assigned_cleaner_id ?? null) !== (isMultiSite ? null : (aci || null))
+  const schedErrUpd = assignmentScheduleError({
+    isMultiSite, sites: sitesData, cleanerId: clientCleanerChanged ? aci : null, frequency,
+    serviceDays: serviceDaysUpd, startDate: rest.start_date,
+    onlySite: (site) => !site.dbId || prevSiteCleaner.get(site.dbId) !== (site.assigned_cleaner_id || null),
+  })
+  if (schedErrUpd) return { error: { _form: [schedErrUpd] } }
+
   const multiSiteMonthlyUpd = isMultiSite && sitesData.length > 0
     ? sitesData.reduce((sum: number, s: any) => sum + calcSiteMonthlyValue(s), 0)
     : null
@@ -346,8 +404,7 @@ export async function updateClientAction(id: string, formData: FormData) {
   // their clients, so a change of cleaner resets acceptance (otherwise the new cleaner
   // would inherit the previous cleaner's accepted state, or never be asked).
   const newCleanerId: string | null = isMultiSite ? null : (aci || null)
-  const { data: before } = await db2.from('clients').select('assigned_cleaner_id').eq('id', id).maybeSingle()
-  const cleanerChanged = (before?.assigned_cleaner_id ?? null) !== newCleanerId
+  const cleanerChanged = clientCleanerChanged
 
   const { error } = await db2
     .from('clients')

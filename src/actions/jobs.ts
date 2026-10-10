@@ -169,7 +169,8 @@ export async function submitJobAction(input: {
   // Notify managers + admins by push. Ticking the scope checklist is optional, so a
   // submitted job is simply "complete" — the notification shows who + how long it took.
   try {
-    const { data: jobData } = await (supabase as any)
+    // Admin read: a site-only cleaner can't see the parent client row under RLS
+    const { data: jobData } = await (createAdminClient() as any)
       .from('job_assignments')
       .select('clients(business_name), client_sites(site_name), job_submissions(started_at)')
       .eq('id', input.jobId)
@@ -235,6 +236,7 @@ export async function flagJobAction(input: {
     .from('job_assignments')
     .update({ status: 'flagged' })
     .eq('id', input.jobId)
+    .eq('cleaner_id', profile.id)
 
   // Notify managers and admin via push
   const cleanerName = profile.full_name ?? 'A cleaner'
@@ -351,9 +353,11 @@ export async function startCleanForClientAction(clientId: string, siteId?: strin
   const profile = await getCurrentProfile()
   if (!profile) return { error: 'Not authenticated' }
 
-  const today = new Date().toISOString().split('T')[0]
-  // Saturday jobs stay actionable on Sunday, so consider the whole weekend window
+  // Saturday jobs stay actionable on Sunday, so consider the whole weekend window.
+  // Brisbane's date, not UTC's: a 7am start in Brisbane is still "yesterday" in UTC,
+  // which dated the job a day early so it never showed as today's and got duplicated.
   const dates = actionableDates()
+  const today = dates[0]
 
   // Block if cleaner already has a job in progress at a different client
   const { data: activeElsewhere } = await (supabase as any)
@@ -430,21 +434,24 @@ export async function startCleanForClientAction(clientId: string, siteId?: strin
   const alreadyStarted = !!existing?.started_at
   const now = new Date().toISOString()
 
-  await (supabase as any)
+  const { error: startErr } = await (supabase as any)
     .from('job_assignments')
     .update(alreadyStarted ? { status: 'in_progress' } : { status: 'in_progress', started_at: now })
     .eq('id', jobId)
+  if (startErr) return { error: startErr.message }
 
   if (!alreadyStarted) {
-    await (supabase as any)
+    const { error: subErr } = await (supabase as any)
       .from('job_submissions')
       .upsert(
         { job_id: jobId, cleaner_id: profile.id, started_at: now },
         { onConflict: 'job_id' }
       )
+    if (subErr) return { error: subErr.message }
   }
 
   revalidatePath(`/cleaner/clients/${clientId}`)
+  revalidatePath('/cleaner/dashboard')
   return { success: true, jobId }
 }
 
