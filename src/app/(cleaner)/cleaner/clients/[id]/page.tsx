@@ -90,6 +90,19 @@ export default async function CleanerClientPage({ params, searchParams }: { para
   // Client-level job ignores site-scoped jobs (multi-site shows Start/Finish per site)
   const todayJob = pickJob(jobs.filter((j: any) => !j.site_id))
 
+  // Today's clean handed to a different cleaner (Team → Manage Jobs cover). Read via
+  // admin: RLS only shows a cleaner their own jobs. Used to show "covered" instead of a
+  // Start button, so the regular cleaner doesn't start a duplicate.
+  const { data: coverJobsRaw } = await admin
+    .from('job_assignments')
+    .select('id, status, site_id, cleaner_id, profiles(full_name)')
+    .eq('client_id', params.id)
+    .in('scheduled_date', dates)
+    .neq('cleaner_id', profile.id)
+  const coverJobs = (coverJobsRaw ?? []) as any[]
+  const coverFor = (siteId: string | null) =>
+    pickJob(coverJobs.filter((j: any) => (j.site_id ?? null) === siteId))
+
   const serviceDays: string[] = client.service_days ?? []
   const checklist = todayJob?.checklist ?? []
 
@@ -170,6 +183,25 @@ export default async function CleanerClientPage({ params, searchParams }: { para
     const { job, siteId, address, suburb, checklist } = opts
     const inProg = job?.status === 'in_progress' || job?.status === 'flagged'
     const done   = job?.status === 'completed'
+    const cover  = job ? null : coverFor(siteId)
+    if (cover) {
+      const who = cover.profiles?.full_name ?? 'another cleaner'
+      const state = cover.status === 'completed' ? 'Completed' : cover.status === 'not_started' ? 'Not started yet' : 'In progress'
+      return (
+        <div className="border-t border-gray-100 pt-5 mt-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            {siteId ? 'Start / Finish' : "Today's Clean"}
+          </p>
+          <div className="bg-white rounded-2xl px-5 py-5 flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-gray-400 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-black">Covered by {who} today</p>
+              <p className="text-xs text-gray-400 mt-0.5">{state}. You don&apos;t need to do this clean.</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="border-t border-gray-100 pt-5 mt-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
