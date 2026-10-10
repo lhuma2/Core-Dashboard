@@ -52,7 +52,28 @@ export interface ClientSchedule {
 export function getUpcomingDates(client: ClientSchedule, daysAhead = 60, fromDate?: Date): Date[] {
   const days    = (client.service_days ?? []).map((d) => DAY_NUM[d.toLowerCase()]).filter((n) => n !== undefined)
   const freq    = client.frequency ?? ''
-  if (days.length === 0 || !freq || freq === 'adhoc') return []
+  if (!freq || freq === 'adhoc') return []
+
+  // One-off / quarterly / annual clients have no clean days (the form hides the day
+  // picker for them) — their cleans fall on the first clean date and, for the
+  // recurring ones, every 3 or 12 months after it. Without this they never showed on
+  // the cleaner's timetable at all.
+  if (days.length === 0 && ['one_off', 'quarterly', 'annual'].includes(freq) && client.start_date) {
+    const from = fromDate ? new Date(fromDate) : new Date()
+    from.setHours(0, 0, 0, 0)
+    const until = new Date(from)
+    until.setDate(until.getDate() + daysAhead)
+    const step = freq === 'quarterly' ? 3 : freq === 'annual' ? 12 : 0
+    const out: Date[] = []
+    const d = new Date(client.start_date + 'T00:00:00')
+    for (let i = 0; i < 200 && d <= until; i++) {
+      if (d >= from) out.push(new Date(d))
+      if (!step) break
+      d.setMonth(d.getMonth() + step)
+    }
+    return out
+  }
+  if (days.length === 0) return []
 
   // Anchor for fortnightly / 4-weekly cadence
   const anchor = client.start_date ? new Date(client.start_date + 'T00:00:00') : new Date()

@@ -58,8 +58,16 @@ export default async function CleanerClientPage({ params, searchParams }: { para
   const mySites = sites.filter((s) => s.assigned_cleaner_id === profile.id)
   const clientAssigned = client.assigned_cleaner_id === profile.id && client.assignment_accepted !== false
 
-  // Must be assigned to the client, or to at least one of its sites.
-  if (!clientAssigned && mySites.length === 0) notFound()
+  // Must be assigned to the client, or to at least one of its sites — or have a job of
+  // their own here (an admin can hand a cleaner a one-off job at a client they don't
+  // normally clean; the dashboard links in-progress/missed jobs to this page).
+  if (!clientAssigned && mySites.length === 0) {
+    const since = new Date(Date.now() - 14 * 86_400_000).toISOString().split('T')[0]
+    const { data: ownJobs } = await (supabase as any)
+      .from('job_assignments').select('id')
+      .eq('client_id', params.id).eq('cleaner_id', profile.id).gte('scheduled_date', since).limit(1)
+    if (!ownJobs?.length) notFound()
+  }
 
   // Check for an actionable job — today's, or a Saturday job carried into Sunday
   const today = brisbaneTodayStr()
