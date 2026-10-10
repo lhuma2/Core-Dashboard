@@ -20,7 +20,12 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-async function geocode(q: string) {
+// A geocoded place as an area, not a point. For a street-level match Nominatim
+// returns the street's centre, which on a long road can be km from the building;
+// its bounding box covers the whole street, so we measure to the box instead.
+type Place = { minLat: number; maxLat: number; minLon: number; maxLon: number }
+
+async function geocode(q: string): Promise<Place | null> {
   try {
     // Abort after 6s so a slow/blocked geocoder can never hang the Start flow
     const ctrl = new AbortController()
@@ -29,8 +34,22 @@ async function geocode(q: string) {
       { headers: { 'Accept-Language': 'en', 'User-Agent': 'CoreCleaningPortal/1.0' }, signal: ctrl.signal })
     clearTimeout(t)
     const d = await r.json()
-    return d?.[0] ? { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon) } : null
+    const hit = d?.[0]
+    if (!hit) return null
+    const lat = parseFloat(hit.lat), lon = parseFloat(hit.lon)
+    const bb  = Array.isArray(hit.boundingbox) ? hit.boundingbox.map(parseFloat) : []
+    if (bb.length === 4 && bb.every((n: number) => Number.isFinite(n))) {
+      const [minLat, maxLat, minLon, maxLon] = bb
+      return { minLat, maxLat, minLon, maxLon }
+    }
+    return Number.isFinite(lat) && Number.isFinite(lon) ? { minLat: lat, maxLat: lat, minLon: lon, maxLon: lon } : null
   } catch { return null }
+}
+
+// Distance from a point to the nearest edge of a place's box (0 when inside it)
+function distanceToPlaceKm(lat: number, lon: number, p: Place) {
+  const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi)
+  return haversineKm(lat, lon, clamp(lat, p.minLat, p.maxLat), clamp(lon, p.minLon, p.maxLon))
 }
 
 function getGPS(): Promise<GeolocationPosition> {
@@ -77,7 +96,7 @@ export function StartCleanButton({ clientId, address, suburb, label: customLabel
 
     // 2. Geocode
     setStep('geocoding')
-    let coords: { lat: number; lon: number } | null = null
+    let coords: Place | null = null
     for (const q of [
       address && suburb ? `${address}, ${suburb}, Queensland, Australia` : '',
       suburb ? `${suburb}, Queensland, Australia` : '',
@@ -88,11 +107,15 @@ export function StartCleanButton({ clientId, address, suburb, label: customLabel
     // Can't geocode — let them through
     if (!coords) { await runStart(); return }
 
-    // 3. Distance check — 1 km with address, 3 km suburb only
-    const dist   = haversineKm(pos.coords.latitude, pos.coords.longitude, coords.lat, coords.lon)
-    const radius = address ? 1 : 3
+    // 3. Distance check — 1 km with address, 3 km suburb only, measured to the edge of
+    // the matched place. A phone's fix can be off by its reported accuracy (indoors or
+    // in a big building often several hundred metres), so allow for that too, capped
+    // at 1 km so a useless fix can't wave everyone through.
+    const dist     = distanceToPlaceKm(pos.coords.latitude, pos.coords.longitude, coords)
+    const accuracy = Math.min(pos.coords.accuracy || 0, 1000) / 1000
+    const radius   = address ? 1 : 3
 
-    if (dist > radius) {
+    if (dist - accuracy > radius) {
       const distStr = dist < 1 ? `${Math.round(dist * 1000)} m` : `${dist.toFixed(1)} km`
       setErr(`You must be within ${radius} km of the client to start. You are ${distStr} away.`)
       setStep('error'); return
