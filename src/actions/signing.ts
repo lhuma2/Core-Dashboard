@@ -3,6 +3,9 @@
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaff } from '@/lib/require-staff'
+import { isTemplateDocData } from '@/lib/documents/template'
+import { blankPriceFields } from '@/lib/documents/quote-request'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { withAgreementDefaults, type AgreementData } from '@/lib/documents/agreement'
@@ -12,6 +15,8 @@ import { APP_URL, OWNER_EMAIL, WORDMARK, EMAIL_RE, auDate, uniqueSignCode } from
 
 // ─── Issue the agreement for signature: mint a unique link + email the client ──
 export async function sendForSignatureAction(id: string, toEmail: string, message?: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const email = (toEmail ?? '').trim()
   if (!EMAIL_RE.test(email)) return { error: 'Enter a valid email address.' }
 
@@ -51,6 +56,8 @@ export async function sendForSignatureAction(id: string, toEmail: string, messag
 
 // ─── Company-document proposals: send the PDF (with placed fields) for signing ─
 export async function sendCompanyDocForSignatureAction(id: string, toEmail: string, message?: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const email = (toEmail ?? '').trim()
   if (!EMAIL_RE.test(email)) return { error: 'Enter a valid email address.' }
 
@@ -61,6 +68,10 @@ export async function sendCompanyDocForSignatureAction(id: string, toEmail: stri
     .eq('id', id).single()
   if (!doc) return { error: 'Document not found.' }
   if (!doc.pdf_url) return { error: 'Only company documents can be sent this way.' }
+  if (isTemplateDocData(doc.data)) {
+    const blank = blankPriceFields(doc.data)
+    if (blank.length) return { error: `Add the price before sending: ${blank.join(', ')}.` }
+  }
 
   const name = doc.data?.fieldValues?.clientName || doc.client_name || 'Client'
   const code: string = doc.sign_code ?? await uniqueSignCode(db, name)
@@ -281,6 +292,7 @@ export async function submitOnboardingAction(code: string, details: SignerDetail
 // Idempotent: mints a sign_code once so the /sign/<code> link is ready to copy,
 // without emailing or changing the document's status.
 export async function ensureSignCode(id: string): Promise<string | null> {
+  if (await requireStaff()) return null
   const db = createAdminClient() as any
   const { data: doc } = await db
     .from('proposal_documents')
@@ -296,6 +308,8 @@ export async function ensureSignCode(id: string): Promise<string | null> {
 
 // Stamp the agreement with today's date when it's issued via the copy-link path.
 export async function stampIssueDateAction(id: string): Promise<{ date: string } | { error: string }> {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { data: doc } = await db.from('proposal_documents').select('data, status').eq('id', id).maybeSingle()
   if (!doc) return { error: 'Document not found.' }

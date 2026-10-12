@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPushToRole } from '@/lib/push'
-import type { TemplateDocData } from '@/lib/documents/template'
+import { hasTemplate, type TemplateDocData } from '@/lib/documents/template'
 import {
   CLIENT_TYPE_FOR_KIND, QUOTE_REQUEST_KIND_LABELS, kindOfRequest, pickTemplate, valuesFromRequest,
   type QuoteRequest,
@@ -14,9 +14,10 @@ import {
 // owner know. The website still emails the request as before; this is on top.
 
 function authorised(request: Request): boolean {
-  const secret = process.env.QUOTE_REQUEST_SECRET
+  // Trimmed: a pasted value often carries a stray space or newline.
+  const secret = process.env.QUOTE_REQUEST_SECRET?.trim()
   if (!secret) return false
-  const got = Buffer.from(request.headers.get('authorization') ?? '')
+  const got = Buffer.from((request.headers.get('authorization') ?? '').trim())
   const want = Buffer.from(`Bearer ${secret}`)
   return got.length === want.length && timingSafeEqual(got, want)
 }
@@ -24,7 +25,18 @@ function authorised(request: Request): boolean {
 const str = (v: unknown, max = 500) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 
 export async function POST(request: Request) {
-  if (!authorised(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    return await handle(request)
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message ?? 'Unexpected error' }, { status: 500 })
+  }
+}
+
+async function handle(request: Request) {
+  if (!process.env.QUOTE_REQUEST_SECRET?.trim()) {
+    return NextResponse.json({ error: 'QUOTE_REQUEST_SECRET is not set on the hub' }, { status: 503 })
+  }
+  if (!authorised(request)) return NextResponse.json({ error: 'The secret does not match the hub\'s QUOTE_REQUEST_SECRET' }, { status: 401 })
 
   const body = await request.json().catch(() => null)
   const req: QuoteRequest = {
@@ -43,13 +55,19 @@ export async function POST(request: Request) {
   if (!req.name || !req.email) return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
 
   const kind = kindOfRequest(req)
-  if (!kind) return NextResponse.json({ skipped: 'unknown service' })
+  if (!kind) return NextResponse.json({ skipped: `"${req.service || 'No service'}" isn't a service the hub drafts quotes for` })
 
   const db = createAdminClient() as any
   const { data: docs, error: docsErr } = await db.from('company_documents').select('id, name, file_url, template')
   if (docsErr) return NextResponse.json({ error: docsErr.message }, { status: 500 })
   const cd = pickTemplate<{ id: string; name: string; file_url: string; template: any }>(docs ?? [], kind)
-  if (!cd) return NextResponse.json({ skipped: `no template for ${QUOTE_REQUEST_KIND_LABELS[kind]}` })
+  if (!cd) {
+    const names = (docs ?? []).filter((d: any) => hasTemplate(d.template)).map((d: any) => d.name)
+    return NextResponse.json({
+      skipped: `No template is set for ${QUOTE_REQUEST_KIND_LABELS[kind]} requests. `
+        + (names.length ? `Templates found: ${names.join(', ')}. Choose one under "Website quote requests" on its setup screen.` : 'No company documents have template fields yet.'),
+    })
+  }
 
   const ref = `DC-PROP-${Math.floor(1000 + Math.random() * 8999)}`
   const data: TemplateDocData = {
@@ -80,5 +98,5 @@ export async function POST(request: Request) {
   }).catch(() => {})
 
   revalidatePath('/documents')
-  return NextResponse.json({ success: true, id: row.id })
+  return NextResponse.json({ success: true, id: row.id, template: cd.name })
 }

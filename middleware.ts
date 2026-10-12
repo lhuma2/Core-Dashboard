@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = [
   '/client/login',
   '/api/cleaner-calendar',
   '/api/quote-requests',
+  '/api/cron',          // Vercel cron: each route checks CRON_SECRET itself
   '/survey',
   '/sign',
   '/quote',

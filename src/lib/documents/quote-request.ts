@@ -5,7 +5,7 @@
 // it can recognise from the field's label and leaves the prices blank, so the
 // owner only has to price it and press Send.
 
-import type { DocTemplate, TemplateField } from './template'
+import { fieldValue, type DocTemplate, type TemplateField, type TemplateDocData } from './template'
 import type { ClientType } from './quote'
 
 export type QuoteRequestKind = 'residential_one_off' | 'residential_regular' | 'end_of_lease' | 'commercial'
@@ -66,11 +66,18 @@ export function kindFromTemplateName(name: string): QuoteRequestKind | null {
   return null
 }
 
+function isResidentialName(name: string): boolean {
+  return /residential|home|house/.test((name ?? '').toLowerCase())
+}
+
 /** The template for a request: one tagged for it, else one whose name says so. */
 export function pickTemplate<T extends { name: string; template: DocTemplate | null }>(docs: T[], kind: QuoteRequestKind): T | null {
   const usable = docs.filter((d) => d.template && Array.isArray(d.template.fields) && d.template.fields.length > 0)
+  const untagged = usable.filter((d) => !d.template!.autoDraftFor)
   return usable.find((d) => d.template!.autoDraftFor === kind)
-    ?? usable.find((d) => !d.template!.autoDraftFor && kindFromTemplateName(d.name) === kind)
+    ?? untagged.find((d) => kindFromTemplateName(d.name) === kind)
+    // A residential template that doesn't say one-off or regular covers both.
+    ?? (kind.startsWith('residential_') ? untagged.find((d) => isResidentialName(d.name) && kindFromTemplateName(d.name) == null) : undefined)
     ?? null
 }
 
@@ -80,6 +87,12 @@ const auDate = (d: Date) => d.toLocaleDateString('en-AU', { day: 'numeric', mont
 function prettyDate(v: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v)
   return m ? auDate(new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], 2))) : v
+}
+
+/** A field that holds a price, left blank on drafts made from a request. */
+export function isPriceLabel(label: string): boolean {
+  const l = (label ?? '').toLowerCase()
+  return !/hours/.test(l) && /price|fee|cost|total|amount|investment|\brate|\$|gst|subtotal|per (clean|visit|hour)/.test(l)
 }
 
 /**
@@ -94,7 +107,7 @@ export function valueForField(f: TemplateField, r: QuoteRequest, ref: string, no
 
   if (/hours/.test(l)) return row(r, /hours/) || null
   if (/living/.test(l)) return row(r, /living/) || null
-  if (/price|fee|cost|total|amount|investment|\brate|\$|gst|subtotal|per (clean|visit|hour)/.test(l)) return ''
+  if (isPriceLabel(l)) return ''
   if (/\bref|quote (no|number|#)|proposal (no|number|#)/.test(l)) return ref
   if (/e-?mail/.test(l)) return r.email
   if (/phone|mobile|contact number/.test(l)) return r.phone
@@ -128,4 +141,11 @@ export function valuesFromRequest(t: DocTemplate, r: QuoteRequest, ref: string, 
     if (v != null) out[f.id] = f.multiline ? v : v.replace(/\s*\n\s*/g, ' ')
   }
   return out
+}
+
+/** Price fields still blank on a template document, by label. Sending is held until they're filled. */
+export function blankPriceFields(d: TemplateDocData): string[] {
+  return d.template.fields
+    .filter((f) => f.kind === 'text' && isPriceLabel(f.label) && !fieldValue(f, d.values).trim())
+    .map((f) => f.label)
 }

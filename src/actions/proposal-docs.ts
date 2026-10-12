@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaff } from '@/lib/require-staff'
 import { DEFAULT_PROPOSAL, withProposalDefaults, type ProposalData } from '@/lib/documents/proposal'
 import { mapProposalToAgreement, withAgreementDefaults } from '@/lib/documents/agreement'
 import { flattenProposalDocument } from '@/lib/documents/flatten'
@@ -35,6 +36,8 @@ function nextRef(prefix: string): string {
 // ─── Create ──────────────────────────────────────────────────────────────────
 
 export async function createProposalAction(seed?: Partial<ProposalData> & { clientId?: string }) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const ref = nextRef('DC-PROP')
   const data: ProposalData = { ...DEFAULT_PROPOSAL, ...(seed ?? {}), refNumber: ref }
@@ -56,6 +59,8 @@ export async function createProposalAction(seed?: Partial<ProposalData> & { clie
 // ─── Create from a selected company document (embeds that PDF as the proposal) ─
 
 export async function createProposalFromDocAction(name: string, fileUrl: string, clientName?: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const ref = nextRef('DC-PROP')
   const data: ProposalData = { ...DEFAULT_PROPOSAL, clientName: clientName || name, refNumber: ref }
@@ -77,6 +82,8 @@ export async function createProposalFromDocAction(name: string, fileUrl: string,
 // ─── Save (with optional version snapshot) ───────────────────────────────────
 
 export async function saveProposalDocAction(id: string, data: ProposalData, snapshotLabel?: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { error } = await db.from('proposal_documents').update({
     data,
@@ -98,6 +105,8 @@ export async function saveProposalDocAction(id: string, data: ProposalData, snap
 // filled-in version is persisted here, not just streamed to the browser.
 
 export async function saveFlattenedPdfAction(id: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { data: doc } = await db.from('proposal_documents').select('id, pdf_url, client_name, data').eq('id', id).single()
   if (!doc) return { error: 'Document not found' }
@@ -132,6 +141,8 @@ export async function saveFlattenedPdfAction(id: string) {
 // ─── Convert accepted proposal → agreement (prefilled, editable) ─────────────
 
 export async function convertToAgreementAction(proposalId: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { data: proposal } = await db.from('proposal_documents').select('*').eq('id', proposalId).single()
   if (!proposal) return { error: 'Proposal not found' }
@@ -168,6 +179,8 @@ export async function convertToAgreementAction(proposalId: string) {
 // name + details — so a signed contract lands on their profile and never carries
 // the "Northpoint Commercial" placeholder title.
 export async function createAgreementForClientAction(clientId: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { data: client } = await db.from('clients').select('*').eq('id', clientId).single()
   if (!client) return { error: 'Client not found' }
@@ -203,6 +216,8 @@ export async function createAgreementForClientAction(clientId: string) {
 }
 
 export async function saveAgreementDocAction(id: string, data: any, snapshotLabel?: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   // A signed agreement is final: never let an open editor tab overwrite what was signed
   // (start date, ABN and signature details are stamped on at signing).
@@ -218,6 +233,8 @@ export async function saveAgreementDocAction(id: string, data: any, snapshotLabe
 }
 
 export async function setDocStatusAction(id: string, status: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { error } = await db.from('proposal_documents').update({ status }).eq('id', id)
   if (error) return { error: error.message }
@@ -228,6 +245,8 @@ export async function setDocStatusAction(id: string, status: string) {
 
 // Link a document to a client so a signed agreement lands on that client's profile.
 export async function setDocClientAction(id: string, clientId: string | null) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { error } = await db.from('proposal_documents').update({ client_id: clientId || null }).eq('id', id)
   if (error) return { error: error.message }
@@ -239,6 +258,8 @@ export async function setDocClientAction(id: string, clientId: string | null) {
 // ─── Duplicate / delete ──────────────────────────────────────────────────────
 
 export async function duplicateProposalDocAction(id: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { data: orig } = await db.from('proposal_documents').select('*').eq('id', id).single()
   if (!orig) return { error: 'Document not found' }
@@ -254,6 +275,8 @@ export async function duplicateProposalDocAction(id: string) {
 }
 
 export async function deleteProposalDocAction(id: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { error } = await db.from('proposal_documents').delete().eq('id', id)
   if (error) return { error: error.message }
@@ -264,6 +287,8 @@ export async function deleteProposalDocAction(id: string) {
 // ─── Restore a prior version ─────────────────────────────────────────────────
 
 export async function restoreVersionAction(documentId: string, versionId: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const { data: v } = await db.from('proposal_document_versions').select('data').eq('id', versionId).single()
   if (!v) return { error: 'Version not found' }
@@ -277,6 +302,8 @@ export async function restoreVersionAction(documentId: string, versionId: string
 // ─── Rename (display name only — never touches the signed content) ───────────
 
 export async function renameProposalDocAction(id: string, title: string) {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
   const db = createAdminClient() as any
   const t = (title ?? '').trim()
   const { error } = await db.from('proposal_documents').update({ title: t || null }).eq('id', id)

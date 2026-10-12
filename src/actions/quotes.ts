@@ -6,6 +6,7 @@ import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { requireStaff } from '@/lib/require-staff'
 import { isTemplateDocData } from '@/lib/documents/template'
+import { blankPriceFields } from '@/lib/documents/quote-request'
 import { agreementFromQuote, clientTypeOf, quoteClientName, type ClientType } from '@/lib/documents/quote'
 import { APP_URL, WORDMARK, EMAIL_RE, auDate, esc, uniqueSignCode } from '@/lib/documents/sign-code'
 
@@ -24,6 +25,8 @@ export async function sendQuoteAction(id: string, toEmail: string, message?: str
     return { error: 'Only quotes made from a template can be sent for the client to accept.' }
   }
   if (doc.status === 'accepted') return { error: 'This quote has already been accepted.' }
+  const blank = blankPriceFields(doc.data)
+  if (blank.length) return { error: `Add the price before sending: ${blank.join(', ')}.` }
 
   // The name typed into the quote's client field, not the template's name.
   const name = quoteClientName(doc.data)
