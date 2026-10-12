@@ -3,11 +3,8 @@ import { timingSafeEqual } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPushToRole } from '@/lib/push'
-import { hasTemplate, type TemplateDocData } from '@/lib/documents/template'
-import {
-  CLIENT_TYPE_FOR_KIND, QUOTE_REQUEST_KIND_LABELS, kindOfRequest, pickTemplate, valuesFromRequest,
-  type QuoteRequest,
-} from '@/lib/documents/quote-request'
+import { QUOTE_REQUEST_KIND_LABELS, type QuoteRequest } from '@/lib/documents/quote-request'
+import { draftFromRequest } from '@/lib/documents/quote-request-draft'
 
 // A new quote request from the website's quote form. Makes a draft proposal from
 // the matching template, prefilled with everything but the prices, and lets the
@@ -54,42 +51,11 @@ async function handle(request: Request) {
   }
   if (!req.name || !req.email) return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
 
-  const kind = kindOfRequest(req)
-  if (!kind) return NextResponse.json({ skipped: `"${req.service || 'No service'}" isn't a service the hub drafts quotes for` })
-
   const db = createAdminClient() as any
-  const { data: docs, error: docsErr } = await db.from('company_documents').select('id, name, file_url, template')
-  if (docsErr) return NextResponse.json({ error: docsErr.message }, { status: 500 })
-  const cd = pickTemplate<{ id: string; name: string; file_url: string; template: any }>(docs ?? [], kind)
-  if (!cd) {
-    const names = (docs ?? []).filter((d: any) => hasTemplate(d.template)).map((d: any) => d.name)
-    return NextResponse.json({
-      skipped: `No template is set for ${QUOTE_REQUEST_KIND_LABELS[kind]} requests. `
-        + (names.length ? `Templates found: ${names.join(', ')}. Choose one under "Website quote requests" on its setup screen.` : 'No company documents have template fields yet.'),
-    })
-  }
-
-  const ref = `DC-PROP-${Math.floor(1000 + Math.random() * 8999)}`
-  const data: TemplateDocData = {
-    clientName: req.name,
-    refNumber: ref,
-    templateId: cd.id,
-    templateName: cd.name,
-    template: cd.template,
-    values: valuesFromRequest(cd.template, req, ref),
-    clientType: CLIENT_TYPE_FOR_KIND[kind],
-    quoteRequest: { ...req, kind },
-  }
-  const { data: row, error } = await db.from('proposal_documents').insert({
-    kind: 'proposal',
-    status: 'draft',
-    ref_number: ref,
-    client_name: req.name,
-    pdf_url: cd.file_url,
-    signer_email: req.email,
-    data,
-  }).select('id').single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const res = await draftFromRequest(db, req)
+  if ('error' in res) return NextResponse.json({ error: res.error }, { status: 500 })
+  if ('skipped' in res) return NextResponse.json({ skipped: res.skipped })
+  const row = res, kind = res.kind
 
   await sendPushToRole('admin', {
     title: `New quote request: ${req.name}`,
@@ -98,5 +64,5 @@ async function handle(request: Request) {
   }).catch(() => {})
 
   revalidatePath('/documents')
-  return NextResponse.json({ success: true, id: row.id, template: cd.name })
+  return NextResponse.json({ success: true, id: row.id, template: res.template })
 }

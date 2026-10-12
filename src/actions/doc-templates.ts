@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasTemplate, type DocTemplate, type TemplateDocData } from '@/lib/documents/template'
+import { draftFromRequest } from '@/lib/documents/quote-request-draft'
 
 const NON_STAFF = ['cleaner', 'client', 'manager']
 
@@ -87,4 +88,24 @@ export async function saveTemplateDocAction(id: string, patch: { clientName: str
   if (error) return { error: error.message }
   revalidatePath('/documents')
   return { success: true }
+}
+
+// ─── Redo a website quote request's draft with the current template rules ────
+// Makes a fresh draft from the stored request, then removes the old one if it
+// was never sent.
+
+export async function redraftFromRequestAction(id: string): Promise<{ id: string; template: string } | { error: string }> {
+  const denied = await requireStaff()
+  if (denied) return { error: denied }
+  const db = createAdminClient() as any
+  const { data: doc } = await db.from('proposal_documents').select('id, status, data').eq('id', id).single()
+  const stored = doc?.data?.quoteRequest
+  if (!stored) return { error: 'This draft wasn’t made from a website quote request.' }
+  const { kind: _kind, ...req } = stored
+  const res = await draftFromRequest(db, { ...req, fields: Array.isArray(req.fields) ? req.fields : [] })
+  if ('error' in res) return { error: res.error }
+  if ('skipped' in res) return { error: res.skipped }
+  if (doc.status === 'draft') await db.from('proposal_documents').delete().eq('id', id)
+  revalidatePath('/documents')
+  return { id: res.id, template: res.template }
 }

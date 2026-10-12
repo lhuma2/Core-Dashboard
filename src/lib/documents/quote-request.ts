@@ -11,7 +11,7 @@ import type { ClientType } from './quote'
 export type QuoteRequestKind = 'residential_one_off' | 'residential_regular' | 'end_of_lease' | 'commercial'
 
 export const QUOTE_REQUEST_KIND_LABELS: Record<QuoteRequestKind, string> = {
-  residential_one_off: 'Residential one-off',
+  residential_one_off: 'Residential one-off (deep clean)',
   residential_regular: 'Residential regular',
   end_of_lease: 'End of lease',
   commercial: 'Commercial',
@@ -54,30 +54,34 @@ export function kindOfRequest(r: QuoteRequest): QuoteRequestKind | null {
   return null
 }
 
-/** Best guess at which kind of request a template is for, from its name. */
+// Only quote templates are ever used. Agreements, contracts and other company
+// documents are never picked, even when tagged.
+const NOT_A_QUOTE = /agreement|contract|terms|conditions|\bsop\b|procedure|policy|capability|subcontract|induction|swms|safety|invoice/
+
+export function isQuoteTemplateName(name: string): boolean {
+  return !NOT_A_QUOTE.test((name ?? '').toLowerCase())
+}
+
+/** Best guess at which kind of request a quote template is for, from its name. */
 export function kindFromTemplateName(name: string): QuoteRequestKind | null {
   const n = (name ?? '').toLowerCase()
-  if (/end of lease|end-of-lease|bond/.test(n)) return 'end_of_lease'
-  if (/commercial/.test(n)) return 'commercial'
-  if (/residential|home|house/.test(n)) {
-    if (/one[\s-]?off|once/.test(n)) return 'residential_one_off'
-    if (/regular|recurring|weekly|fortnightly|monthly|ongoing/.test(n)) return 'residential_regular'
-  }
+  if (!isQuoteTemplateName(n)) return null
+  if (/end of lease|end-of-lease|bond|vacate|move[\s-]?out/.test(n)) return 'end_of_lease'
+  if (/commercial|office/.test(n)) return 'commercial'
+  // A one-off residential clean is a deep clean.
+  if (/deep|one[\s-]?off|once[\s-]?off|spring/.test(n)) return 'residential_one_off'
+  if (/residential|home|house|regular|recurring|weekly|fortnightly|monthly|ongoing|maintenance/.test(n)) return 'residential_regular'
   return null
 }
 
-function isResidentialName(name: string): boolean {
-  return /residential|home|house/.test((name ?? '').toLowerCase())
-}
-
-/** The template for a request: one tagged for it, else one whose name says so. */
+/** The quote template for a request: one tagged for it, else one whose name says so. */
 export function pickTemplate<T extends { name: string; template: DocTemplate | null }>(docs: T[], kind: QuoteRequestKind): T | null {
-  const usable = docs.filter((d) => d.template && Array.isArray(d.template.fields) && d.template.fields.length > 0)
-  const untagged = usable.filter((d) => !d.template!.autoDraftFor)
+  const usable = docs.filter((d) => isQuoteTemplateName(d.name) && d.template && Array.isArray(d.template.fields) && d.template.fields.length > 0)
+  const guessed = usable.filter((d) => !d.template!.autoDraftFor && kindFromTemplateName(d.name) === kind)
   return usable.find((d) => d.template!.autoDraftFor === kind)
-    ?? untagged.find((d) => kindFromTemplateName(d.name) === kind)
-    // A residential template that doesn't say one-off or regular covers both.
-    ?? (kind.startsWith('residential_') ? untagged.find((d) => isResidentialName(d.name) && kindFromTemplateName(d.name) == null) : undefined)
+    // Prefer a name that says it's a quote or proposal.
+    ?? guessed.find((d) => /quote|proposal/i.test(d.name))
+    ?? guessed[0]
     ?? null
 }
 
@@ -122,7 +126,7 @@ export function valueForField(f: TemplateField, r: QuoteRequest, ref: string, no
   if (/size|sqm|square/.test(l)) return row(r, /size|sqm/) || null
   if (/frequen/.test(l)) return row(r, /frequen/) || null
   if (/extra|add-?on/.test(l)) return row(r, /extras/) || null
-  if (/service|clean type|type of clean/.test(l)) return r.service
+  if (/service|clean type|type of clean/.test(l)) return kindOfRequest(r) === 'residential_one_off' ? 'Deep Clean' : r.service
   if (/start|preferred|clean(ing)? date|move|booking|service date/.test(l)) {
     const d = row(r, /start date|cleaning date|move-out|preferred/)
     return d ? prettyDate(d) : null

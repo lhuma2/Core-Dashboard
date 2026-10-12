@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Check, Loader2, Download, Send, RotateCcw, PenLine, AlertCircle } from 'lucide-react'
 import { fieldValue, isChanged, sortFields, type TemplateDocData } from '@/lib/documents/template'
 import { CLIENT_TYPE_LABELS, clientTypeOf, quoteToAgreementFields, type ClientType } from '@/lib/documents/quote'
 import type { QuoteRequestData } from '@/lib/documents/quote-request'
-import { saveTemplateDocAction } from '@/actions/doc-templates'
+import { saveTemplateDocAction, redraftFromRequestAction } from '@/actions/doc-templates'
 import { saveFlattenedPdfAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
 import { usePdfPages } from './usePdfPages'
@@ -131,7 +132,7 @@ export function TemplateDocEditor({
               </span>
             </label>
           )}
-          {data.quoteRequest && <QuoteRequestPanel r={data.quoteRequest} />}
+          {data.quoteRequest && <QuoteRequestPanel id={id} r={data.quoteRequest} templateName={data.templateName} canRedo={status === 'draft' || !status} />}
           <div className="border-t border-gray-100" />
           {textFields.length === 0 && <p className="text-sm text-gray-400">This template has no text fields.</p>}
           {textFields.map((f) => {
@@ -214,7 +215,16 @@ export function TemplateDocEditor({
 }
 
 // What the client asked for on the website, for anything the template has no field for.
-function QuoteRequestPanel({ r }: { r: QuoteRequestData }) {
+function QuoteRequestPanel({ id, r, templateName, canRedo }: { id: string; r: QuoteRequestData; templateName: string; canRedo: boolean }) {
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
+  async function redo() {
+    setBusy(true); setNote(null)
+    const res = await redraftFromRequestAction(id)
+    if ('error' in res) { setBusy(false); setNote(res.error); return }
+    router.replace(`/documents/${res.id}`)
+  }
   const rows = [
     ['Service', r.service], ['Phone', r.phone], ['Email', r.email], ['Region', r.region ?? ''],
     ...r.fields.filter((f) => !/landing page|click id/i.test(f.label)).map((f) => [f.label, f.value]),
@@ -230,6 +240,17 @@ function QuoteRequestPanel({ r }: { r: QuoteRequestData }) {
           <div key={k} className="flex gap-2"><span className="w-28 flex-shrink-0 text-blue-800/70">{k}</span><span className="break-words min-w-0">{v}</span></div>
         ))}
         {r.message && <p className="pt-1 whitespace-pre-line"><span className="text-blue-800/70">Message: </span>{r.message}</p>}
+        <div className="pt-2 mt-1 border-t border-blue-100 space-y-1.5">
+          <p className="text-blue-800/80">Template: <span className="font-semibold text-blue-900">{templateName}</span></p>
+          {canRedo && (
+            <button onClick={redo} disabled={busy}
+              title="Makes a new draft from this request with the current template rules and removes this one"
+              className="inline-flex items-center gap-1.5 font-semibold text-blue-700 hover:text-blue-900 disabled:opacity-50">
+              {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />} Redo draft
+            </button>
+          )}
+          {note && <p className="text-amber-700">{note}</p>}
+        </div>
       </div>
     </details>
   )
