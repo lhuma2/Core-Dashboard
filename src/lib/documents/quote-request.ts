@@ -1,0 +1,131 @@
+// Website quote requests → draft proposals.
+//
+// The website's quote form posts each new request to /api/quote-requests. The
+// hub picks the template set up for that kind of request, fills in every field
+// it can recognise from the field's label and leaves the prices blank, so the
+// owner only has to price it and press Send.
+
+import type { DocTemplate, TemplateField } from './template'
+import type { ClientType } from './quote'
+
+export type QuoteRequestKind = 'residential_one_off' | 'residential_regular' | 'end_of_lease' | 'commercial'
+
+export const QUOTE_REQUEST_KIND_LABELS: Record<QuoteRequestKind, string> = {
+  residential_one_off: 'Residential one-off',
+  residential_regular: 'Residential regular',
+  end_of_lease: 'End of lease',
+  commercial: 'Commercial',
+}
+
+export const CLIENT_TYPE_FOR_KIND: Record<QuoteRequestKind, ClientType> = {
+  residential_one_off: 'residential',
+  residential_regular: 'residential',
+  end_of_lease: 'end_of_lease',
+  commercial: 'commercial',
+}
+
+/** A request as the website sends it: contact details plus labelled rows. */
+export interface QuoteRequest {
+  name: string
+  email: string
+  phone: string
+  service: string
+  region?: string
+  message?: string
+  fields: { label: string; value: string }[]
+  receivedAt: string
+}
+
+/** What a draft made from a request remembers, shown above the editor. */
+export type QuoteRequestData = QuoteRequest & { kind: QuoteRequestKind }
+
+/** The row whose label matches, e.g. row(r, /bedroom/) → "3". */
+function row(r: QuoteRequest, re: RegExp): string {
+  return r.fields.find((f) => re.test(f.label.toLowerCase()))?.value?.trim() ?? ''
+}
+
+export function kindOfRequest(r: QuoteRequest): QuoteRequestKind | null {
+  const s = r.service.toLowerCase()
+  if (/end of lease|bond/.test(s)) return 'end_of_lease'
+  if (/commercial/.test(s)) return 'commercial'
+  if (/residential/.test(s)) {
+    return /one[\s-]?off|once/i.test(row(r, /frequen/)) ? 'residential_one_off' : 'residential_regular'
+  }
+  return null
+}
+
+/** Best guess at which kind of request a template is for, from its name. */
+export function kindFromTemplateName(name: string): QuoteRequestKind | null {
+  const n = (name ?? '').toLowerCase()
+  if (/end of lease|end-of-lease|bond/.test(n)) return 'end_of_lease'
+  if (/commercial/.test(n)) return 'commercial'
+  if (/residential|home|house/.test(n)) {
+    if (/one[\s-]?off|once/.test(n)) return 'residential_one_off'
+    if (/regular|recurring|weekly|fortnightly|monthly|ongoing/.test(n)) return 'residential_regular'
+  }
+  return null
+}
+
+/** The template for a request: one tagged for it, else one whose name says so. */
+export function pickTemplate<T extends { name: string; template: DocTemplate | null }>(docs: T[], kind: QuoteRequestKind): T | null {
+  const usable = docs.filter((d) => d.template && Array.isArray(d.template.fields) && d.template.fields.length > 0)
+  return usable.find((d) => d.template!.autoDraftFor === kind)
+    ?? usable.find((d) => !d.template!.autoDraftFor && kindFromTemplateName(d.name) === kind)
+    ?? null
+}
+
+const auDate = (d: Date) => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Brisbane' })
+
+/** "2026-10-15" → "15 October 2026"; anything else is left as written. */
+function prettyDate(v: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v)
+  return m ? auDate(new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], 2))) : v
+}
+
+/**
+ * What the request says for a template field, judged from the field's label.
+ * '' = a price, left blank to fill in. null = nothing to say, keep the template's text.
+ */
+export function valueForField(f: TemplateField, r: QuoteRequest, ref: string, now: Date): string | null {
+  const l = (f.label ?? '').toLowerCase().trim()
+  if (!l) return null
+  const address = row(r, /^(suburb \/ )?address$|^suburb/)
+  const premises = address || r.region || row(r, /region/)
+
+  if (/hours/.test(l)) return row(r, /hours/) || null
+  if (/living/.test(l)) return row(r, /living/) || null
+  if (/price|fee|cost|total|amount|investment|\brate|\$|gst|subtotal|per (clean|visit|hour)/.test(l)) return ''
+  if (/\bref|quote (no|number|#)|proposal (no|number|#)/.test(l)) return ref
+  if (/e-?mail/.test(l)) return r.email
+  if (/phone|mobile|contact number/.test(l)) return r.phone
+  if (/business|company/.test(l)) return row(r, /business name/) || r.name
+  if (/name|client|customer|prepared for|attention|attn/.test(l)) return r.name
+  if (/address|premises|site|location|property address/.test(l)) return premises || null
+  if (/suburb|region|area/.test(l)) return address || r.region || row(r, /region/) || null
+  if (/bed/.test(l)) return row(r, /bedroom/) || null
+  if (/bath/.test(l)) return row(r, /bathroom/) || null
+  if (/kitchen/.test(l)) return row(r, /kitchen/) || null
+  if (/property|premises type|home type/.test(l)) return row(r, /property type|premises type/) || null
+  if (/size|sqm|square/.test(l)) return row(r, /size|sqm/) || null
+  if (/frequen/.test(l)) return row(r, /frequen/) || null
+  if (/extra|add-?on/.test(l)) return row(r, /extras/) || null
+  if (/service|clean type|type of clean/.test(l)) return r.service
+  if (/start|preferred|clean(ing)? date|move|booking|service date/.test(l)) {
+    const d = row(r, /start date|cleaning date|move-out|preferred/)
+    return d ? prettyDate(d) : null
+  }
+  if (/date|issued|valid from/.test(l)) return auDate(now)
+  if (/note|message|comment|special|request/.test(l)) return r.message?.trim() || null
+  return null
+}
+
+/** Field values for a draft made from a request. Fields it can't fill keep the template's text. */
+export function valuesFromRequest(t: DocTemplate, r: QuoteRequest, ref: string, now = new Date()): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const f of t.fields) {
+    if (f.kind !== 'text') continue
+    const v = valueForField(f, r, ref, now)
+    if (v != null) out[f.id] = f.multiline ? v : v.replace(/\s*\n\s*/g, ' ')
+  }
+  return out
+}

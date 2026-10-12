@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Check, Loader2, Download, Send, RotateCcw, PenLine, AlertCircle } from 'lucide-react'
 import { fieldValue, isChanged, sortFields, type TemplateDocData } from '@/lib/documents/template'
 import { CLIENT_TYPE_LABELS, clientTypeOf, quoteToAgreementFields, type ClientType } from '@/lib/documents/quote'
+import type { QuoteRequestData } from '@/lib/documents/quote-request'
 import { saveTemplateDocAction } from '@/actions/doc-templates'
 import { saveFlattenedPdfAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
@@ -106,7 +107,7 @@ export function TemplateDocEditor({
           )}
         </div>
       )}
-      {showSend && <SendCompanyDocModal id={id} onClose={() => setShowSend(false)} quote={isQuote ? { clientType, accepted: status === 'accepted', agreement: quoteToAgreementFields({ ...data, clientName, values }) } : undefined} />}
+      {showSend && <SendCompanyDocModal id={id} defaultEmail={data.quoteRequest?.email} onClose={() => setShowSend(false)} quote={isQuote ? { clientType, accepted: status === 'accepted', agreement: quoteToAgreementFields({ ...data, clientName, values }) } : undefined} />}
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left: one text box per editable part of the template */}
@@ -130,6 +131,7 @@ export function TemplateDocEditor({
               </span>
             </label>
           )}
+          {data.quoteRequest && <QuoteRequestPanel r={data.quoteRequest} />}
           <div className="border-t border-gray-100" />
           {textFields.length === 0 && <p className="text-sm text-gray-400">This template has no text fields.</p>}
           {textFields.map((f) => {
@@ -208,5 +210,27 @@ export function TemplateDocEditor({
         </div>
       </div>
     </div>
+  )
+}
+
+// What the client asked for on the website, for anything the template has no field for.
+function QuoteRequestPanel({ r }: { r: QuoteRequestData }) {
+  const rows = [
+    ['Service', r.service], ['Phone', r.phone], ['Email', r.email], ['Region', r.region ?? ''],
+    ...r.fields.filter((f) => !/landing page|click id/i.test(f.label)).map((f) => [f.label, f.value]),
+  ].filter(([, v]) => v)
+  return (
+    <details open className="rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-900">
+      <summary className="cursor-pointer px-3 py-2 font-semibold">
+        Website quote request · {new Date(r.receivedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Brisbane' })}
+      </summary>
+      <div className="px-3 pb-3 space-y-1">
+        <p className="text-blue-800/80 pb-1">Filled in from the request. Add the prices, then press Send.</p>
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex gap-2"><span className="w-28 flex-shrink-0 text-blue-800/70">{k}</span><span className="break-words min-w-0">{v}</span></div>
+        ))}
+        {r.message && <p className="pt-1 whitespace-pre-line"><span className="text-blue-800/70">Message: </span>{r.message}</p>}
+      </div>
+    </details>
   )
 }

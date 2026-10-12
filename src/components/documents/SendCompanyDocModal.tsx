@@ -9,13 +9,14 @@ import type { AgreementData } from '@/lib/documents/agreement'
 
 // `quote` is set for proposals: they can go out as a quote the client accepts
 // (which issues a prefilled service agreement) or, as before, for signature.
-export function SendCompanyDocModal({ id, onClose, quote }: {
+export function SendCompanyDocModal({ id, onClose, quote, defaultEmail }: {
   id: string
   onClose: () => void
+  defaultEmail?: string
   quote?: { clientType: ClientType; accepted: boolean; agreement?: Partial<AgreementData> }
 }) {
   const [mode, setMode] = useState<'quote' | 'sign'>(quote && !quote.accepted ? 'quote' : 'sign')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(defaultEmail ?? '')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)

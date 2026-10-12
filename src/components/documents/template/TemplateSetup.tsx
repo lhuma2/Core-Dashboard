@@ -9,6 +9,7 @@ import {
 } from '@/lib/documents/template'
 import { saveCompanyDocTemplateAction } from '@/actions/doc-templates'
 import { AGREEMENT_KEY_OPTIONS, guessAgreementKey } from '@/lib/documents/quote'
+import { QUOTE_REQUEST_KIND_LABELS, kindFromTemplateName, type QuoteRequestKind } from '@/lib/documents/quote-request'
 import { usePdfPages, type PdfPage, type TextRun } from './usePdfPages'
 import { TemplatePage, useTemplateFonts } from './TemplatePage'
 
@@ -23,6 +24,7 @@ export function TemplateSetup({
 }: { companyDocId: string; name: string; fileUrl: string; initial: DocTemplate | null }) {
   const { pages, message } = usePdfPages(fileUrl, { scale: 2, forSetup: true })
   const [fields, setFields] = useState<TemplateField[]>(initial?.fields ?? [])
+  const [autoDraftFor, setAutoDraftFor] = useState<DocTemplate['autoDraftFor']>(initial?.autoDraftFor)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [redrawId, setRedrawId] = useState<string | null>(null)
   const [showOriginal, setShowOriginal] = useState(false)
@@ -44,11 +46,12 @@ export function TemplateSetup({
     const t = setTimeout(async () => {
       const res = await saveCompanyDocTemplateAction(companyDocId, {
         version: 1, pages: pages.map((p) => ({ w: p.w, h: p.h })), fields,
+        ...(autoDraftFor ? { autoDraftFor } : {}),
       })
       if (res?.error) { setSaved('error'); setErr(res.error) } else { setSaved('saved'); setErr(null) }
     }, 800)
     return () => clearTimeout(t)
-  }, [fields]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fields, autoDraftFor]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const update = (id: string, patch: Partial<TemplateField>) =>
     setFields((fs) => fs.map((f) => (f.id === id ? { ...f, ...patch } : f)))
@@ -128,6 +131,7 @@ export function TemplateSetup({
   const addField = (f: TemplateField) => { setFields((fs) => [...fs, f]); setSelectedId(f.id) }
 
   const ordered = sortFields(fields)
+  const nameGuess = kindFromTemplateName(name)
   const hasRuns = pages.some((p) => (p.runs?.length ?? 0) > 0)
 
   return (
@@ -164,6 +168,20 @@ export function TemplateSetup({
             {hasRuns && <p>This PDF has real text, so you can also <span className="font-semibold text-gray-700">click a line of text</span> to pick up its exact font and size.</p>}
             <p>Type what the document says in <span className="font-semibold text-gray-700">Template text</span>, then match the font until it looks the same. Use <span className="font-semibold text-gray-700">Show original</span> to compare.</p>
           </div>
+
+          <label className="block rounded-xl border border-gray-200 p-3 space-y-1.5">
+            <span className="text-xs font-semibold text-gray-700">Website quote requests</span>
+            <select className={input} value={autoDraftFor ?? ''} onChange={(e) => setAutoDraftFor((e.target.value || undefined) as DocTemplate['autoDraftFor'])}>
+              <option value="">{nameGuess ? `From the name: ${QUOTE_REQUEST_KIND_LABELS[nameGuess]}` : "From the name: not used"}</option>
+              <option value="none">Don&rsquo;t use for quote requests</option>
+              {(Object.keys(QUOTE_REQUEST_KIND_LABELS) as QuoteRequestKind[]).map((k) => (
+                <option key={k} value={k}>{QUOTE_REQUEST_KIND_LABELS[k]}</option>
+              ))}
+            </select>
+            <span className="block text-[11px] text-gray-400 leading-snug">
+              New requests of this kind from the website get a draft from this template, with every field filled in except the prices. Fields are matched by their label, e.g. &ldquo;Client name&rdquo;, &ldquo;Address&rdquo;, &ldquo;Bedrooms&rdquo;, &ldquo;Price&rdquo;.
+            </span>
+          </label>
 
           {ordered.length === 0 && <p className="text-sm text-gray-400 text-center py-6">No fields yet.</p>}
 

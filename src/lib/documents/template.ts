@@ -11,6 +11,8 @@
 // Shared by the setup screen, the proposal editor, the signing page and the
 // server-side PDF flattener.
 
+import type { QuoteRequestData } from './quote-request'
+
 export type FontCategory = 'sans' | 'serif' | 'mono' | 'script'
 export type FieldAlign = 'left' | 'center' | 'right'
 
@@ -49,6 +51,9 @@ export interface DocTemplate {
   version: 1
   pages: { w: number; h: number }[]
   fields: TemplateField[]
+  // Website quote requests of this kind get a draft made from this template
+  // (see lib/documents/quote-request.ts). Unset = guessed from the document's name; 'none' = never.
+  autoDraftFor?: 'residential_one_off' | 'residential_regular' | 'end_of_lease' | 'commercial' | 'none'
 }
 
 // What a proposal made from a template stores in proposal_documents.data.
@@ -65,6 +70,8 @@ export interface TemplateDocData {
   clientType?: 'commercial' | 'residential' | 'end_of_lease'
   quoteMode?: boolean
   acceptedAt?: string
+  // Set when the draft was made automatically from a website quote request.
+  quoteRequest?: QuoteRequestData
 }
 
 export function isTemplateDocData(data: any): data is TemplateDocData {
