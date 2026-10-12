@@ -1,5 +1,5 @@
 ﻿import type { CSSProperties } from 'react'
-import { AGREEMENT_CLAUSES, type AgreementData } from '@/lib/documents/agreement'
+import { AGREEMENT_CLAUSES, PROVIDER_INSURANCE, type AgreementData } from '@/lib/documents/agreement'
 import { clientTypeOf } from '@/lib/documents/quote'
 
 // Faithful recreation of the Service Agreement (7 × A4 pages).
@@ -107,7 +107,7 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
         <div style={{ marginTop: 46 }}>
           <div style={monoEyebrow}>Schedule of particulars</div>
           <h2 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 32, lineHeight: 1.06, letterSpacing: '-.025em', margin: 0 }}>Key terms.</h2>
-          <p style={{ margin: '14px 0 0', fontSize: 13.5, lineHeight: 1.6, color: '#64748B', maxWidth: 620 }}>These particulars form part of this Agreement and prevail over the general terms to the extent of any inconsistency. Complete each field for the engagement.</p>
+          <p style={{ margin: '14px 0 0', fontSize: 13.5, lineHeight: 1.6, color: '#64748B', maxWidth: 620 }}>These particulars form part of this Agreement and prevail over the general terms to the extent of any inconsistency.</p>
         </div>
         <div style={{ marginTop: 30, border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
           <PRow k="Service Provider">{data.providerName} · ABN {data.providerABN}</PRow>
@@ -119,6 +119,7 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
           <PRow k="Initial Term">{data.initialTerm}</PRow>
           <PRow k="Service Fee">{data.serviceFee}{!/gst/i.test(data.serviceFee ?? '') && <span style={{ color: '#94A3B8' }}> (incl. GST)</span>}</PRow>
           <PRow k="Payment Terms">{data.paymentTerms}</PRow>
+          <PRow k="Insurance">Public &amp; product liability {PROVIDER_INSURANCE.publicLiability} · {PROVIDER_INSURANCE.insurer} · Policy {PROVIDER_INSURANCE.policyNumber}</PRow>
           <PRow k="Price Review">Annually, in line with Queensland CPI, minimum 30 days&apos; written notice</PRow>
           <PRow k="Special Conditions" last>{data.specialConditions}</PRow>
         </div>
@@ -155,7 +156,7 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
         <div style={{ marginTop: 46 }}>
           <div style={monoEyebrow}>Schedule 1</div>
           <h2 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 30, lineHeight: 1.06, letterSpacing: '-.025em', margin: 0 }}>Scope of services.</h2>
-          <p style={{ margin: '14px 0 0', fontSize: 13, lineHeight: 1.6, color: '#64748B', maxWidth: 640 }}>The Services comprise the following inclusions at {data.premises}, performed {data.frequency}, together with any items in the accepted Proposal. The scope may be tailored by written agreement.</p>
+          <p style={{ margin: '14px 0 0', fontSize: 13, lineHeight: 1.6, color: '#64748B', maxWidth: 640 }}>The Services comprise the following inclusions at {data.premises}, at a frequency of {data.frequency}, together with any items in the accepted Proposal. The scope may be tailored by written agreement.</p>
         </div>
         <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 40px' }}>
           {data.scopeGroups.map((g, i) => <ScopeCol key={i} title={g.title} items={g.items} />)}
@@ -213,9 +214,6 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
             <div style={{ fontSize: 13, color: '#94A3B8' }}>{data.contactName} · {data.contactPhone} · {data.contactEmail}</div>
           </div>
           <img src={WORDMARK_WHITE} alt="Core Cleaning" style={{ height: 22, width: 'auto', opacity: 0.9 }} />
-        </div>
-        <div style={{ marginTop: 22, border: '1px dashed #CBD5E1', borderRadius: 10, padding: '14px 18px', fontSize: 11.5, lineHeight: 1.55, color: '#94A3B8' }}>
-          This document is a template provided for convenience. We recommend it is reviewed by your legal adviser before use to ensure it suits your circumstances.
         </div>
         <Foot n="07" />
       </section>
