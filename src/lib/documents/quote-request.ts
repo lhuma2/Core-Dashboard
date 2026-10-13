@@ -100,6 +100,20 @@ export function isPriceLabel(label: string): boolean {
 }
 
 /**
+ * A price field filled from the price the website worked out (residential requests
+ * only), judged from the label: GST alone, ex GST, or else the GST-inclusive price.
+ * Hourly rates are left blank, as is everything when the website sent no price.
+ */
+function priceFromRequest(l: string, r: QuoteRequest): string {
+  const exact = (label: string) => r.fields.find((f) => f.label.toLowerCase() === label)?.value?.trim() ?? ''
+  const inc = exact('price (inc gst)')
+  if (!inc || /\brate|per hour|hourly/.test(l)) return ''
+  if (/gst/.test(l) && !/inc|ex\b|excl|total|plus|\+/.test(l)) return exact('gst')
+  if (/\bex\b|ex[\s.-]*gst|excl|subtotal|plus gst|\+\s*gst/.test(l)) return exact('price (ex gst)')
+  return inc
+}
+
+/**
  * What the request says for a template field, judged from the field's label.
  * '' = a price, left blank to fill in. null = nothing to say, keep the template's text.
  */
@@ -111,7 +125,7 @@ export function valueForField(f: TemplateField, r: QuoteRequest, ref: string, no
 
   if (/hours/.test(l)) return row(r, /hours/) || null
   if (/living/.test(l)) return row(r, /living/) || null
-  if (isPriceLabel(l)) return ''
+  if (isPriceLabel(l)) return priceFromRequest(l, r)
   if (/\bref|quote (no|number|#)|proposal (no|number|#)/.test(l)) return ref
   if (/e-?mail/.test(l)) return r.email
   if (/phone|mobile|contact number/.test(l)) return r.phone
