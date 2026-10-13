@@ -99,15 +99,19 @@ export function isPriceLabel(label: string): boolean {
   return !/hours/.test(l) && /price|fee|cost|total|amount|investment|\brate|\$|gst|subtotal|per (clean|visit|hour)/.test(l)
 }
 
+// Prices for anything but the clean itself (windows, carpets, extras…), left for the owner.
+const NOT_THE_CLEAN = /window|carpet|oven|blind|wall|fridge|mattress|sofa|couch|upholster|pressure|gutter|range ?hood|balcon|garage|extra|add-?on|optional|additional|deposit|discount|travel|call[\s-]?out/
+
 /**
  * A price field filled from the price the website worked out (residential requests
  * only), judged from the label: GST alone, ex GST, or else the GST-inclusive price.
- * Hourly rates are left blank, as is everything when the website sent no price.
+ * Hourly rates and other services' prices are left blank, as is everything when the
+ * website sent no price.
  */
 function priceFromRequest(l: string, r: QuoteRequest): string {
   const exact = (label: string) => r.fields.find((f) => f.label.toLowerCase() === label)?.value?.trim() ?? ''
   const inc = exact('price (inc gst)')
-  if (!inc || /\brate|per hour|hourly/.test(l)) return ''
+  if (!inc || /\brate|per hour|hourly/.test(l) || NOT_THE_CLEAN.test(l)) return ''
   if (/gst/.test(l) && !/inc|ex\b|excl|total|plus|\+/.test(l)) return exact('gst')
   if (/\bex\b|ex[\s.-]*gst|excl|subtotal|plus gst|\+\s*gst/.test(l)) return exact('price (ex gst)')
   return inc
