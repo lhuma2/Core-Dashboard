@@ -8,6 +8,7 @@ import { CompanyDocEditor } from '@/components/documents/CompanyDocEditor'
 import { AgreementEditor } from '@/components/documents/AgreementEditor'
 import { TemplateDocEditor } from '@/components/documents/template/TemplateDocEditor'
 import { isTemplateDocData } from '@/lib/documents/template'
+import { followUpState, quotePhone } from '@/lib/documents/follow-up'
 import { withProposalDefaults } from '@/lib/documents/proposal'
 import { withAgreementDefaults } from '@/lib/documents/agreement'
 import { ensureSignCode } from '@/actions/signing'
@@ -49,7 +50,9 @@ export default async function DocumentEditorPage({ params }: { params: { id: str
       ? await db.from('proposal_documents').select('id, status').eq('source_id', doc.id).eq('kind', 'agreement')
         .order('created_at', { ascending: true }).limit(1).maybeSingle()
       : { data: null }
-    return <TemplateDocEditor id={doc.id} kind={doc.kind} pdfUrl={doc.pdf_url} data={doc.data} status={doc.status} agreement={agr ?? null} />
+    const fu = doc.kind === 'proposal' ? followUpState(doc) : null
+    return <TemplateDocEditor id={doc.id} kind={doc.kind} pdfUrl={doc.pdf_url} data={doc.data} status={doc.status} agreement={agr ?? null}
+      followUp={fu ? { state: fu, phone: quotePhone(doc.data) } : null} />
   }
   // Older company-document proposals (fields dragged onto the PDF).
   if (doc.pdf_url) {

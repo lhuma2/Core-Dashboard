@@ -10,6 +10,8 @@ import type { QuoteRequestData } from '@/lib/documents/quote-request'
 import { saveTemplateDocAction, redraftFromRequestAction } from '@/actions/doc-templates'
 import { saveFlattenedPdfAction } from '@/actions/proposal-docs'
 import { SendCompanyDocModal } from '@/components/documents/SendCompanyDocModal'
+import { FollowUpButton } from '@/components/documents/FollowUpButton'
+import type { FollowUpState } from '@/lib/documents/follow-up'
 import { usePdfPages } from './usePdfPages'
 import { TemplatePage, useTemplateFonts } from './TemplatePage'
 
@@ -17,8 +19,12 @@ import { TemplatePage, useTemplateFonts } from './TemplatePage'
 // template: text boxes on the left, the document on the right, and every edit
 // drawn straight onto the page in the template's own font and colour.
 export function TemplateDocEditor({
-  id, kind, pdfUrl, data, status, agreement,
-}: { id: string; kind?: string; pdfUrl: string; data: TemplateDocData; status?: string; agreement?: { id: string; status: string } | null }) {
+  id, kind, pdfUrl, data, status, agreement, followUp,
+}: {
+  id: string; kind?: string; pdfUrl: string; data: TemplateDocData; status?: string
+  agreement?: { id: string; status: string } | null
+  followUp?: { state: FollowUpState; phone: string } | null
+}) {
   const isQuote = kind === 'proposal'
   const fields = sortFields(data.template.fields)
   const { pages, message } = usePdfPages(pdfUrl)
@@ -106,6 +112,7 @@ export function TemplateDocEditor({
           {agreement && (
             <Link href={`/documents/${agreement.id}`} className="font-semibold underline underline-offset-2">Open the service agreement</Link>
           )}
+          {followUp && <FollowUpButton id={id} clientName={clientName} phone={followUp.phone} state={followUp.state} />}
         </div>
       )}
       {showSend && <SendCompanyDocModal id={id} defaultEmail={data.quoteRequest?.email} onClose={() => setShowSend(false)} quote={isQuote ? { clientType, accepted: status === 'accepted', agreement: quoteToAgreementFields({ ...data, clientName, values }) } : undefined} />}

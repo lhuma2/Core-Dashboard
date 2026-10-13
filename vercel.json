@@ -31,6 +31,10 @@
     {
       "path": "/api/cron/tenders-refresh",
       "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/cron/quote-followups",
+      "schedule": "30 22 * * *"
     }
   ]
 }

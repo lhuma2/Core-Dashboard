@@ -10,8 +10,10 @@ import { RenameDocButton } from '@/components/documents/RenameDocButton'
 import { UploadCompanyDocButton } from '@/components/documents/UploadCompanyDocButton'
 import { DeleteCompanyDocButton } from '@/components/documents/DeleteCompanyDocButton'
 import { SignedDocsFolders } from '@/components/documents/SignedDocsFolders'
-import { FileText, FilePen, ChevronRight, FileDown, LayoutTemplate } from 'lucide-react'
+import { FileText, FilePen, ChevronRight, FileDown, LayoutTemplate, Phone } from 'lucide-react'
 import { hasTemplate } from '@/lib/documents/template'
+import { FOLLOW_UP_STATUSES, brisbaneDate, followUpState, quotePhone, type FollowUpState } from '@/lib/documents/follow-up'
+import { FollowUpButton } from '@/components/documents/FollowUpButton'
 
 const KIND_LABEL: Record<string, string> = {
   proposal: 'Proposal', agreement: 'Service Agreement', one_off: 'One-Off Agreement', capability: 'Capability Statement',
@@ -37,6 +39,20 @@ export default async function DocumentsPage() {
     .order('updated_at', { ascending: false })
 
   const all: any[] = docs ?? []
+
+  // Sent quotes waiting on the client get follow-up calls.
+  const { data: sentRows } = await db
+    .from('proposal_documents')
+    .select('id, status, sent_at, data')
+    .eq('kind', 'proposal')
+    .in('status', FOLLOW_UP_STATUSES)
+  const today = brisbaneDate()
+  const followUps = new Map<string, { state: FollowUpState; phone: string }>()
+  for (const r of sentRows ?? []) {
+    const state = followUpState(r, today)
+    if (state) followUps.set(r.id, { state, phone: quotePhone(r.data) })
+  }
+  const dueCount = Array.from(followUps.values()).filter((f) => f.state.due).length
   // Active documents up top; signed ones live in the folders section below.
   const list: any[] = all.filter((d) => d.status !== 'signed')
 
@@ -97,6 +113,13 @@ export default async function DocumentsPage() {
         </div>
       </div>
 
+      {dueCount > 0 && (
+        <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
+          <Phone className="w-4 h-4 flex-shrink-0" />
+          {dueCount === 1 ? 'One quote is due a follow-up call today.' : `${dueCount} quotes are due a follow-up call today.`} Press Follow up on it below.
+        </div>
+      )}
+
       {list.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-200 py-16 text-center">
           <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
@@ -122,6 +145,9 @@ export default async function DocumentsPage() {
                   </span>
                   <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
                 </Link>
+                {followUps.has(d.id) && (
+                  <FollowUpButton id={d.id} clientName={d.client_name || d.title || ''} phone={followUps.get(d.id)!.phone} state={followUps.get(d.id)!.state} compact />
+                )}
                 {d.status !== 'draft' && <RenameDocButton id={d.id} name={d.title || d.client_name || ''} />}
                 <DeleteDocButton id={d.id} />
               </div>

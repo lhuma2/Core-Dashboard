@@ -85,8 +85,10 @@ export async function saveProposalDocAction(id: string, data: ProposalData, snap
   const denied = await requireStaff()
   if (denied) return { error: denied }
   const db = createAdminClient() as any
+  // The editor doesn't know about logged follow-up calls; keep them.
+  const { data: cur } = await db.from('proposal_documents').select('data').eq('id', id).maybeSingle()
   const { error } = await db.from('proposal_documents').update({
-    data,
+    data: cur?.data?.followUps ? { ...data, followUps: cur.data.followUps } : data,
     client_name: data.clientName,
     ref_number: data.refNumber,
   }).eq('id', id)
@@ -264,7 +266,8 @@ export async function duplicateProposalDocAction(id: string) {
   const { data: orig } = await db.from('proposal_documents').select('*').eq('id', id).single()
   if (!orig) return { error: 'Document not found' }
   const ref = nextRef(orig.kind === 'proposal' ? 'DC-PROP' : 'DC-DOC')
-  const data = { ...(orig.data ?? {}), refNumber: ref }
+  const { followUps: _calls, ...origData } = orig.data ?? {}
+  const data = { ...origData, refNumber: ref }
   const { error } = await db.from('proposal_documents').insert({
     kind: orig.kind, status: 'draft', ref_number: ref,
     client_name: orig.client_name, client_id: orig.client_id, data,
@@ -292,8 +295,9 @@ export async function restoreVersionAction(documentId: string, versionId: string
   const db = createAdminClient() as any
   const { data: v } = await db.from('proposal_document_versions').select('data').eq('id', versionId).single()
   if (!v) return { error: 'Version not found' }
+  const { data: cur } = await db.from('proposal_documents').select('data').eq('id', documentId).maybeSingle()
   await db.from('proposal_documents').update({
-    data: v.data, client_name: v.data?.clientName, ref_number: v.data?.refNumber,
+    data: cur?.data?.followUps ? { ...v.data, followUps: cur.data.followUps } : v.data, client_name: v.data?.clientName, ref_number: v.data?.refNumber,
   }).eq('id', documentId)
   revalidatePath(`/documents/${documentId}`)
   return { success: true }
