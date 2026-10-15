@@ -115,7 +115,7 @@ export function TemplateDocEditor({
           {followUp && <FollowUpButton id={id} clientName={clientName} phone={followUp.phone} state={followUp.state} />}
         </div>
       )}
-      {showSend && <SendCompanyDocModal id={id} defaultEmail={data.quoteRequest?.email} onClose={() => setShowSend(false)} quote={isQuote ? { clientType, accepted: status === 'accepted', agreement: quoteToAgreementFields({ ...data, clientName, values }) } : undefined} />}
+      {showSend && <SendCompanyDocModal id={id} defaultEmail={data.quoteRequest?.email} onClose={() => setShowSend(false)} quote={isQuote ? { clientType, accepted: status === 'accepted', agreement: quoteToAgreementFields({ ...data, clientName, values, clientType }) } : undefined} />}
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left: one text box per editable part of the template */}

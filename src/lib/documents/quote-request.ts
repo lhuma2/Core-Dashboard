@@ -103,6 +103,15 @@ export function isPriceLabel(label: string): boolean {
 const NOT_THE_CLEAN = /window|carpet|oven|blind|wall|fridge|mattress|sofa|couch|upholster|pressure|gutter|range ?hood|balcon|garage|extra|add-?on|optional|additional|deposit|discount|travel|call[\s-]?out/
 
 /**
+ * An extra on top of the clean itself (blinds, oven, carpets…) with its own price: a
+ * price label, or any extra whose value is a dollar amount. Deposits and discounts aren't extras.
+ */
+export function isExtraPrice(label: string, value = ''): boolean {
+  const l = (label ?? '').toLowerCase()
+  return NOT_THE_CLEAN.test(l) && !/deposit|discount/.test(l) && (isPriceLabel(l) || /^\s*\$/.test(value))
+}
+
+/**
  * A price field filled from the price the website worked out (residential requests
  * only), judged from the label: GST alone, ex GST, or else the GST-inclusive price.
  * Hourly rates and other services' prices are left blank, as is everything when the
