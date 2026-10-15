@@ -81,6 +81,26 @@ export const AGREEMENT_CLAUSES: { n: number; title: string; body: string }[] = [
   { n: 19, title: 'General', body: 'This Agreement is governed by the laws of Queensland and the parties submit to the courts of that State. It constitutes the entire agreement between the parties and supersedes prior discussions. Any variation must be in writing and signed by both parties. A failure to enforce a term is not a waiver of it. If any provision is unenforceable, it is severed and the remainder continues in force. Notices must be in writing and sent to the addresses in the Particulars. This Agreement may be executed in counterparts and by electronic signature.' },
 ]
 
+// End of lease agreements are a one-off clean, so the clauses about an ongoing
+// term, annual price reviews and early termination are swapped for one-off terms,
+// payment before completion and the 72-hour re-clean guarantee. Every other clause
+// is shared with the standard agreement.
+export const END_OF_LEASE_PAYMENT_TERMS = 'Payment in full is due before completion of the clean'
+export const END_OF_LEASE_TERM = 'One-off end of lease clean'
+
+const END_OF_LEASE_OVERRIDES: Record<number, { title: string; body: string }> = {
+  2: { title: 'Engagement & Term', body: 'The Client engages the Provider to perform a one-off end of lease clean at the Premises on the Commencement Date. This Agreement ends once the Services, including any re-clean under clause 4, are complete and the Fees are paid. The Provider performs the Services as an independent contractor; nothing in this Agreement creates a partnership, joint venture or employment relationship.' },
+  3: { title: 'Scope of Services & Variations', body: 'The Provider will perform the Services set out in the scope of works of the accepted Quote, which forms Schedule 1. Additional tasks requested on the day, or a property in materially worse condition than described when quoted, may incur extra charges, which the Provider will agree with the Client before carrying out the work.' },
+  4: { title: 'Service Standard & Re-clean Guarantee', body: 'The Provider will perform the Services with due care and skill, using trained and supervised personnel, to a standard suited to an end of lease inspection. <strong>If the Client, property manager or landlord identifies any item within the agreed scope that has not been cleaned to standard, and the Client notifies the Provider in writing within 72 hours of completion, the Provider will return and re-clean those items at no additional cost.</strong> The guarantee does not cover items outside the agreed scope, damage, fair wear and tear, or areas used or disturbed after the clean, and requires the Client to provide access to the Premises.' },
+  5: { title: 'Fees & Payment', body: 'The Client will pay the Fees specified in the Particulars. <strong>Payment in full is due before completion of the Services.</strong> The Provider issues a tax invoice by email, and may postpone the Services or withhold completion where payment has not been received. All amounts include GST unless stated otherwise.' },
+  7: { title: 'Fixed Price', body: 'The Fees are fixed for the Services as quoted and change only where the scope changes under clause 3.' },
+  8: { title: 'Client Responsibilities', body: 'The Client will provide safe access to the Premises, including keys or access codes, on the Commencement Date; ensure power, water and lighting are connected; ensure the Premises are vacated, with furniture, belongings and rubbish removed unless otherwise agreed; notify the Provider of any site-specific hazards in advance; and secure any valuables remaining at the Premises.' },
+  14: { title: 'Cancellation & Termination', body: 'Either party may cancel this Agreement by written notice before the Commencement Date. Either party may terminate immediately if the other commits a material breach not remedied within 14 days of written notice, or becomes insolvent. On termination, the Client will pay for Services performed to the termination date and the Provider will return all keys and access devices.' },
+}
+
+export const END_OF_LEASE_CLAUSES: { n: number; title: string; body: string }[] =
+  AGREEMENT_CLAUSES.map((c) => ({ ...c, ...(END_OF_LEASE_OVERRIDES[c.n] ?? {}) }))
+
 export function withAgreementDefaults(data: Partial<AgreementData> | null | undefined): AgreementData {
   return {
     ...DEFAULT_AGREEMENT,

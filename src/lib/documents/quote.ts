@@ -8,7 +8,7 @@
 // clients are prompted on the Clients tab instead and never get a welcome page.
 
 import { fieldValue, isChanged, type TemplateDocData } from './template'
-import { DEFAULT_AGREEMENT, type AgreementData } from './agreement'
+import { DEFAULT_AGREEMENT, END_OF_LEASE_PAYMENT_TERMS, END_OF_LEASE_TERM, type AgreementData } from './agreement'
 
 export type ClientType = 'commercial' | 'residential' | 'end_of_lease'
 
@@ -91,16 +91,24 @@ export function quoteClientName(q: TemplateDocData): string {
 
 /** A full agreement for an accepted template quote. The start date is left for the client. */
 export function agreementFromQuote(q: TemplateDocData, agreementRef: string): AgreementData & Record<string, any> {
+  const type = clientTypeOf(q)
+  const fromQuote = quoteToAgreementFields(q)
   return {
     ...DEFAULT_AGREEMENT,
     // Never carry the sample particulars (Northpoint, $5,400 / month…) onto a
     // real client's agreement: anything the quote doesn't fill stays blank.
     clientName: '', clientABN: '', premises: '', frequency: '', serviceFee: '',
-    ...quoteToAgreementFields(q),
+    ...fromQuote,
+    // End of lease is a one-off clean, paid for before it's finished.
+    ...(type === 'end_of_lease' ? {
+      frequency: fromQuote.frequency || END_OF_LEASE_TERM,
+      initialTerm: END_OF_LEASE_TERM,
+      paymentTerms: END_OF_LEASE_PAYMENT_TERMS,
+    } : {}),
     proposalRef: q.refNumber ?? '',
     agreementRef,
     commencementDate: '',
-    clientType: clientTypeOf(q),
+    clientType: type,
     clientPicksStartDate: true,
   }
 }
