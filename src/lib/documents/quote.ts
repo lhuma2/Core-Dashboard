@@ -8,7 +8,8 @@
 // clients are prompted on the Clients tab instead and never get a welcome page.
 
 import { fieldValue, isChanged, type TemplateDocData } from './template'
-import { DEFAULT_AGREEMENT, type AgreementData } from './agreement'
+import { isExtraPrice } from './quote-request'
+import { DEFAULT_AGREEMENT, END_OF_LEASE_PAYMENT_TERMS, END_OF_LEASE_TERM, type AgreementData } from './agreement'
 
 export type ClientType = 'commercial' | 'residential' | 'end_of_lease'
 
@@ -62,12 +63,15 @@ export function guessAgreementKey(label: string): AgreementKey | null {
 /** The agreement particulars a template quote fills, field by field. */
 export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementData> {
   const out: Partial<Record<AgreementKey, string>> = {}
+  const eol = clientTypeOf(q) === 'end_of_lease'
   for (const f of q.template.fields) {
     if (f.kind !== 'text') continue
     const explicit = f.agreementKey
     if (explicit === 'none') continue
     const key = (explicit && KEYS.has(explicit) ? explicit : guessAgreementKey(f.label)) as AgreementKey | null
     if (!key) continue
+    // End of lease extras (blinds, oven…) are added to the fee below, never taken as it.
+    if (key === 'serviceFee' && !explicit && eol && isExtraPrice(f.label, fieldValue(f, q.values))) continue
     const raw = fieldValue(f, q.values)
     const v = raw.trim()
     if (!v) continue
@@ -75,6 +79,10 @@ export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementDat
     if (key === 'clientName' && !isChanged(f, raw)) continue
     // An explicit mapping wins over a guess; otherwise the first field wins.
     if (out[key] == null || explicit) out[key] = v.replace(/\s*\n\s*/g, key === 'premises' ? ', ' : ' ')
+  }
+  if (eol) {
+    const fee = endOfLeaseFee(q, out.serviceFee)
+    if (fee) out.serviceFee = fee
   }
   if (!out.clientName) {
     // The editor's "Client" box starts as the template's name; only use it once it's been changed.
@@ -84,6 +92,36 @@ export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementDat
   return out
 }
 
+/** "$1,234.50" → 1234.5; null when there's no amount. */
+function money(v: string): number | null {
+  // Prefer the dollar amount, so "3 blinds $20" reads as 20.
+  const m = /\$\s*(\d[\d,]*(?:\.\d+)?)/.exec(v ?? '') ?? /(\d[\d,]*(?:\.\d+)?)/.exec(v ?? '')
+  if (!m) return null
+  const n = Number(m[1].replace(/,/g, ''))
+  return Number.isFinite(n) ? n : null
+}
+
+const aud = (n: number) => `$${n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+/**
+ * End of lease: the agreement's fee is the quoted price plus every extra with a price
+ * (blinds, oven…). Extras of $0.00 are left off. Prices already include GST.
+ */
+function endOfLeaseFee(q: TemplateDocData, quoted: string | undefined): string | null {
+  const base = quoted ? money(quoted) : null
+  if (base == null) return null
+  const extras: { label: string; amount: number }[] = []
+  for (const f of q.template.fields) {
+    const value = f.kind === 'text' ? fieldValue(f, q.values) : ''
+    if (f.kind !== 'text' || !isExtraPrice(f.label, value)) continue
+    const amount = money(value)
+    if (amount) extras.push({ label: f.label.replace(/\b(price|cost|fee|amount)\b|\$|\(.*?\)|:/gi, '').replace(/\s+/g, ' ').trim() || f.label, amount })
+  }
+  if (!extras.length) return null
+  const total = extras.reduce((sum, e) => sum + e.amount, base)
+  return `${aud(total)} incl. GST (clean ${aud(base)} + ${extras.map((e) => `${e.label} ${aud(e.amount)}`).join(' + ')})`
+}
+
 /** The client's name as written on the quote, or '' if it hasn't been filled in. */
 export function quoteClientName(q: TemplateDocData): string {
   return quoteToAgreementFields(q).clientName ?? ''
@@ -91,16 +129,24 @@ export function quoteClientName(q: TemplateDocData): string {
 
 /** A full agreement for an accepted template quote. The start date is left for the client. */
 export function agreementFromQuote(q: TemplateDocData, agreementRef: string): AgreementData & Record<string, any> {
+  const type = clientTypeOf(q)
+  const fromQuote = quoteToAgreementFields(q)
   return {
     ...DEFAULT_AGREEMENT,
     // Never carry the sample particulars (Northpoint, $5,400 / month…) onto a
     // real client's agreement: anything the quote doesn't fill stays blank.
     clientName: '', clientABN: '', premises: '', frequency: '', serviceFee: '',
-    ...quoteToAgreementFields(q),
+    ...fromQuote,
+    // End of lease is a one-off clean, paid for before it's finished.
+    ...(type === 'end_of_lease' ? {
+      frequency: fromQuote.frequency || END_OF_LEASE_TERM,
+      initialTerm: END_OF_LEASE_TERM,
+      paymentTerms: END_OF_LEASE_PAYMENT_TERMS,
+    } : {}),
     proposalRef: q.refNumber ?? '',
     agreementRef,
     commencementDate: '',
-    clientType: clientTypeOf(q),
+    clientType: type,
     clientPicksStartDate: true,
   }
 }

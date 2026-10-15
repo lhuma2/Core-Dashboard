@@ -35,6 +35,7 @@ export function SignExperience({
   const hasName = name.trim().length >= 2
   // ABN, billing email and PO numbers are business questions; homes skip them.
   const isCommercial = clientTypeOf(data) === 'commercial'
+  const dateWord = clientTypeOf(data) === 'end_of_lease' ? 'clean date' : 'start date'
   const [startDate, setStartDate] = useState('')
   const minStart = useMemo(() => new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' }), [])
   const needsDate = askStartDate && !alreadySigned
@@ -151,7 +152,7 @@ export function SignExperience({
               {needsDate && (
                 <div className="mb-4">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <CalendarDays className="w-3.5 h-3.5" /> Choose your start date
+                    <CalendarDays className="w-3.5 h-3.5" /> Choose your {dateWord}
                   </p>
                   <input
                     type="date"
@@ -195,7 +196,7 @@ export function SignExperience({
                 {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing…</> : <><ShieldCheck className="w-4 h-4" /> Sign &amp; onboard</>}
               </button>
               {needsDate && !hasDate && (
-                <p className="text-[12px] text-amber-700 text-center mt-2">Choose your start date above to sign.</p>
+                <p className="text-[12px] text-amber-700 text-center mt-2">Choose your {dateWord} above to sign.</p>
               )}
               <p className="text-[11px] text-gray-400 text-center mt-3">
                 You&apos;ll answer a couple of quick questions right after. This electronic signature is legally binding.

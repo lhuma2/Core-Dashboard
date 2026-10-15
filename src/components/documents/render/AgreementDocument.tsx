@@ -1,5 +1,5 @@
 ﻿import type { CSSProperties } from 'react'
-import { AGREEMENT_CLAUSES, type AgreementData } from '@/lib/documents/agreement'
+import { AGREEMENT_CLAUSES, DEFAULT_AGREEMENT, END_OF_LEASE_CLAUSES, END_OF_LEASE_PAYMENT_TERMS, END_OF_LEASE_TERM, type AgreementData } from '@/lib/documents/agreement'
 import { clientTypeOf } from '@/lib/documents/quote'
 
 // Faithful recreation of the Service Agreement (7 × A4 pages).
@@ -68,10 +68,14 @@ function ScopeCol({ title, items }: { title: string; items: string[] }) {
 }
 
 export function AgreementDocument({ data, signature }: { data: AgreementData; signature?: SignatureFill | null }) {
-  const c1to6 = AGREEMENT_CLAUSES.slice(0, 6)
-  const c7to13 = AGREEMENT_CLAUSES.slice(6, 13)
-  const c14to19 = AGREEMENT_CLAUSES.slice(13, 19)
   const t = clientTypeOf(data)
+  const eol = t === 'end_of_lease'
+  const clauses = eol ? END_OF_LEASE_CLAUSES : AGREEMENT_CLAUSES
+  const c1to6 = clauses.slice(0, 6)
+  const c7to13 = clauses.slice(6, 13)
+  const c14to19 = clauses.slice(13, 19)
+  // End of lease agreements issued before their own terms existed still carry the commercial payment terms.
+  const paymentTerms = eol && data.paymentTerms === DEFAULT_AGREEMENT.paymentTerms ? END_OF_LEASE_PAYMENT_TERMS : data.paymentTerms
   const service = t === 'residential' ? 'residential cleaning' : t === 'end_of_lease' ? 'end of lease cleaning' : 'commercial cleaning'
 
   return (
@@ -114,12 +118,14 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
           <PRow k="Client">{data.clientName}{data.clientABN ? ` · ABN ${data.clientABN}` : ''}</PRow>
           <PRow k="Premises / Site">{data.premises}</PRow>
           <PRow k="Services">{service.charAt(0).toUpperCase() + service.slice(1)} per Schedule 1 and accepted Proposal {data.proposalRef}</PRow>
-          <PRow k="Frequency">{data.frequency}</PRow>
-          <PRow k="Commencement">{data.commencementDate || '—'}</PRow>
-          <PRow k="Initial Term">{data.initialTerm}</PRow>
+          <PRow k="Frequency">{data.frequency || (eol ? END_OF_LEASE_TERM : '')}</PRow>
+          <PRow k={eol ? 'Clean Date' : 'Commencement'}>{data.commencementDate || '—'}</PRow>
+          {eol
+            ? <PRow k="Re-clean Guarantee">Free return to re-clean if notified in writing within 72 hours of completion (clause 4)</PRow>
+            : <PRow k="Initial Term">{data.initialTerm}</PRow>}
           <PRow k="Service Fee">{data.serviceFee}{!/gst/i.test(data.serviceFee ?? '') && <span style={{ color: '#94A3B8' }}> (incl. GST)</span>}</PRow>
-          <PRow k="Payment Terms">{data.paymentTerms}</PRow>
-          <PRow k="Price Review">Annually, in line with Queensland CPI, minimum 30 days&apos; written notice</PRow>
+          <PRow k="Payment Terms">{paymentTerms}</PRow>
+          <PRow k="Price Review">{eol ? 'Fixed price as quoted' : <>Annually, in line with Queensland CPI, minimum 30 days&apos; written notice</>}</PRow>
           <PRow k="Special Conditions" last>{data.specialConditions}</PRow>
         </div>
         <Foot n="02" />
@@ -155,17 +161,30 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
         <div style={{ marginTop: 46 }}>
           <div style={monoEyebrow}>Schedule 1</div>
           <h2 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 30, lineHeight: 1.06, letterSpacing: '-.025em', margin: 0 }}>Scope of services.</h2>
-          <p style={{ margin: '14px 0 0', fontSize: 13, lineHeight: 1.6, color: '#64748B', maxWidth: 640 }}>The Services comprise the following inclusions at {data.premises}, performed {data.frequency}, together with any items in the accepted Proposal. The scope may be tailored by written agreement.</p>
+          {eol ? (
+            <p style={{ margin: '14px 0 0', fontSize: 13, lineHeight: 1.6, color: '#64748B', maxWidth: 640 }}>The Services are the end of lease clean at {data.premises}, as set out in the scope of works of the accepted Quote{data.proposalRef ? ` ${data.proposalRef}` : ''}. That scope of works forms part of this Agreement.</p>
+          ) : (
+            <p style={{ margin: '14px 0 0', fontSize: 13, lineHeight: 1.6, color: '#64748B', maxWidth: 640 }}>The Services comprise the following inclusions at {data.premises}, performed {data.frequency}, together with any items in the accepted Proposal. The scope may be tailored by written agreement.</p>
+          )}
         </div>
-        <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 40px' }}>
-          {data.scopeGroups.map((g, i) => <ScopeCol key={i} title={g.title} items={g.items} />)}
-        </div>
-        <div style={{ marginTop: 26, background: '#F8FAFC', border: '1px solid #EEF2F6', borderRadius: 12, padding: '22px 26px' }}>
-          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 12 }}>Periodic &amp; on request, quoted separately</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {data.additionalServices.map((s, i) => <span key={i} style={{ fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 999, padding: '6px 13px', color: '#334155', background: '#fff', whiteSpace: 'nowrap' }}>{s}</span>)}
+        {eol ? (
+          <div style={{ marginTop: 28, background: '#F8FAFC', border: '1px solid #EEF2F6', borderRadius: 12, padding: '22px 26px' }}>
+            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 10 }}>Re-clean guarantee</div>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#334155' }}>If anything within the agreed scope isn&apos;t up to standard at the final inspection, let us know in writing within 72 hours of completion and we&apos;ll come back and re-clean it at no extra cost (clause 4).</p>
           </div>
-        </div>
+        ) : (
+          <>
+            <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 40px' }}>
+              {data.scopeGroups.map((g, i) => <ScopeCol key={i} title={g.title} items={g.items} />)}
+            </div>
+            <div style={{ marginTop: 26, background: '#F8FAFC', border: '1px solid #EEF2F6', borderRadius: 12, padding: '22px 26px' }}>
+              <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 12 }}>Periodic &amp; on request, quoted separately</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {data.additionalServices.map((s, i) => <span key={i} style={{ fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 999, padding: '6px 13px', color: '#334155', background: '#fff', whiteSpace: 'nowrap' }}>{s}</span>)}
+              </div>
+            </div>
+          </>
+        )}
         <Foot n="06" />
       </section>
 
