@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasTemplate, type DocTemplate, type TemplateDocData } from '@/lib/documents/template'
 import { draftFromRequest } from '@/lib/documents/quote-request-draft'
+import { kindFromTemplateName } from '@/lib/documents/quote-request'
 
 const NON_STAFF = ['cleaner', 'client', 'manager']
 
@@ -52,7 +53,10 @@ export async function createProposalFromTemplateAction(companyDocId: string) {
   if (!hasTemplate(cd.template)) return { error: 'This document has no template fields set up yet.' }
 
   const ref = nextRef('DC-PROP')
+  // A quote made from the end of lease template is for an end of lease client.
+  const forKind = cd.template.autoDraftFor && cd.template.autoDraftFor !== 'none' ? cd.template.autoDraftFor : kindFromTemplateName(cd.name)
   const data: TemplateDocData = {
+    ...(forKind === 'end_of_lease' ? { clientType: 'end_of_lease' as const } : {}),
     clientName: cd.name,
     refNumber: ref,
     templateId: cd.id,

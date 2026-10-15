@@ -4,6 +4,8 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { withAgreementDefaults } from './agreement'
+import { clientTypeOf } from './quote'
+import { quotePhone } from './follow-up'
 
 // Best-effort parsers for agreement particulars → client fields.
 export function parseMonthlyFee(s?: string): number | null {
@@ -125,11 +127,23 @@ export async function markAgreementClientAdded(docId: FormDataEntryValue | null)
 /** Prefill for the residential / bond "add" forms from a signed agreement. */
 export async function jobPrefillFromAgreement(docId?: string) {
   if (!docId || !/^[0-9a-f-]{36}$/i.test(docId)) return undefined
-  const { data: doc } = await (createAdminClient() as any).from('proposal_documents')
-    .select('id, kind, status, data, onboarding').eq('id', docId).maybeSingle()
+  const db = createAdminClient() as any
+  const { data: doc } = await db.from('proposal_documents')
+    .select('id, kind, status, data, onboarding, source_id').eq('id', docId).maybeSingle()
   if (!doc || doc.kind !== 'agreement' || doc.status !== 'signed') return undefined
   const a = withAgreementDefaults(doc.data)
   const o = doc.onboarding ?? {}
+  // End of lease: what the client told us on the quote fills what they skipped after signing.
+  let fromQuote: { phone?: string; bedrooms?: number; bathrooms?: number } = {}
+  if (clientTypeOf(doc.data) === 'end_of_lease' && doc.source_id) {
+    const { data: quote } = await db.from('proposal_documents').select('data').eq('id', doc.source_id).maybeSingle()
+    const rows: { label: string; value: string }[] = quote?.data?.quoteRequest?.fields ?? []
+    const rooms = (re: RegExp) => {
+      const n = parseInt(rows.find((r) => re.test((r.label ?? '').toLowerCase()))?.value ?? '', 10)
+      return Number.isInteger(n) && n >= 0 && n <= 7 ? n : undefined
+    }
+    fromQuote = { phone: quotePhone(quote?.data).slice(0, 20) || undefined, bedrooms: rooms(/bedroom/), bathrooms: rooms(/bathroom/) }
+  }
   const comments = [
     a.frequency && `Frequency: ${a.frequency}`,
     a.serviceFee && `Fee: ${a.serviceFee}`,
@@ -140,7 +154,9 @@ export async function jobPrefillFromAgreement(docId?: string) {
     fromDoc: doc.id as string,
     client_name: a.clientName,
     address: a.premises,
-    contact_phone: o.siteContactPhone || undefined,
+    contact_phone: o.siteContactPhone || fromQuote.phone,
+    bedrooms: fromQuote.bedrooms,
+    bathrooms: fromQuote.bathrooms,
     clean_date: doc.data?.commencementDateIso || parseDateLoose(a.commencementDate) || undefined,
     comments: comments || undefined,
   }

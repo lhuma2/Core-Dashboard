@@ -200,9 +200,10 @@ export async function submitSignatureAction(code: string, typedName: string, det
   let newData: any = { ...(doc.data ?? {}) }
   if (newData.clientPicksStartDate) {
     const iso = (startDate ?? '').trim()
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return { error: 'Please choose your start date.' }
+    const dateWord = clientTypeOf(newData) === 'end_of_lease' ? 'clean date' : 'start date'
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return { error: `Please choose your ${dateWord}.` }
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' })
-    if (iso < today) return { error: 'Your start date can’t be in the past.' }
+    if (iso < today) return { error: `Your ${dateWord} can’t be in the past.` }
     newData.commencementDate = auDate(iso + 'T12:00:00+10:00')
     newData.commencementDateIso = iso
   }
