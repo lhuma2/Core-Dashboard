@@ -70,8 +70,9 @@ export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementDat
     if (explicit === 'none') continue
     const key = (explicit && KEYS.has(explicit) ? explicit : guessAgreementKey(f.label)) as AgreementKey | null
     if (!key) continue
-    // End of lease extras (blinds, oven…) are added to the fee below, never taken as it.
-    if (key === 'serviceFee' && !explicit && eol && isExtraPrice(f.label, fieldValue(f, q.values))) continue
+    // End of lease extras (blinds, oven…) are added to the fee below, never taken as it,
+    // and neither is a GST-only, ex-GST or subtotal box: the fee is the GST-inclusive price.
+    if (key === 'serviceFee' && !explicit && eol && (isExtraPrice(f.label, fieldValue(f, q.values)) || notTheFullPrice(f.label))) continue
     const raw = fieldValue(f, q.values)
     const v = raw.trim()
     if (!v) continue
@@ -90,6 +91,12 @@ export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementDat
     if (listed && listed !== q.templateName?.trim()) out.clientName = listed
   }
   return out
+}
+
+/** A GST-only, ex-GST or subtotal price box, e.g. "GST $" or "Subtotal (ex GST)". */
+function notTheFullPrice(label: string): boolean {
+  const l = (label ?? '').toLowerCase()
+  return /subtotal|\bex\b|ex[\s.-]*gst|excl|plus gst|\+\s*gst/.test(l) || (/\bgst\b/.test(l) && !/inc|total/.test(l))
 }
 
 /** "$1,234.50" → 1234.5; null when there's no amount. */

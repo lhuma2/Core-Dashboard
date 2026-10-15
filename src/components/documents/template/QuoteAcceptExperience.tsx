@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Check, ArrowRight } from 'lucide-react'
 import { sortFields, type TemplateDocData } from '@/lib/documents/template'
+import { clientTypeOf } from '@/lib/documents/quote'
 import { acceptQuoteAction } from '@/actions/quotes'
 import { usePdfPages } from './usePdfPages'
 import { TemplatePage, useTemplateFonts } from './TemplatePage'
@@ -75,7 +76,7 @@ export function QuoteAcceptExperience({
           ) : (
             <>
               <p className="text-xs text-gray-500 max-w-sm">
-                Happy with the quote? Accept it and your service agreement opens straight away, already filled in. You just choose a start date and sign.
+                Happy with the quote? Accept it and your service agreement opens straight away, already filled in. You just choose a {clientTypeOf(data) === 'end_of_lease' ? 'clean date' : 'start date'} and sign.
               </p>
               {err && <span className="text-xs text-red-500">{err}</span>}
               <button onClick={accept} disabled={busy}

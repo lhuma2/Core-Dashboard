@@ -17,6 +17,8 @@ export interface JobPrefill {
   address?: string
   contact_phone?: string
   clean_date?: string
+  bedrooms?: number
+  bathrooms?: number
   comments?: string
 }
 
@@ -131,14 +133,14 @@ export function BondJobForm({ action, cleaners, prefill }: BondJobFormProps) {
           name="bedrooms"
           label="Bedrooms"
           options={countOptions}
-          defaultValue="0"
+          defaultValue={String(prefill?.bedrooms ?? 0)}
           error={errors.bedrooms?.[0]}
         />
         <Select
           name="bathrooms"
           label="Bathrooms"
           options={countOptions}
-          defaultValue="0"
+          defaultValue={String(prefill?.bathrooms ?? 0)}
           error={errors.bathrooms?.[0]}
         />
       </div>

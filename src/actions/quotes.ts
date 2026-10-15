@@ -102,7 +102,7 @@ export async function acceptQuoteAction(code: string): Promise<{ agreementCode: 
 
   const link = `${APP_URL}/sign/${agreementCode}`
   if (quote.signer_email) {
-    sendEmail(quote.signer_email, 'Your Core Cleaning service agreement — ready to sign', agreementReadyEmail(data.clientName, link)).catch(() => {})
+    sendEmail(quote.signer_email, 'Your Core Cleaning service agreement — ready to sign', agreementReadyEmail(data.clientName, link, clientTypeOf(quote.data) === 'end_of_lease' ? 'clean date' : 'start date')).catch(() => {})
   }
   sendPushToRole('admin', {
     title: `${data.clientName} accepted the quote`,
@@ -154,12 +154,12 @@ function quoteEmail(name: string, link: string, message?: string): string {
     ${button(link, 'View your quote &rarr;')}`)
 }
 
-function agreementReadyEmail(name: string, link: string): string {
+function agreementReadyEmail(name: string, link: string, dateWord = 'start date'): string {
   return shell(`
     <p style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2563eb;margin:0 0 12px;">Quote accepted</p>
     <h1 style="font-size:24px;line-height:1.25;margin:0 0 12px;color:#0f172a;font-weight:800;">Thanks${name ? ` ${esc(name)}` : ''}, your agreement is ready.</h1>
     <p style="font-size:14.5px;line-height:1.65;color:#475569;margin:0 0 26px;">
-      We&rsquo;ve filled in your service agreement from your quote. All that&rsquo;s left is to choose your start date and sign. If you&rsquo;ve already done that, you can ignore this email.
+      We&rsquo;ve filled in your service agreement from your quote. All that&rsquo;s left is to choose your ${dateWord} and sign. If you&rsquo;ve already done that, you can ignore this email.
     </p>
-    ${button(link, 'Choose start date &amp; sign &rarr;')}`)
+    ${button(link, `Choose ${dateWord} &amp; sign &rarr;`)}`)
 }
