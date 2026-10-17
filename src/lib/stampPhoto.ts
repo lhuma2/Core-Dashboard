@@ -1,9 +1,13 @@
 /**
  * Burns the current Brisbane date + time into the top-right corner of a photo
- * and returns it as a JPEG File. Runs in the browser (canvas). If the image
+ * and returns it as a JPEG File, scaled down so its longest side is at most
+ * MAX_EDGE px. Phone photos straight off the camera are 3–8 MB, which is over
+ * what the upload accepts, and very large ones are too big for iOS to draw. Runs in the browser (canvas). If the image
  * can't be decoded, the original file is returned unchanged so an upload is
  * never blocked by the stamp.
  */
+const MAX_EDGE = 2048
+
 export async function stampPhoto(file: File, at: Date = new Date()): Promise<File> {
   try {
     const blob = await drawStamp(file, at)
@@ -21,11 +25,12 @@ function drawStamp(file: File, at: Date): Promise<Blob> {
     img.onload = () => {
       URL.revokeObjectURL(objectUrl)
       const canvas = document.createElement('canvas')
-      canvas.width  = img.naturalWidth
-      canvas.height = img.naturalHeight
+      const scale = Math.min(1, MAX_EDGE / Math.max(img.naturalWidth, img.naturalHeight))
+      canvas.width  = Math.round(img.naturalWidth * scale)
+      canvas.height = Math.round(img.naturalHeight * scale)
       const ctx = canvas.getContext('2d')
       if (!ctx) return reject(new Error('No canvas context'))
-      ctx.drawImage(img, 0, 0)
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
       const stamp = at.toLocaleString('en-AU', {
         timeZone: 'Australia/Brisbane',
@@ -65,7 +70,7 @@ function drawStamp(file: File, at: Date): Promise<Blob> {
       canvas.toBlob(
         (blob) => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')),
         'image/jpeg',
-        0.88,
+        0.85,
       )
     }
     img.onerror = () => {

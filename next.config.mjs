@@ -3,6 +3,9 @@ const nextConfig = {
   serverExternalPackages: ['pdf-parse'],
   experimental: {
     serverComponentsExternalPackages: ['pdf-parse'],
+    // Job photos are uploaded through a server action. The default 1 MB cap
+    // rejected most phone photos; Vercel itself caps requests at 4.5 MB.
+    serverActions: { bodySizeLimit: '4mb' },
     // These PDFs are read via a runtime-built fs path (src/actions/cold-leads.ts),
     // which Vercel's file tracer can't follow statically — without this they get
     // silently dropped from the serverless bundle and emails send with no attachment.
