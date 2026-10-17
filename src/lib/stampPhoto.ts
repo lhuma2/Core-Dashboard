@@ -7,6 +7,7 @@
  * never blocked by the stamp.
  */
 const MAX_EDGE = 2048
+const SMALL_ENOUGH = 1.5 * 1024 * 1024
 
 export async function stampPhoto(file: File, at: Date = new Date()): Promise<File> {
   try {
@@ -79,4 +80,36 @@ function drawStamp(file: File, at: Date): Promise<Blob> {
     }
     img.src = objectUrl
   })
+}
+
+/**
+ * Re-encodes an already-stamped photo smaller (longest side MAX_EDGE px) without
+ * stamping it again. Used for photos queued offline before photos were shrunk.
+ * Returns the original if it's already small or can't be decoded.
+ */
+export async function shrinkPhoto(file: File | Blob, name = 'photo.jpg'): Promise<File> {
+  const asFile = file instanceof File ? file : new File([file], name, { type: file.type || 'image/jpeg' })
+  if (asFile.size <= SMALL_ENOUGH) return asFile
+  try {
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      const img = document.createElement('img')
+      const url = URL.createObjectURL(asFile)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const scale = Math.min(1, MAX_EDGE / Math.max(img.naturalWidth, img.naturalHeight))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.naturalWidth * scale)
+        canvas.height = Math.round(img.naturalHeight * scale)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return reject(new Error('No canvas context'))
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', 0.8)
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not decode image')) }
+      img.src = url
+    })
+    return new File([blob], asFile.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' })
+  } catch {
+    return asFile
+  }
 }

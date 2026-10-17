@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { startJobAction, cancelStartAction, uploadJobPhotoAction } from '@/actions/jobs'
+import { startJobAction, cancelStartAction } from '@/actions/jobs'
+import { uploadJobPhoto } from '@/lib/uploadJobPhoto'
 import { startBondJobAction, cancelStartBondJobAction, finishBondJobAction } from '@/actions/bondJobs'
 import { startResidentialJobAction, cancelStartResidentialJobAction, finishResidentialJobAction } from '@/actions/residentialJobs'
 import { flushPhotoQueue } from '@/lib/photoQueue'
@@ -51,11 +52,14 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
   // Retry any before/after photos left queued from a previous offline session
   // as soon as this screen mounts (covers "reopened the app later, back online").
   useEffect(() => {
-    flushPhotoQueue(jobId, async (entry) => {
-      const fd = new FormData()
-      fd.append('photo', new File([entry.blob], entry.fileName, { type: entry.contentType }))
-      return uploadJobPhotoAction(jobId, fd, entry.phase, entry.jobKind)
+    const flush = () => flushPhotoQueue(jobId, async (entry) => {
+      const res = await uploadJobPhoto(entry.jobId, new File([entry.blob], entry.fileName, { type: entry.contentType }), entry.phase, entry.jobKind)
+      return 'error' in res ? { error: res.error } : {}
     }).catch(() => {})
+    flush()
+    // …and again whenever signal comes back while the job is open.
+    window.addEventListener('online', flush)
+    return () => window.removeEventListener('online', flush)
   }, [jobId])
 
   async function handleStart() {

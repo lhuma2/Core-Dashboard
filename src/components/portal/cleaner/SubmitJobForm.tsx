@@ -2,13 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { submitJobAction, uploadJobPhotoAction, deleteJobPhotoAction } from '@/actions/jobs'
+import { submitJobAction, deleteJobPhotoAction } from '@/actions/jobs'
 import { Camera, Video, X, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { stampPhoto } from '@/lib/stampPhoto'
+import { uploadJobPhoto } from '@/lib/uploadJobPhoto'
 
 const MIN_PHOTOS = 0
 const MAX_PHOTOS = 10
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024
 
 interface ChecklistItem {
   id: string
@@ -28,6 +30,7 @@ interface PhotoEntry {
   storagePath: string | null
   uploading: boolean
   error: string | null
+  file: File | null   // the stamped photo, kept so a failed upload can be retried
 }
 
 interface VideoEntry {
@@ -37,6 +40,7 @@ interface VideoEntry {
   name: string
   uploading: boolean
   error: string | null
+  file: File
 }
 
 export function SubmitJobForm({ jobId, checklist }: Props) {
@@ -64,8 +68,11 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
   const requiredItems    = checklist.filter((i) => i.required)
   const allRequiredChecked = requiredItems.every((i) => checked[i.id])
   const anyUploading     = photos.some((p) => p.uploading) || videos.some((v) => v.uploading)
+  // A photo that didn't upload must be retried or removed, so none are silently lost.
+  const failedCount      = photos.filter((p) => p.error).length + videos.filter((v) => v.error).length
   const canSubmit        = uploadedPhotos.length >= MIN_PHOTOS
     && !anyUploading
+    && failedCount === 0
     && (requiredItems.length === 0 || allRequiredChecked)
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -82,55 +89,89 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
       // 1. Show instant local preview
       const localUrl = URL.createObjectURL(file)
       const id       = `${Date.now()}-${Math.random()}`
-      setPhotos((p) => [...p, { id, localUrl, remoteUrl: null, storagePath: null, uploading: true, error: null }])
+      setPhotos((p) => [...p, { id, localUrl, remoteUrl: null, storagePath: null, uploading: true, error: null, file: null }])
 
-      // 2. Stamp + upload in background
-      try {
-        const stampedFile = await stampPhoto(file)
-        const fd          = new FormData()
-        fd.append('photo', stampedFile)
-        const result = await uploadJobPhotoAction(jobId, fd, 'after')
-        if (result.error) {
-          setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: false, error: result.error! } : x))
-        } else {
-          setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: false, remoteUrl: result.url!, storagePath: result.storagePath ?? null } : x))
-        }
-      } catch {
-        setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: false, error: 'Upload failed' } : x))
-      }
+      // 2. Stamp (and shrink) + upload in background
+      const stamped = await stampPhoto(file)
+      setPhotos((p) => p.map((x) => x.id === id ? { ...x, file: stamped } : x))
+      await upload(id, stamped)
     }
   }
+
+  async function upload(id: string, file: File) {
+    setPhotos((p) => p.map((x) => x.id === id ? { ...x, uploading: true, error: null } : x))
+    const result = await uploadJobPhoto(jobId, file, 'after')
+    setPhotos((p) => p.map((x) => x.id !== id ? x
+      : 'error' in result ? { ...x, uploading: false, error: result.error }
+      : { ...x, uploading: false, error: null, remoteUrl: result.url, storagePath: result.storagePath }))
+  }
+
+  function retryPhoto(id: string) {
+    const entry = photos.find((p) => p.id === id)
+    if (entry?.file && !entry.uploading) upload(id, entry.file)
+  }
+
+  // Back in signal: retry every photo that failed.
+  const photosRef = useRef(photos)
+  photosRef.current = photos
+  useEffect(() => {
+    function onOnline() {
+      photosRef.current.filter((p) => p.error && p.file && !p.uploading).forEach((p) => upload(p.id, p.file!))
+    }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleVideoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setError(null)
     if (videoInputRef.current) videoInputRef.current.value = ''
+    // Storage takes files up to 50 MB; a phone records roughly that in 30–60 seconds.
+    if (file.size > MAX_VIDEO_BYTES) {
+      setError(`That video is ${Math.round(file.size / 1024 / 1024)} MB, over the ${MAX_VIDEO_BYTES / 1024 / 1024} MB limit. Record a shorter one (about 30 seconds).`)
+      return
+    }
 
     // 1. Show instant local video preview
     const localUrl = URL.createObjectURL(file)
     const id       = `${Date.now()}-${Math.random()}`
-    setVideos((v) => [...v, { id, localUrl, remoteUrl: null, name: file.name, uploading: true, error: null }])
+    setVideos((v) => [...v, { id, localUrl, remoteUrl: null, name: file.name, uploading: true, error: null, file }])
 
     // 2. Upload in background
+    await uploadVideo(id, file)
+  }
+
+  async function uploadVideo(id: string, file: File) {
+    setVideos((v) => v.map((x) => x.id === id ? { ...x, uploading: true, error: null } : x))
     try {
       const supabase = createClient()
-      const fileName = `${Date.now()}.mp4`
-      const path     = `videos/${jobId}/${fileName}`
+      const ext      = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4'
+      const path     = `videos/${jobId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
       const { error: upErr } = await (supabase as any).storage
         .from('job-photos')
         .upload(path, file, { contentType: file.type || 'video/mp4', upsert: false })
 
       if (upErr) {
-        setVideos((v) => v.map((x) => x.id === id ? { ...x, uploading: false, error: upErr.message } : x))
+        const msg = /exceed|too large|maximum allowed size/i.test(upErr.message)
+          ? 'This video is too large. Record a shorter one.'
+          : /jwt|auth|unauthori/i.test(upErr.message) ? 'You’ve been signed out. Sign in again, then add the video again.'
+          : `Upload failed (${upErr.message}). Tap to retry.`
+        setVideos((v) => v.map((x) => x.id === id ? { ...x, uploading: false, error: msg } : x))
       } else {
         const { data } = (supabase as any).storage.from('job-photos').getPublicUrl(path)
         setVideos((v) => v.map((x) => x.id === id ? { ...x, uploading: false, remoteUrl: data.publicUrl as string } : x))
       }
     } catch {
-      setVideos((v) => v.map((x) => x.id === id ? { ...x, uploading: false, error: 'Upload failed' } : x))
+      setVideos((v) => v.map((x) => x.id === id ? { ...x, uploading: false, error: 'Weak or no signal. Tap to retry.' } : x))
     }
+  }
+
+  function retryVideo(id: string) {
+    const entry = videos.find((v) => v.id === id)
+    if (entry && !entry.uploading) uploadVideo(id, entry.file)
   }
 
   function removePhoto(id: string) {
@@ -220,9 +261,11 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
               )}
               {/* Error overlay */}
               {p.error && (
-                <div className="absolute inset-0 bg-red-500/70 flex items-center justify-center">
-                  <span className="text-white text-[10px] font-semibold px-1 text-center">Failed</span>
-                </div>
+                <button onClick={() => retryPhoto(p.id)} title={p.error}
+                  className="absolute inset-0 bg-red-500/75 flex flex-col items-center justify-center gap-0.5 px-1">
+                  <span className="text-white text-[11px] font-bold">Not uploaded</span>
+                  <span className="text-white text-[10px] font-semibold">Tap to retry</span>
+                </button>
               )}
               {/* Uploaded tick */}
               {p.remoteUrl && (
@@ -249,6 +292,10 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
             </button>
           )}
         </div>
+
+        {photos.find((p) => p.error) && (
+          <p className="text-xs text-red-600 -mt-1 mb-1">{photos.find((p) => p.error)!.error}</p>
+        )}
 
         {/* No `capture` attribute — on iOS that forces a single-shot camera that
             closes after each photo. Without it, iOS's normal multi-select picker
@@ -299,9 +346,10 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
                     </div>
                   )}
                   {v.error && (
-                    <div className="absolute inset-0 bg-red-500/50 flex items-center justify-center pointer-events-none">
-                      <span className="text-white text-xs font-semibold">Upload failed — tap × to remove</span>
-                    </div>
+                    <button onClick={() => retryVideo(v.id)}
+                      className="absolute inset-0 bg-red-500/60 flex items-center justify-center px-4">
+                      <span className="text-white text-xs font-semibold text-center">{v.error}</span>
+                    </button>
                   )}
                 </div>
                 <div className="flex items-center gap-3 px-4 py-2.5">
@@ -411,7 +459,12 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
             Uploading media, please wait…
           </p>
         )}
-        {!canSubmit && !anyUploading && (
+        {!anyUploading && failedCount > 0 && (
+          <p className="text-xs text-center text-red-600">
+            {failedCount === 1 ? 'One photo or video didn’t upload.' : `${failedCount} photos or videos didn’t upload.`} Tap it to retry, or × to remove it.
+          </p>
+        )}
+        {!canSubmit && !anyUploading && failedCount === 0 && (
           <p className="text-xs text-center text-gray-400">
             Complete all required checklist items.
           </p>
