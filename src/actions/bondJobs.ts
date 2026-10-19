@@ -4,7 +4,26 @@ import { markAgreementClientAdded } from '@/lib/documents/agreement-client'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { sendPushToUser } from '@/lib/push'
 import { bondJobSchema } from '@/lib/validations/bondJob.schema'
+
+// Let the assigned cleaner know an end of lease clean is on their timetable.
+async function notifyBondCleaner(jobId: string) {
+  const db = createAdminClient() as any
+  const { data: job } = await db.from('bond_jobs')
+    .select('client_name, address, clean_date, clean_time, cleaner_id').eq('id', jobId).maybeSingle()
+  if (!job?.cleaner_id) return
+  const { data: cleaner } = await db.from('profiles').select('user_id').eq('id', job.cleaner_id).maybeSingle()
+  if (!cleaner?.user_id) return
+  const when = new Date(`${job.clean_date}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = job.clean_time ? ` at ${String(job.clean_time).slice(0, 5)}` : ''
+  await sendPushToUser(cleaner.user_id, {
+    title: 'New end of lease clean assigned',
+    body:  `${job.client_name}, ${job.address}. ${when}${time}. Tap to view.`,
+    url:   `/cleaner/bond/${jobId}`,
+  })
+}
 
 export async function createBondJobAction(formData: FormData) {
   const supabase = createClient()
@@ -39,7 +58,7 @@ export async function createBondJobAction(formData: FormData) {
     createdBy = profile?.id ?? null
   }
 
-  const { error } = await db.from('bond_jobs').insert({
+  const { data: created, error } = await db.from('bond_jobs').insert({
     client_name:   parsed.data.client_name,
     address:       parsed.data.address,
     contact_phone: parsed.data.contact_phone || null,
@@ -53,12 +72,13 @@ export async function createBondJobAction(formData: FormData) {
     cleaner_id:    parsed.data.cleaner_id || null,
     cleaner_cost:  parsed.data.cleaner_cost || null,
     created_by:    createdBy,
-  })
+  }).select('id').single()
 
   if (error) {
     return { error: { _form: [error.message] } }
   }
   await markAgreementClientAdded(formData.get('from_doc'))
+  if (parsed.data.cleaner_id) await notifyBondCleaner(created.id).catch(() => {})
 
   revalidatePath('/clients')
   redirect('/clients?tab=bond')
@@ -77,9 +97,13 @@ export async function updateBondJobCleanerCostAction(id: string, cost: number | 
 export async function assignBondJobCleanerAction(id: string, cleanerId: string) {
   const supabase = createClient()
   const db = supabase as any
+  const { data: before } = await db.from('bond_jobs').select('cleaner_id').eq('id', id).maybeSingle()
   const { error } = await db.from('bond_jobs').update({ cleaner_id: cleanerId || null }).eq('id', id)
   if (error) return { error: error.message }
+  // Only a newly assigned cleaner is told; re-saving the same cleaner sends nothing.
+  if (cleanerId && cleanerId !== before?.cleaner_id) await notifyBondCleaner(id).catch(() => {})
   revalidatePath('/clients')
+  revalidatePath('/cleaner/dashboard')
   return { success: true }
 }
 
