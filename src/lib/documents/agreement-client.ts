@@ -133,9 +133,10 @@ export async function jobPrefillFromAgreement(docId?: string) {
   if (!doc || doc.kind !== 'agreement' || doc.status !== 'signed') return undefined
   const a = withAgreementDefaults(doc.data)
   const o = doc.onboarding ?? {}
-  // End of lease: what the client told us on the quote fills what they skipped after signing.
+  // Homes: what the client told us on the quote fills what they skipped after signing.
+  const type = clientTypeOf(doc.data)
   let fromQuote: { phone?: string; bedrooms?: number; bathrooms?: number } = {}
-  if (clientTypeOf(doc.data) === 'end_of_lease' && doc.source_id) {
+  if (type !== 'commercial' && doc.source_id) {
     const { data: quote } = await db.from('proposal_documents').select('data').eq('id', doc.source_id).maybeSingle()
     const rows: { label: string; value: string }[] = quote?.data?.quoteRequest?.fields ?? []
     const rooms = (re: RegExp) => {
@@ -150,6 +151,7 @@ export async function jobPrefillFromAgreement(docId?: string) {
     o.siteContactName && `Site contact: ${o.siteContactName}`,
     o.notes,
   ].filter(Boolean).join('\n')
+  const cleanDate = doc.data?.commencementDateIso || parseDateLoose(a.commencementDate) || undefined
   return {
     fromDoc: doc.id as string,
     client_name: a.clientName,
@@ -157,7 +159,24 @@ export async function jobPrefillFromAgreement(docId?: string) {
     contact_phone: o.siteContactPhone || fromQuote.phone,
     bedrooms: fromQuote.bedrooms,
     bathrooms: fromQuote.bathrooms,
-    clean_date: doc.data?.commencementDateIso || parseDateLoose(a.commencementDate) || undefined,
+    clean_date: cleanDate,
     comments: comments || undefined,
+    // Residential: a weekly / fortnightly / monthly agreement becomes a recurring clean on
+    // the weekday of the start date the client chose. Anything else stays a one-off.
+    ...(type === 'residential' ? recurringFrom(a.frequency, cleanDate) : {}),
   }
+}
+
+function recurringFrom(frequency?: string, cleanDate?: string): { frequency?: 'weekly' | 'fortnightly' | 'monthly'; service_days?: string[] } {
+  const f = (frequency ?? '').toLowerCase()
+  if (/one[\s-]?off|once/.test(f)) return {}
+  const freq = /fortnight|every\s*(2|two)\s*weeks|bi-?weekly/.test(f) ? 'fortnightly'
+    : /week/.test(f) ? 'weekly'
+    : /month/.test(f) ? 'monthly'
+    : undefined
+  if (!freq) return {}
+  const day = cleanDate && /^\d{4}-\d{2}-\d{2}$/.test(cleanDate)
+    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(`${cleanDate}T12:00:00Z`).getUTCDay()]
+    : undefined
+  return { frequency: freq, service_days: day ? [day] : [] }
 }

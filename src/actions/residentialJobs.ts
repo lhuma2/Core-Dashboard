@@ -4,8 +4,27 @@ import { markAgreementClientAdded } from '@/lib/documents/agreement-client'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { sendPushToUser } from '@/lib/push'
 import { residentialJobSchema } from '@/lib/validations/residentialJob.schema'
 import { actionableDates, brisbaneTodayStr } from '@/lib/schedule'
+
+// Let the assigned cleaner know a residential clean is on their timetable.
+async function notifyResidentialCleaner(jobId: string) {
+  const db = createAdminClient() as any
+  const { data: job } = await db.from('residential_jobs')
+    .select('client_name, address, clean_date, clean_time, frequency, cleaner_id').eq('id', jobId).maybeSingle()
+  if (!job?.cleaner_id) return
+  const { data: cleaner } = await db.from('profiles').select('user_id').eq('id', job.cleaner_id).maybeSingle()
+  if (!cleaner?.user_id) return
+  const when = new Date(`${job.clean_date}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = job.clean_time ? ` at ${String(job.clean_time).slice(0, 5)}` : ''
+  await sendPushToUser(cleaner.user_id, {
+    title: 'New residential clean assigned',
+    body:  `${job.client_name}, ${job.address}. ${job.frequency ? `Starts ${when}${time}, ${job.frequency}` : `${when}${time}`}. Tap to view.`,
+    url:   `/cleaner/residential/${jobId}`,
+  })
+}
 
 export async function createResidentialJobAction(formData: FormData) {
   const supabase = createClient()
@@ -67,6 +86,7 @@ export async function createResidentialJobAction(formData: FormData) {
     return { error: { _form: [error.message] } }
   }
   await markAgreementClientAdded(formData.get('from_doc'))
+  if (parsed.data.cleaner_id) await notifyResidentialCleaner(created.id).catch(() => {})
 
   // Optional scope-of-works image, chosen in the same create form — uploaded
   // after the insert since the storage path is keyed by the new row's id.
@@ -162,9 +182,13 @@ export async function removeResidentialScopeImageAction(jobId: string) {
 export async function assignResidentialJobCleanerAction(id: string, cleanerId: string) {
   const supabase = createClient()
   const db = supabase as any
+  const { data: before } = await db.from('residential_jobs').select('cleaner_id').eq('id', id).maybeSingle()
   const { error } = await db.from('residential_jobs').update({ cleaner_id: cleanerId || null }).eq('id', id)
   if (error) return { error: error.message }
+  // Only a newly assigned cleaner is told; re-saving the same cleaner sends nothing.
+  if (cleanerId && cleanerId !== before?.cleaner_id) await notifyResidentialCleaner(id).catch(() => {})
   revalidatePath('/clients')
+  revalidatePath('/cleaner/dashboard')
   return { success: true }
 }
 

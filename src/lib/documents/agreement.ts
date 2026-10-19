@@ -26,6 +26,9 @@ export interface AgreementData {
   contactEmail: string
   scopeGroups: ScopeGroup[]
   additionalServices: string[]
+  // Set on residential agreements issued with the residential terms, so ones
+  // signed before those terms existed keep showing what was signed.
+  residentialTerms?: boolean
 }
 
 const AGREEMENT_SCOPE: ScopeGroup[] = [
@@ -100,6 +103,26 @@ const END_OF_LEASE_OVERRIDES: Record<number, { title: string; body: string }> = 
 
 export const END_OF_LEASE_CLAUSES: { n: number; title: string; body: string }[] =
   AGREEMENT_CLAUSES.map((c) => ({ ...c, ...(END_OF_LEASE_OVERRIDES[c.n] ?? {}) }))
+
+// Residential agreements follow the residential quote terms: no fixed term,
+// recurring services end on 14 days' notice, payment on the day of each service,
+// 24 hours' notice to cancel a visit, and scope limited to the accepted Quote.
+// Every other clause is shared with the standard agreement.
+export const RESIDENTIAL_PAYMENT_TERMS = 'Due on the day of each service; payments not made on the day incur a 10% late fee'
+export const RESIDENTIAL_TERM = 'No fixed term'
+
+const RESIDENTIAL_OVERRIDES: Record<number, { title: string; body: string }> = {
+  2: { title: 'Engagement & Term', body: "The Client engages the Provider to perform the Services at the Premises from the Commencement Date. There is no minimum or fixed term. <strong>Once accepted, recurring Services continue on a recurring basis at the Frequency in the Particulars until terminated by either party on 14 days' written notice</strong> under clause 14. A one-off clean ends once the Services are complete and the Fees are paid. The Provider performs the Services as an independent contractor; nothing in this Agreement creates a partnership, joint venture or employment relationship." },
+  3: { title: 'Scope of Services & Variations', body: 'The Provider will perform the Services set out in the scope of works of the accepted Quote, which forms Schedule 1. <strong>The scope is limited strictly to the areas and items listed; anything not listed is excluded.</strong> Excessive soiling, or items beyond the scope, may attract an additional charge, which the Provider will confirm with the Client first. Any other change to the scope or frequency of the Services must be agreed in writing and may result in an adjustment to the Fees.' },
+  4: { title: 'Service Standards & Quality', body: 'The Provider will perform the Services with due care and skill, using trained and supervised personnel, to a professional standard and in compliance with all applicable laws. Where the Client reports a deficiency in the Services within a reasonable time, the Provider will rectify it at no additional cost at the next scheduled visit or, for a one-off clean, at a time agreed with the Client.' },
+  5: { title: 'Fees & Payment', body: 'The Client will pay the Fees specified in the Particulars. <strong>Payment is due on the same day as the service. Payments not made on the day of service will incur a 10% late fee.</strong> The Provider issues a tax invoice by email for each service, and may suspend the Services where an amount remains unpaid 14 days after a written reminder. All amounts include GST unless stated otherwise.' },
+  7: { title: 'Price Review', body: "For recurring Services, the Provider may adjust the Fees once per year in line with the Queensland Consumer Price Index, on a minimum of 30 days' written notice. The Fees may also be reviewed by agreement where there is a material change in scope, frequency, property condition or consumable costs." },
+  8: { title: 'Client Responsibilities', body: 'The Client will <strong>provide clear, safe access to the Premises for the duration of each visit</strong>, including keys or access codes where needed; supply power, water and lighting at no charge; notify the Provider of any hazards or special requirements in advance; secure cash and valuables; and supply client-provided consumables unless otherwise agreed.' },
+  14: { title: 'Cancellation & Termination', body: "<strong>At least 24 hours' notice is required to cancel or reschedule a visit.</strong> Less notice, or a lockout on arrival, incurs a fee of up to 100% of that visit's charge. Either party may end recurring Services by giving 14 days' written notice. Either party may terminate immediately if the other commits a material breach not remedied within 14 days of written notice, or becomes insolvent. On termination, the Client will pay for Services performed to the termination date and the Provider will return all keys and access devices." },
+}
+
+export const RESIDENTIAL_CLAUSES: { n: number; title: string; body: string }[] =
+  AGREEMENT_CLAUSES.map((c) => ({ ...c, ...(RESIDENTIAL_OVERRIDES[c.n] ?? {}) }))
 
 export function withAgreementDefaults(data: Partial<AgreementData> | null | undefined): AgreementData {
   return {

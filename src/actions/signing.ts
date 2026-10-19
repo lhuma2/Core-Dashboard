@@ -209,6 +209,8 @@ export async function submitSignatureAction(code: string, typedName: string, det
   }
   // The ABN the client typed goes onto the contract itself.
   if (d.abn) newData.clientABN = d.abn
+  // An unsigned residential agreement shows the residential terms, so that's what is signed.
+  if (clientTypeOf(newData) === 'residential') newData.residentialTerms = true
 
   const h = headers()
   const ip = (h.get('x-forwarded-for') ?? '').split(',')[0].trim() || null

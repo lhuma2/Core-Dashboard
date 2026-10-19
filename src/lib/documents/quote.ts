@@ -9,7 +9,7 @@
 
 import { fieldValue, isChanged, type TemplateDocData } from './template'
 import { isExtraPrice } from './quote-request'
-import { DEFAULT_AGREEMENT, END_OF_LEASE_PAYMENT_TERMS, END_OF_LEASE_TERM, type AgreementData } from './agreement'
+import { DEFAULT_AGREEMENT, END_OF_LEASE_PAYMENT_TERMS, END_OF_LEASE_TERM, RESIDENTIAL_PAYMENT_TERMS, RESIDENTIAL_TERM, type AgreementData } from './agreement'
 
 export type ClientType = 'commercial' | 'residential' | 'end_of_lease'
 
@@ -149,6 +149,12 @@ export function agreementFromQuote(q: TemplateDocData, agreementRef: string): Ag
       frequency: fromQuote.frequency || END_OF_LEASE_TERM,
       initialTerm: END_OF_LEASE_TERM,
       paymentTerms: END_OF_LEASE_PAYMENT_TERMS,
+    } : {}),
+    // Residential: no fixed term, paid on the day of each service.
+    ...(type === 'residential' ? {
+      initialTerm: RESIDENTIAL_TERM,
+      paymentTerms: RESIDENTIAL_PAYMENT_TERMS,
+      residentialTerms: true,
     } : {}),
     proposalRef: q.refNumber ?? '',
     agreementRef,
