@@ -19,6 +19,11 @@ export interface JobPrefill {
   contact_phone?: string
   clean_date?: string
   comments?: string
+  bedrooms?: number
+  bathrooms?: number
+  // Set when the signed agreement is weekly, fortnightly or monthly.
+  frequency?: 'weekly' | 'fortnightly' | 'monthly'
+  service_days?: string[]
 }
 
 interface ResidentialJobFormProps {
@@ -38,9 +43,9 @@ const FREQUENCY_OPTIONS = [
 export function ResidentialJobForm({ action, cleaners, prefill }: ResidentialJobFormProps) {
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(false)
-  const [isRecurring, setIsRecurring] = useState(false)
-  const [frequency, setFrequency] = useState('weekly')
-  const [serviceDays, setServiceDays] = useState<string[]>([])
+  const [isRecurring, setIsRecurring] = useState(!!prefill?.frequency)
+  const [frequency, setFrequency] = useState<string>(prefill?.frequency ?? 'weekly')
+  const [serviceDays, setServiceDays] = useState<string[]>(prefill?.service_days ?? [])
   const [scopeImageName, setScopeImageName] = useState<string | null>(null)
   const scopeImageInputRef = useRef<HTMLInputElement>(null)
 
@@ -204,14 +209,14 @@ export function ResidentialJobForm({ action, cleaners, prefill }: ResidentialJob
           name="bedrooms"
           label="Bedrooms"
           options={countOptions}
-          defaultValue="0"
+          defaultValue={String(prefill?.bedrooms ?? 0)}
           error={errors.bedrooms?.[0]}
         />
         <Select
           name="bathrooms"
           label="Bathrooms"
           options={countOptions}
-          defaultValue="0"
+          defaultValue={String(prefill?.bathrooms ?? 0)}
           error={errors.bathrooms?.[0]}
         />
       </div>

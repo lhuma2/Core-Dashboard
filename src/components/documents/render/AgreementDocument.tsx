@@ -1,5 +1,5 @@
 ﻿import type { CSSProperties } from 'react'
-import { AGREEMENT_CLAUSES, DEFAULT_AGREEMENT, END_OF_LEASE_CLAUSES, END_OF_LEASE_PAYMENT_TERMS, END_OF_LEASE_TERM, type AgreementData } from '@/lib/documents/agreement'
+import { AGREEMENT_CLAUSES, DEFAULT_AGREEMENT, END_OF_LEASE_CLAUSES, END_OF_LEASE_PAYMENT_TERMS, END_OF_LEASE_TERM, RESIDENTIAL_CLAUSES, RESIDENTIAL_PAYMENT_TERMS, RESIDENTIAL_TERM, type AgreementData } from '@/lib/documents/agreement'
 import { clientTypeOf } from '@/lib/documents/quote'
 
 // Faithful recreation of the Service Agreement (7 × A4 pages).
@@ -70,12 +70,19 @@ function ScopeCol({ title, items }: { title: string; items: string[] }) {
 export function AgreementDocument({ data, signature }: { data: AgreementData; signature?: SignatureFill | null }) {
   const t = clientTypeOf(data)
   const eol = t === 'end_of_lease'
-  const clauses = eol ? END_OF_LEASE_CLAUSES : AGREEMENT_CLAUSES
+  // Residential terms show on residential agreements issued with them, and on any not
+  // yet signed. One signed before they existed keeps the terms it was signed on.
+  const res = t === 'residential' && (!!data.residentialTerms || !signature)
+  // Both one-off types: scope comes from the accepted quote, not the office list.
+  const quoteScope = eol || res
+  const clauses = eol ? END_OF_LEASE_CLAUSES : res ? RESIDENTIAL_CLAUSES : AGREEMENT_CLAUSES
   const c1to6 = clauses.slice(0, 6)
   const c7to13 = clauses.slice(6, 13)
   const c14to19 = clauses.slice(13, 19)
   // End of lease agreements issued before their own terms existed still carry the commercial payment terms.
-  const paymentTerms = eol && data.paymentTerms === DEFAULT_AGREEMENT.paymentTerms ? END_OF_LEASE_PAYMENT_TERMS : data.paymentTerms
+  // Residential agreements issued before their own terms, but not yet signed, likewise.
+  const oldPayment = data.paymentTerms === DEFAULT_AGREEMENT.paymentTerms
+  const paymentTerms = eol && oldPayment ? END_OF_LEASE_PAYMENT_TERMS : res && oldPayment ? RESIDENTIAL_PAYMENT_TERMS : data.paymentTerms
   const service = t === 'residential' ? 'residential cleaning' : t === 'end_of_lease' ? 'end of lease cleaning' : 'commercial cleaning'
 
   return (
@@ -122,10 +129,13 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
           <PRow k={eol ? 'Clean Date' : 'Commencement'}>{data.commencementDate || '—'}</PRow>
           {eol
             ? <PRow k="Re-clean Guarantee">Free return to re-clean if notified in writing within 72 hours of completion (clause 4)</PRow>
-            : <PRow k="Initial Term">{data.initialTerm}</PRow>}
+            : res
+              ? <PRow k="Term">{RESIDENTIAL_TERM}. Recurring services continue until either party gives 14 days&apos; written notice (clause 14)</PRow>
+              : <PRow k="Initial Term">{data.initialTerm}</PRow>}
           <PRow k="Service Fee">{data.serviceFee}{!/gst/i.test(data.serviceFee ?? '') && <span style={{ color: '#94A3B8' }}> (incl. GST)</span>}</PRow>
           <PRow k="Payment Terms">{paymentTerms}</PRow>
-          <PRow k="Price Review">{eol ? 'Fixed price as quoted' : <>Annually, in line with Queensland CPI, minimum 30 days&apos; written notice</>}</PRow>
+          {res && <PRow k="Cancellation">At least 24 hours&apos; notice to cancel or reschedule a visit (clause 14)</PRow>}
+          <PRow k="Price Review">{eol ? 'Fixed price as quoted' : <>{res ? 'Recurring services: annually' : 'Annually'}, in line with Queensland CPI, minimum 30 days&apos; written notice</>}</PRow>
           <PRow k="Special Conditions" last>{data.specialConditions}</PRow>
         </div>
         <Foot n="02" />
@@ -161,8 +171,8 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
         <div style={{ marginTop: 46 }}>
           <div style={monoEyebrow}>Schedule 1</div>
           <h2 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 30, lineHeight: 1.06, letterSpacing: '-.025em', margin: 0 }}>Scope of services.</h2>
-          {eol ? (
-            <p style={{ margin: '14px 0 0', fontSize: 13, lineHeight: 1.6, color: '#64748B', maxWidth: 640 }}>The Services are the end of lease clean at {data.premises}, as set out in the scope of works of the accepted Quote{data.proposalRef ? ` ${data.proposalRef}` : ''}. That scope of works forms part of this Agreement.</p>
+          {quoteScope ? (
+            <p style={{ margin: '14px 0 0', fontSize: 13, lineHeight: 1.6, color: '#64748B', maxWidth: 640 }}>The Services are the {eol ? 'end of lease clean' : 'residential cleaning'} at {data.premises}, as set out in the scope of works of the accepted Quote{data.proposalRef ? ` ${data.proposalRef}` : ''}. That scope of works forms part of this Agreement.</p>
           ) : (
             <p style={{ margin: '14px 0 0', fontSize: 13, lineHeight: 1.6, color: '#64748B', maxWidth: 640 }}>The Services comprise the following inclusions at {data.premises}, performed {data.frequency}, together with any items in the accepted Proposal. The scope may be tailored by written agreement.</p>
           )}
@@ -171,6 +181,11 @@ export function AgreementDocument({ data, signature }: { data: AgreementData; si
           <div style={{ marginTop: 28, background: '#F8FAFC', border: '1px solid #EEF2F6', borderRadius: 12, padding: '22px 26px' }}>
             <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 10 }}>Re-clean guarantee</div>
             <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#334155' }}>If anything within the agreed scope isn&apos;t up to standard at the final inspection, let us know in writing within 72 hours of completion and we&apos;ll come back and re-clean it at no extra cost (clause 4).</p>
+          </div>
+        ) : res ? (
+          <div style={{ marginTop: 28, background: '#F8FAFC', border: '1px solid #EEF2F6', borderRadius: 12, padding: '22px 26px' }}>
+            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 10 }}>What&apos;s included</div>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#334155' }}>The scope is limited strictly to the areas and items listed in the accepted Quote; anything not listed is excluded. Excessive soiling or items beyond the scope may attract an additional charge, which we&apos;ll confirm with you first (clause 3).</p>
           </div>
         ) : (
           <>

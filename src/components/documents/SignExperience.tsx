@@ -42,10 +42,13 @@ export function SignExperience({
   const hasDate = !needsDate || startDate >= minStart
   // Show the chosen start date on the agreement as they pick it.
   const shown = useMemo(() => {
-    if (!needsDate || !startDate) return data
+    // A residential agreement signed here is signed on the residential terms, so keep
+    // showing them once the signature appears (signing stamps the same flag).
+    const base = !alreadySigned && clientTypeOf(data) === 'residential' ? { ...data, residentialTerms: true } : data
+    if (!needsDate || !startDate) return base
     const label = new Date(startDate + 'T12:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
-    return { ...data, commencementDate: label }
-  }, [data, needsDate, startDate])
+    return { ...base, commencementDate: label }
+  }, [data, alreadySigned, needsDate, startDate])
 
   // ── Fit the A4 document to its column via CSS zoom (reflows, so the column
   //    height stays correct on laptop and mobile). ──
