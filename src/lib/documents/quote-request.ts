@@ -104,11 +104,12 @@ const NOT_THE_CLEAN = /window|carpet|oven|blind|wall|fridge|mattress|sofa|couch|
 
 /**
  * An extra on top of the clean itself (blinds, oven, carpets…) with its own price: a
- * price label, or any extra whose value is a dollar amount. Deposits and discounts aren't extras.
+ * price label, or any extra whose value is a dollar amount ("$80" or "80.00", never a bare
+ * count like "2"). Deposits and discounts aren't extras.
  */
 export function isExtraPrice(label: string, value = ''): boolean {
   const l = (label ?? '').toLowerCase()
-  return NOT_THE_CLEAN.test(l) && !/deposit|discount/.test(l) && (isPriceLabel(l) || /^\s*\$/.test(value))
+  return NOT_THE_CLEAN.test(l) && !/deposit|discount/.test(l) && (isPriceLabel(l) || /^\s*\$|^\s*\d[\d,]*\.\d{2}\s*$/.test(value))
 }
 
 /**
