@@ -63,16 +63,17 @@ export function guessAgreementKey(label: string): AgreementKey | null {
 /** The agreement particulars a template quote fills, field by field. */
 export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementData> {
   const out: Partial<Record<AgreementKey, string>> = {}
-  const eol = clientTypeOf(q) === 'end_of_lease'
+  // Residential and end of lease quotes price add-ons (windows, oven, blinds…) in their own boxes.
+  const addOns = clientTypeOf(q) !== 'commercial'
   for (const f of q.template.fields) {
     if (f.kind !== 'text') continue
     const explicit = f.agreementKey
     if (explicit === 'none') continue
     const key = (explicit && KEYS.has(explicit) ? explicit : guessAgreementKey(f.label)) as AgreementKey | null
     if (!key) continue
-    // End of lease extras (blinds, oven…) are added to the fee below, never taken as it,
+    // Add-ons (windows, oven, blinds…) are added to the fee below, never taken as it,
     // and neither is a GST-only, ex-GST or subtotal box: the fee is the GST-inclusive price.
-    if (key === 'serviceFee' && !explicit && eol && (isExtraPrice(f.label, fieldValue(f, q.values)) || notTheFullPrice(f.label))) continue
+    if (key === 'serviceFee' && !explicit && addOns && (isExtraPrice(f.label, fieldValue(f, q.values)) || notTheFullPrice(f.label))) continue
     const raw = fieldValue(f, q.values)
     const v = raw.trim()
     if (!v) continue
@@ -81,8 +82,8 @@ export function quoteToAgreementFields(q: TemplateDocData): Partial<AgreementDat
     // An explicit mapping wins over a guess; otherwise the first field wins.
     if (out[key] == null || explicit) out[key] = v.replace(/\s*\n\s*/g, key === 'premises' ? ', ' : ' ')
   }
-  if (eol) {
-    const fee = endOfLeaseFee(q, out.serviceFee)
+  if (addOns) {
+    const fee = feeWithAddOns(q, out.serviceFee)
     if (fee) out.serviceFee = fee
   }
   if (!out.clientName) {
@@ -111,10 +112,10 @@ function money(v: string): number | null {
 const aud = (n: number) => `$${n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 /**
- * End of lease: the agreement's fee is the quoted price plus every extra with a price
- * (blinds, oven…). Extras of $0.00 are left off. Prices already include GST.
+ * Residential and end of lease: the agreement's fee is the quoted price plus every add-on
+ * with a price (windows, oven, blinds…). Add-ons of $0.00 are left off. Prices already include GST.
  */
-function endOfLeaseFee(q: TemplateDocData, quoted: string | undefined): string | null {
+function feeWithAddOns(q: TemplateDocData, quoted: string | undefined): string | null {
   const base = quoted ? money(quoted) : null
   if (base == null) return null
   const extras: { label: string; amount: number }[] = []
