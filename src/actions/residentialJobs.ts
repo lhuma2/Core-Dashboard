@@ -243,7 +243,7 @@ export async function startResidentialJobAction(jobId: string) {
     .eq('cleaner_id', profile.id)
     .eq('status', 'not_started')
     .select('id')
-    .single()
+    .maybeSingle() // no row = a second tap already started it
 
   if (error) return { error: error.message }
   if (!updated) return { success: true, alreadyStarted: true }
@@ -359,10 +359,11 @@ export async function startResidentialOccurrenceAction(templateId: string) {
 
   const alreadyStarted = !!existing?.started_at
   const now = new Date().toISOString()
-  await (supabase as any)
+  const { error: startErr } = await (supabase as any)
     .from('residential_jobs')
     .update(alreadyStarted ? { status: 'in_progress' } : { status: 'in_progress', started_at: now })
     .eq('id', jobId)
+  if (startErr) return { error: startErr.message }
 
   revalidatePath('/cleaner/dashboard')
   revalidatePath(`/cleaner/residential/${templateId}`)
@@ -376,13 +377,25 @@ export async function finishResidentialJobAction(jobId: string) {
   if (!profile) return { error: 'Not authenticated' }
 
   const now = new Date().toISOString()
-  const { error } = await (supabase as any)
+  const { data: updated, error } = await (supabase as any)
     .from('residential_jobs')
     .update({ status: 'completed', finished_at: now })
     .eq('id', jobId)
     .eq('cleaner_id', profile.id)
+    .eq('status', 'in_progress')
+    .select('id')
+    .maybeSingle()
 
   if (error) return { error: error.message }
+  if (!updated) {
+    // Nothing changed: either a second tap after it already finished (fine,
+    // and its finish time is kept), or it isn't this cleaner's started job.
+    const { data: current } = await (supabase as any)
+      .from('residential_jobs').select('status, cleaner_id').eq('id', jobId).maybeSingle()
+    if (current?.cleaner_id === profile.id && current.status === 'completed') return { success: true }
+    if (current?.cleaner_id !== profile.id) return { error: 'This job is not assigned to you.' }
+    return { error: 'This clean hasn’t been started yet. Refresh the page and tap Start Job.' }
+  }
 
   revalidatePath('/cleaner/timetable')
   revalidatePath(`/cleaner/residential/${jobId}`)

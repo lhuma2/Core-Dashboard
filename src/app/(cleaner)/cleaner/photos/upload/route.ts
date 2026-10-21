@@ -24,6 +24,10 @@ export async function POST(request: Request) {
   const jobId = String(form?.get('jobId') ?? '')
   const phase = String(form?.get('phase') ?? 'after') as (typeof PHASES)[number]
   const jobKind = String(form?.get('jobKind') ?? 'job_assignment') as (typeof KINDS)[number]
+  // The phone's own id for this photo. Sending the same photo twice (the reply was
+  // lost to bad signal or the app being closed, so it was retried) lands on the
+  // same file instead of storing a duplicate.
+  const photoId = String(form?.get('photoId') ?? '').toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 64)
   if (!(file instanceof File) || !file.size) return NextResponse.json({ error: 'No photo was received.' }, { status: 400 })
   if (!/^[0-9a-f-]{36}$/i.test(jobId) || !PHASES.includes(phase) || !KINDS.includes(jobKind)) {
     return NextResponse.json({ error: 'This job link is not valid.' }, { status: 400 })
@@ -32,21 +36,28 @@ export async function POST(request: Request) {
 
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
   // Random suffix: several photos picked at once upload in parallel and can land in the same millisecond.
-  const path = `${jobKind}/${jobId}/${phase}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`
+  const name = photoId.length >= 8 ? photoId : `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
+  const path = `${jobKind}/${jobId}/${phase}/${name}.${ext}`
 
   const { error: upErr } = await supabase.storage
     .from('job-photos')
     .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false })
-  if (upErr) {
+  const alreadyStored = !!upErr && (String(upErr.statusCode) === '409' || /already exists|duplicate/i.test(upErr.message))
+  if (upErr && !alreadyStored) {
     console.error('Job photo upload failed', jobKind, jobId, upErr.message)
     return NextResponse.json({ error: upErr.message }, { status: 502 })
   }
 
-  // Tag it for the admin view. The file is already stored, so a failure here is logged, not fatal.
-  const { error: tagErr } = await supabase.from('job_photos').insert({
-    job_id: jobId, job_kind: jobKind, phase, storage_path: path, uploaded_by: profile.id,
-  })
-  if (tagErr) console.error('Job photo tag failed', path, tagErr.message)
+  // Tag it for the admin view (once). The file is already stored, so a failure here is logged, not fatal.
+  const { data: tagged } = alreadyStored
+    ? await supabase.from('job_photos').select('id').eq('storage_path', path).limit(1).maybeSingle()
+    : { data: null }
+  if (!tagged) {
+    const { error: tagErr } = await supabase.from('job_photos').insert({
+      job_id: jobId, job_kind: jobKind, phase, storage_path: path, uploaded_by: profile.id,
+    })
+    if (tagErr) console.error('Job photo tag failed', path, tagErr.message)
+  }
 
   const { data } = supabase.storage.from('job-photos').getPublicUrl(path)
   return NextResponse.json({ url: data.publicUrl as string, storagePath: path })

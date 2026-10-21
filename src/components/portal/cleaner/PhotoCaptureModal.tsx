@@ -3,15 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { Camera, X, CheckCircle2, Loader2, RefreshCw, WifiOff } from 'lucide-react'
 import { deleteJobPhotoAction } from '@/actions/jobs'
-import { queuePhoto, flushPhotoQueue, removeQueuedPhoto, type QueuedPhoto } from '@/lib/photoQueue'
+import { queuePhoto, flushPhotoQueue, removeQueuedPhoto, claimPhoto, releasePhoto, PHOTO_UPLOADED_EVENT, type QueuedPhoto } from '@/lib/photoQueue'
 import { uploadJobPhoto } from '@/lib/uploadJobPhoto'
-import { stampPhoto } from '@/lib/stampPhoto'
+import { stampPhotoWithThumb } from '@/lib/stampPhoto'
 
 type Phase = 'before' | 'after'
 type PhotoStatus = 'uploading' | 'uploaded' | 'queued' | 'failed'
 
 interface PhotoEntry {
   id: string
+  /** Small preview shown in the grid (the full photo if no preview could be made) */
   localUrl: string
   file: File
   status: PhotoStatus
@@ -39,91 +40,123 @@ const PHASE_COPY: Record<Phase, { title: string; hint: string }> = {
   },
 }
 
-async function uploadFile(jobId: string, phase: Phase, file: File | Blob, jobKind: 'job_assignment' | 'bond_job' | 'residential_job') {
-  const res = await uploadJobPhoto(jobId, file, phase, jobKind)
+async function uploadFile(jobId: string, phase: Phase, file: File | Blob, jobKind: 'job_assignment' | 'bond_job' | 'residential_job', photoId: string) {
+  const res = await uploadJobPhoto(jobId, file, phase, jobKind, photoId)
   return 'error' in res ? { error: res.error, offline: res.offline } : { storagePath: res.storagePath, offline: false }
 }
 
 export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', onClose }: PhotoCaptureModalProps) {
   const cameraInputRef  = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PhotoEntry[]>([])
+  const [preparing, setPreparing] = useState(0)
   const [isOffline, setIsOffline] = useState(false)
   const photosRef = useRef(photos)
   photosRef.current = photos
+  // Photos removed while their upload was still running: deleted once it lands.
+  const removedRef = useRef(new Set<string>())
 
   useEffect(() => {
     setIsOffline(typeof navigator !== 'undefined' && !navigator.onLine)
     function goOnline() { setIsOffline(false); retryAll() }
     function goOffline() { setIsOffline(true) }
+    // The job screen's own queue flush can upload one of this box's pending photos first.
+    function onFlushed(e: Event) {
+      const { id, storagePath } = (e as CustomEvent<{ id: string; storagePath: string | null }>).detail
+      setPhotos((p) => p.map((x) => x.id === id ? { ...x, status: 'uploaded', storagePath, error: undefined } : x))
+    }
     window.addEventListener('online', goOnline)
     window.addEventListener('offline', goOffline)
+    window.addEventListener(PHOTO_UPLOADED_EVENT, onFlushed)
     return () => {
       window.removeEventListener('online', goOnline)
       window.removeEventListener('offline', goOffline)
+      window.removeEventListener(PHOTO_UPLOADED_EVENT, onFlushed)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    return () => { photos.forEach((p) => URL.revokeObjectURL(p.localUrl)) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { photosRef.current.forEach((p) => URL.revokeObjectURL(p.localUrl)) }
   }, [])
 
+  function toQueued(entry: PhotoEntry): QueuedPhoto {
+    return {
+      id: entry.id,
+      jobId,
+      jobKind,
+      phase,
+      blob: entry.file,
+      fileName: entry.file.name,
+      contentType: entry.file.type || 'image/jpeg',
+      queuedAt: new Date().toISOString(),
+    }
+  }
+
+  /** Uploads a photo the caller has already claimed (claimPhoto), and releases it after. */
   async function attemptUpload(entry: PhotoEntry) {
-    const result = await uploadFile(jobId, phase, entry.file, jobKind)
-    if (!result.error) {
-      setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: 'uploaded', storagePath: result.storagePath ?? null } : x))
-      removeQueuedPhoto(entry.id).catch(() => {})
-      return
-    }
-    // Keep every photo that didn't upload in IndexedDB, so it survives this box or
-    // the app being closed and is retried when the job is next opened or signal returns.
-    if (typeof indexedDB !== 'undefined') {
-      const queued: QueuedPhoto = {
-        id: entry.id,
-        jobId,
-        jobKind,
-        phase,
-        blob: entry.file,
-        fileName: entry.file.name,
-        contentType: entry.file.type || 'image/jpeg',
-        queuedAt: new Date().toISOString(),
+    try {
+      const result = await uploadFile(jobId, phase, entry.file, jobKind, entry.id)
+      if (removedRef.current.has(entry.id)) {
+        // Removed while uploading: don't keep it anywhere.
+        removeQueuedPhoto(entry.id).catch(() => {})
+        if (result.storagePath) deleteJobPhotoAction(result.storagePath).catch(() => {})
+        return
       }
-      await queuePhoto(queued).catch(() => {})
+      if (!result.error) {
+        setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: 'uploaded', storagePath: result.storagePath ?? null, error: undefined } : x))
+        removeQueuedPhoto(entry.id).catch(() => {})
+        return
+      }
+      // Keep every photo that didn't upload in IndexedDB, so it survives this box or
+      // the app being closed and is retried when the job is next opened or signal returns.
+      if (typeof indexedDB !== 'undefined') await queuePhoto(toQueued(entry)).catch(() => {})
+      setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: result.offline ? 'queued' : 'failed', error: result.error } : x))
+    } finally {
+      releasePhoto(entry.id)
     }
-    setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: result.offline ? 'queued' : 'failed', error: result.error } : x))
+  }
+
+  function startUpload(entry: PhotoEntry) {
+    if (!claimPhoto(entry.id)) return
+    setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: 'uploading' } : x))
+    attemptUpload(entry)
   }
 
   async function retryAll() {
-    // Retry anything queued in IndexedDB from this or a previous session
-    await flushPhotoQueue(jobId, (entry) => uploadFile(entry.jobId, entry.phase, entry.blob, entry.jobKind))
-    // Retry anything marked failed/queued in this modal's current state
-    const stuck = photosRef.current.filter((p) => p.status === 'failed' || p.status === 'queued')
-    for (const entry of stuck) {
-      setPhotos((p) => p.map((x) => x.id === entry.id ? { ...x, status: 'uploading' } : x))
-      await attemptUpload(entry)
-    }
+    // Retry anything marked failed/queued in this box first (claiming them), then
+    // anything queued in IndexedDB from a previous session — the flush skips claimed photos.
+    photosRef.current.filter((p) => p.status === 'failed' || p.status === 'queued').forEach(startUpload)
+    await flushPhotoQueue(jobId, (entry) => uploadFile(entry.jobId, entry.phase, entry.blob, entry.jobKind, entry.id)).catch(() => {})
   }
 
   async function addFiles(fileList: FileList | null) {
     const files = Array.from(fileList ?? [])
     if (!files.length) return
     const takenAt = new Date()
+    setPreparing((n) => n + files.length)
+    // One at a time: decoding several full-size camera photos at once can run iOS out of memory.
+    // Each photo starts uploading as soon as it's ready; uploadJobPhoto limits how many run at once.
     for (const original of files) {
-      // Stamp before upload/queueing so the stored (and any offline-queued) copy carries the date + time
-      const file = await stampPhoto(original, takenAt)
-      const id = `${Date.now()}-${Math.random()}`
-      const entry: PhotoEntry = { id, localUrl: URL.createObjectURL(file), file, status: 'uploading', storagePath: null }
-      setPhotos((p) => [...p, entry])
-      attemptUpload(entry)
+      try {
+        // Stamp before upload/queueing so the stored (and any offline-queued) copy carries the date + time
+        const { file, thumb } = await stampPhotoWithThumb(original, takenAt)
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+        const entry: PhotoEntry = { id, localUrl: URL.createObjectURL(thumb ?? file), file, status: 'uploading', storagePath: null }
+        claimPhoto(id)
+        // Saved on the phone before uploading, so closing this box or the app
+        // mid-upload never loses it: it's retried when the job is next opened.
+        if (typeof indexedDB !== 'undefined') await queuePhoto(toQueued(entry)).catch(() => {})
+        setPhotos((p) => [...p, entry])
+        attemptUpload(entry)
+      } finally {
+        setPreparing((n) => n - 1)
+      }
     }
   }
 
   function retryOne(id: string) {
     const entry = photos.find((p) => p.id === id)
-    if (!entry) return
-    setPhotos((p) => p.map((x) => x.id === id ? { ...x, status: 'uploading' } : x))
-    attemptUpload(entry)
+    if (entry) startUpload(entry)
   }
 
   function removePhoto(id: string) {
@@ -131,16 +164,20 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
     if (!entry) return
     URL.revokeObjectURL(entry.localUrl)
     setPhotos((p) => p.filter((x) => x.id !== id))
-    // Already uploaded (or queued for upload) — clean up the stored copy too,
-    // not just the on-screen thumbnail, so an accidental shot doesn't linger
-    // for the admin to see.
+    removedRef.current.add(id)
+    removeQueuedPhoto(id).catch(() => {})
+    // Already uploaded — clean up the stored copy too, not just the on-screen
+    // thumbnail, so an accidental shot doesn't linger for the admin to see.
+    // One still uploading is deleted when its upload finishes.
     if (entry.storagePath) {
       deleteJobPhotoAction(entry.storagePath).catch(() => {})
     }
   }
 
   const copy = PHASE_COPY[phase]
-  const anyUploading = photos.some((p) => p.status === 'uploading')
+  const uploadingCount = photos.filter((p) => p.status === 'uploading').length + preparing
+  const anyUploading = uploadingCount > 0
+  const uploadedCount = photos.filter((p) => p.status === 'uploaded').length
   const anyPending    = photos.some((p) => p.status === 'queued' || p.status === 'failed')
 
   return (
@@ -173,7 +210,7 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
               {photos.map((p) => (
                 <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.localUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={p.localUrl} alt="" decoding="async" className="w-full h-full object-cover" />
                   {p.status === 'uploading' && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -255,7 +292,7 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
             disabled={anyUploading}
             className="flex-1 bg-brand-navy text-white font-semibold text-sm rounded-2xl py-3 disabled:opacity-40"
           >
-            {anyUploading ? 'Uploading…' : 'Submit'}
+            {anyUploading ? `Uploading… ${uploadedCount}/${uploadedCount + uploadingCount}` : 'Submit'}
           </button>
         </div>
         {anyPending && !anyUploading && (
