@@ -82,11 +82,11 @@ export function NotificationGate({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Still detecting
-  if (permission === null) return null
-
-  // Unsupported or already granted — show the app
-  if (permission === 'unsupported' || permission === 'granted') return <>{children}</>
+  // Still detecting (the server render and the first paint before the app's JS has
+  // loaded), unsupported, or already granted — show the app. Showing nothing while
+  // detecting left cleaners on a blank white screen until every script had loaded;
+  // the prompt below still replaces the app the moment permission turns out missing.
+  if (permission === null || permission === 'unsupported' || permission === 'granted') return <>{children}</>
 
   async function handleEnable() {
     setError(null)
