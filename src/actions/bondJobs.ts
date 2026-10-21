@@ -97,13 +97,19 @@ export async function updateBondJobCleanerCostAction(id: string, cost: number | 
 export async function assignBondJobCleanerAction(id: string, cleanerId: string) {
   const supabase = createClient()
   const db = supabase as any
-  const { data: before } = await db.from('bond_jobs').select('cleaner_id').eq('id', id).maybeSingle()
+  const { data: before } = await db.from('bond_jobs').select('cleaner_id, status').eq('id', id).maybeSingle()
+  // A clean that's started or finished stays with the cleaner who did it.
+  if (before?.cleaner_id && before.status !== 'not_started') {
+    return { error: 'This clean has already started, so its cleaner can no longer be changed.' }
+  }
   const { error } = await db.from('bond_jobs').update({ cleaner_id: cleanerId || null }).eq('id', id)
   if (error) return { error: error.message }
   // Only a newly assigned cleaner is told; re-saving the same cleaner sends nothing.
   if (cleanerId && cleanerId !== before?.cleaner_id) await notifyBondCleaner(id).catch(() => {})
   revalidatePath('/clients')
+  revalidatePath(`/clients/bond/${id}`)
   revalidatePath('/cleaner/dashboard')
+  revalidatePath(`/cleaner/bond/${id}`)
   return { success: true }
 }
 

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Table, type Column } from '@/components/ui/Table'
 import { Button } from '@/components/ui/Button'
+import { JobCleanerSelect } from '@/components/clients/JobCleanerSelect'
 import { Trash2, ChevronRight } from 'lucide-react'
 
 export interface BondJobRow {
@@ -47,29 +48,15 @@ function CleanerCell({ job, cleaners, assignAction }: {
   cleaners: CleanerOption[]
   assignAction: (id: string, cleanerId: string) => Promise<{ error?: string; success?: boolean }>
 }) {
-  const [isPending, startTransition] = useTransition()
-
-  if (job.cleaner_name) {
-    return <span className="text-gray-900">{job.cleaner_name}</span>
-  }
-
   return (
-    <select
-      className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:border-[#00250e] disabled:opacity-50"
-      defaultValue=""
-      disabled={isPending}
-      onClick={(e) => e.stopPropagation()}
-      onChange={(e) => {
-        const cleanerId = e.target.value
-        if (!cleanerId) return
-        startTransition(async () => { await assignAction(job.id, cleanerId) })
-      }}
-    >
-      <option value="" disabled>Unassigned</option>
-      {cleaners.map((c) => (
-        <option key={c.id} value={c.id}>{c.fullName}</option>
-      ))}
-    </select>
+    <JobCleanerSelect
+      jobId={job.id}
+      currentCleanerId={job.cleaner_id}
+      currentCleanerName={job.cleaner_name}
+      cleaners={cleaners}
+      assignAction={assignAction}
+      locked={job.status !== 'not_started'}
+    />
   )
 }
 
@@ -185,23 +172,26 @@ export function BondJobTable({ jobs, deleteAction, assignAction, cleaners = [] }
         ) : (
           jobs.map((j) => (
             <div key={j.id} className="flex items-center gap-2 px-4 py-4">
-              <Link href={`/clients/bond/${j.id}`} className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="font-medium text-gray-900 truncate">{j.client_name}</p>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${STATUS_STYLES[j.status] ?? STATUS_STYLES.not_started}`}>
-                    {STATUS_LABELS[j.status] ?? j.status}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 truncate">{j.address}</p>
-                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1 flex-wrap">
-                  <span>{formatDate(j.clean_date)} · {formatTime(j.clean_time)} ·</span>
+              <div className="min-w-0 flex-1">
+                <Link href={`/clients/bond/${j.id}`} className="block">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium text-gray-900 truncate">{j.client_name}</p>
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${STATUS_STYLES[j.status] ?? STATUS_STYLES.not_started}`}>
+                      {STATUS_LABELS[j.status] ?? j.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">{j.address}</p>
+                  <p className="text-xs text-gray-500 mt-1">{formatDate(j.clean_date)} · {formatTime(j.clean_time)}</p>
+                </Link>
+                {/* Outside the link so picking a cleaner doesn't open the clean */}
+                <div className="text-xs text-gray-500 mt-0.5">
                   {assignAction ? (
                     <CleanerCell job={j} cleaners={cleaners} assignAction={assignAction} />
                   ) : (
                     <span className={j.cleaner_name ? '' : 'text-gray-400'}>{j.cleaner_name || 'Unassigned'}</span>
                   )}
-                </p>
-              </Link>
+                </div>
+              </div>
               <button
                 type="button"
                 disabled={isPending && deletingId === j.id}

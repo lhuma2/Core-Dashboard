@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { PhotoGrid } from '@/components/ui/PhotoLightbox'
 import { CleanerCostEditor } from '@/components/clients/CleanerCostEditor'
-import { updateBondJobCleanerCostAction } from '@/actions/bondJobs'
+import { JobCleanerSelect } from '@/components/clients/JobCleanerSelect'
+import { updateBondJobCleanerCostAction, assignBondJobCleanerAction } from '@/actions/bondJobs'
 import { ArrowLeft, MapPin, Phone, User, MessageSquare } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -22,7 +24,7 @@ function formatBrisbaneTime(isoString: string | null | undefined): string {
 export default async function AdminBondJobDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
 
-  const [{ data: job }, { data: photos }] = await Promise.all([
+  const [{ data: job }, { data: photos }, { data: cleanerProfiles }] = await Promise.all([
     (supabase as any)
       .from('bond_jobs')
       .select('*, profiles!bond_jobs_cleaner_id_fkey(full_name)')
@@ -34,6 +36,7 @@ export default async function AdminBondJobDetailPage({ params }: { params: { id:
       .eq('job_id', params.id)
       .eq('job_kind', 'bond_job')
       .order('uploaded_at', { ascending: true }),
+    (createAdminClient() as any).from('profiles').select('id, full_name').eq('role', 'cleaner').order('full_name', { ascending: true }),
   ])
 
   if (!job) notFound()
@@ -82,7 +85,14 @@ export default async function AdminBondJobDetailPage({ params }: { params: { id:
           )}
           <div className="flex items-center gap-1.5 text-sm text-gray-700">
             <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-            {job.profiles?.full_name ?? 'Unassigned'}
+            <JobCleanerSelect
+              jobId={job.id}
+              currentCleanerId={job.cleaner_id ?? null}
+              currentCleanerName={job.profiles?.full_name ?? null}
+              cleaners={(cleanerProfiles ?? []).map((p: any) => ({ id: p.id, fullName: p.full_name ?? 'Unknown' }))}
+              assignAction={assignBondJobCleanerAction}
+              locked={job.status !== 'not_started'}
+            />
           </div>
         </div>
       </div>
