@@ -182,13 +182,26 @@ export async function removeResidentialScopeImageAction(jobId: string) {
 export async function assignResidentialJobCleanerAction(id: string, cleanerId: string) {
   const supabase = createClient()
   const db = supabase as any
-  const { data: before } = await db.from('residential_jobs').select('cleaner_id').eq('id', id).maybeSingle()
+  const { data: before } = await db.from('residential_jobs').select('cleaner_id, status, frequency, parent_id').eq('id', id).maybeSingle()
+  const isTemplate = !!before?.frequency && !before?.parent_id
+  // A one-off clean that's started or finished stays with the cleaner who did it.
+  if (before?.cleaner_id && !isTemplate && before.status !== 'not_started') {
+    return { error: 'This clean has already started, so its cleaner can no longer be changed.' }
+  }
   const { error } = await db.from('residential_jobs').update({ cleaner_id: cleanerId || null }).eq('id', id)
   if (error) return { error: error.message }
+  // Reassigning an ongoing client also moves any of its generated cleans that
+  // haven't started yet; started or finished ones stay with whoever did them.
+  if (isTemplate && cleanerId) {
+    await db.from('residential_jobs').update({ cleaner_id: cleanerId })
+      .eq('parent_id', id).eq('status', 'not_started')
+  }
   // Only a newly assigned cleaner is told; re-saving the same cleaner sends nothing.
   if (cleanerId && cleanerId !== before?.cleaner_id) await notifyResidentialCleaner(id).catch(() => {})
   revalidatePath('/clients')
+  revalidatePath(`/clients/residential/${id}`)
   revalidatePath('/cleaner/dashboard')
+  revalidatePath(`/cleaner/residential/${id}`)
   return { success: true }
 }
 
