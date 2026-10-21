@@ -9,7 +9,7 @@ import { startResidentialJobAction, cancelStartResidentialJobAction, finishResid
 import { flushPhotoQueue } from '@/lib/photoQueue'
 import { PhotoCaptureModal } from './PhotoCaptureModal'
 import { JobTimer } from './JobTimer'
-import { AlertCircle, ChevronRight } from 'lucide-react'
+import { AlertCircle, Camera, ChevronRight } from 'lucide-react'
 
 type Kind = 'job_assignment' | 'bond_job' | 'residential_job'
 
@@ -44,7 +44,10 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
   const [err, setErr] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState(initialStartedAt)
   const [finishedAt, setFinishedAt] = useState(initialFinishedAt ?? null)
-  const [showAfterPrompt, setShowAfterPrompt] = useState(false)
+  // The job the after-photo box is open for. Kept separately from jobId: on a
+  // recurring residential clean the page can swap to another dated instance
+  // after a refresh, and photos must still land on the clean just finished.
+  const [photoJobId, setPhotoJobId] = useState<string | null>(null)
   const [cancelling, setCancelling] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [status_, setStatus] = useState(status)
@@ -53,14 +56,25 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
   // as soon as this screen mounts (covers "reopened the app later, back online").
   useEffect(() => {
     const flush = () => flushPhotoQueue(jobId, async (entry) => {
-      const res = await uploadJobPhoto(entry.jobId, new File([entry.blob], entry.fileName, { type: entry.contentType }), entry.phase, entry.jobKind)
-      return 'error' in res ? { error: res.error } : {}
+      const res = await uploadJobPhoto(entry.jobId, new File([entry.blob], entry.fileName, { type: entry.contentType }), entry.phase, entry.jobKind, entry.id)
+      return 'error' in res ? { error: res.error } : { storagePath: res.storagePath }
     }).catch(() => {})
     flush()
     // …and again whenever signal comes back while the job is open.
     window.addEventListener('online', flush)
     return () => window.removeEventListener('online', flush)
   }, [jobId])
+
+  // A different job on the same screen (see photoJobId): show that job's own state.
+  const [shownJobId, setShownJobId] = useState(jobId)
+  if (shownJobId !== jobId) {
+    setShownJobId(jobId)
+    setStatus(status)
+    setStartedAt(initialStartedAt)
+    setFinishedAt(initialFinishedAt ?? null)
+    setLoading(false)
+    setErr(null)
+  }
 
   async function handleStart() {
     setLoading(true)
@@ -84,28 +98,44 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
   async function handleCancelStart() {
     setCancelling(true)
     setErr(null)
-    const result = await actions.cancel(jobId)
-    if (result?.error) {
-      setErr(result.error)
+    try {
+      const result = await actions.cancel(jobId)
+      if (result?.error) {
+        setErr(result.error)
+        setCancelling(false)
+        return
+      }
+      // This screen keeps its own status, so the refresh alone left it stuck on "Cancelling…".
+      setStatus('not_started')
+      setStartedAt(null)
       setCancelling(false)
-      return
+      setLoading(false)
+      router.refresh()
+    } catch {
+      setErr('Could not cancel. Check your connection and try again.')
+      setCancelling(false)
     }
-    router.refresh()
   }
 
   async function handleFinish() {
     if (!actions.finish) return
     setFinishing(true)
     setErr(null)
-    const result = await actions.finish(jobId)
-    if (result?.error) {
-      setErr(result.error)
+    try {
+      const result = await actions.finish(jobId)
+      if (result?.error) {
+        setErr(result.error)
+        setFinishing(false)
+        return
+      }
+    } catch {
+      setErr('Could not finish the clean. Check your connection and try again.')
       setFinishing(false)
       return
     }
     setFinishedAt(new Date().toISOString())
     setStatus('completed')
-    setShowAfterPrompt(true)
+    setPhotoJobId(jobId)
     router.refresh()
   }
 
@@ -159,8 +189,8 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
           {cancelling ? 'Cancelling…' : 'Accidentally started? Cancel'}
         </button>
 
-        {showAfterPrompt && (
-          <PhotoCaptureModal jobId={jobId} phase="after" jobKind={kind} onClose={() => setShowAfterPrompt(false)} />
+        {photoJobId && (
+          <PhotoCaptureModal jobId={photoJobId} phase="after" jobKind={kind} onClose={() => setPhotoJobId(null)} />
         )}
       </div>
     )
@@ -177,10 +207,21 @@ export function JobStartFlow({ jobId, status, startedAt: initialStartedAt, finis
                 Finished at {new Date(finishedAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
               </p>
             )}
+            {/* The photo box only opens once, on Finish. If it was closed early or
+                the app was reloaded, photos can still be added here. */}
+            {!photoJobId && (
+              <button
+                onClick={() => setPhotoJobId(jobId)}
+                className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-black bg-gray-100 rounded-full px-4 py-2 active:scale-[0.98] transition-all"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                Add photos
+              </button>
+            )}
           </div>
         )}
-        {showAfterPrompt && (
-          <PhotoCaptureModal jobId={jobId} phase="after" jobKind={kind} onClose={() => setShowAfterPrompt(false)} />
+        {photoJobId && (
+          <PhotoCaptureModal jobId={photoJobId} phase="after" jobKind={kind} onClose={() => setPhotoJobId(null)} />
         )}
       </div>
     )

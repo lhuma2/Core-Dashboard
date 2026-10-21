@@ -71,28 +71,51 @@ export async function removeQueuedPhoto(id: string): Promise<void> {
   db.close()
 }
 
+// Photo ids with an upload already under way on this page. The capture box and
+// the job screen both flush the queue (on open, and when signal returns); this
+// stops them sending the same photo twice.
+const claimed = new Set<string>()
+
+/** Marks a photo as being uploaded. Returns false if something else already is. */
+export function claimPhoto(id: string): boolean {
+  if (claimed.has(id)) return false
+  claimed.add(id)
+  return true
+}
+
+export function releasePhoto(id: string): void {
+  claimed.delete(id)
+}
+
 /**
  * Attempts to flush every queued photo for a job through `uploadFn`.
  * Leaves an entry in the queue if its upload fails again (still offline).
+ * Uploads are started together; uploadJobPhoto limits how many run at once.
  */
+export const PHOTO_UPLOADED_EVENT = 'job-photo-uploaded'
+
 export async function flushPhotoQueue(
   jobId: string,
-  uploadFn: (entry: QueuedPhoto) => Promise<{ error?: string }>,
+  uploadFn: (entry: QueuedPhoto) => Promise<{ error?: string; storagePath?: string | null }>,
 ): Promise<{ uploaded: string[]; stillPending: number }> {
   if (typeof indexedDB === 'undefined') return { uploaded: [], stillPending: 0 }
-  const pending = await getQueuedPhotos(jobId)
+  const pending = (await getQueuedPhotos(jobId)).filter((entry) => claimPhoto(entry.id))
   const uploaded: string[] = []
-  for (const entry of pending) {
+  await Promise.all(pending.map(async (entry) => {
     try {
       const result = await uploadFn(entry)
       if (!result.error) {
         await removeQueuedPhoto(entry.id)
         uploaded.push(entry.id)
+        // Lets an open photo box show this photo as uploaded instead of still pending.
+        window.dispatchEvent(new CustomEvent(PHOTO_UPLOADED_EVENT, { detail: { id: entry.id, storagePath: result.storagePath ?? null } }))
       }
     } catch {
       // Still offline / still failing — leave it queued, try again next flush
+    } finally {
+      releasePhoto(entry.id)
     }
-  }
+  }))
   const remaining = await getQueuedPhotos(jobId)
   return { uploaded, stillPending: remaining.length }
 }

@@ -5,6 +5,10 @@
  * `offline` says whether it's worth keeping the photo to retry later (no
  * signal) rather than a problem retrying won't fix (signed out, bad file).
  * Brief network blips and server hiccups are retried here first.
+ *
+ * At most MAX_PARALLEL uploads run at once across the whole page. A deep
+ * clean can pick 30-40 photos in one go; sending them all together splits a
+ * phone's upload bandwidth so thin that every one hits the timeout and fails.
  */
 
 import { shrinkPhoto } from './stampPhoto'
@@ -16,8 +20,26 @@ export type UploadResult =
 
 const ATTEMPTS = 3
 const TIMEOUT_MS = 60_000
+const MAX_PARALLEL = 3
 
-export async function uploadJobPhoto(jobId: string, file: File | Blob, phase: 'before' | 'after', jobKind: JobKind = 'job_assignment'): Promise<UploadResult> {
+let running = 0
+const waiting: (() => void)[] = []
+
+async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (running >= MAX_PARALLEL) await new Promise<void>((r) => waiting.push(r))
+  else running++
+  try {
+    return await fn()
+  } finally {
+    // Hand the slot straight to the next upload in line, or free it.
+    const next = waiting.shift()
+    if (next) next()
+    else running--
+  }
+}
+
+/** `photoId` is a stable id for this photo on the phone, so a retry of a photo that already arrived isn't stored twice. */
+export async function uploadJobPhoto(jobId: string, file: File | Blob, phase: 'before' | 'after', jobKind: JobKind = 'job_assignment', photoId?: string): Promise<UploadResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     return { error: 'No signal. The photo will upload when you’re back online.', offline: true }
   }
@@ -31,21 +53,28 @@ export async function uploadJobPhoto(jobId: string, file: File | Blob, phase: 'b
     fd.append('jobId', jobId)
     fd.append('phase', phase)
     fd.append('jobKind', jobKind)
+    if (photoId) fd.append('photoId', photoId)
     let res: Response
-    // AbortController + setTimeout, not AbortSignal.timeout: older iPhones don't have the latter.
-    const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
+    let body: any
     try {
-      res = await fetch('/cleaner/photos/upload', { method: 'POST', body: fd, signal: ctrl.signal, credentials: 'same-origin' })
+      // The timeout only starts once this photo's turn comes, not while it waits in line.
+      ;({ res, body } = await withSlot(async () => {
+        // AbortController + setTimeout, not AbortSignal.timeout: older iPhones don't have the latter.
+        const ctrl = new AbortController()
+        const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
+        try {
+          const r = await fetch('/cleaner/photos/upload', { method: 'POST', body: fd, signal: ctrl.signal, credentials: 'same-origin' })
+          return { res: r, body: await r.json().catch(() => null) }
+        } finally {
+          clearTimeout(timer)
+        }
+      }))
     } catch {
       // No response at all: no signal, or the connection dropped mid-upload.
       last = { error: 'Weak or no signal. The photo will upload when the connection is back.', offline: true }
       if (attempt < ATTEMPTS) { await wait(attempt * 1500); continue }
       return last
-    } finally {
-      clearTimeout(timer)
     }
-    const body = await res.json().catch(() => null)
     if (res.ok && body?.url) return { url: body.url, storagePath: body.storagePath }
     // Signed out: the request was sent to the login page instead.
     if (res.status === 401 || res.redirected || body == null && res.ok) {
