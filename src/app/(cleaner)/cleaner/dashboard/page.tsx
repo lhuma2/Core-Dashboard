@@ -98,11 +98,16 @@ export default async function CleanerDashboard({
 
   const pastFrom = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0]
 
+  const adminDb = createAdminClient() as any
+
   // Fetch clients + active jobs (weekend-aware) + past not-started jobs + this week's
-  // real jobs (both regular and bond cleans) in parallel
+  // real jobs (both regular and bond cleans) + recurring templates + assigned sites,
+  // all in parallel — each is its own round trip, so running them one after another
+  // is what made this page slow to open.
   const [
     { data: clients, error: clientsErr }, { data: activeJobs }, { data: missedJobsRaw },
     { data: weekJobs }, { data: weekBondJobs }, { data: weekResidentialJobs },
+    { data: residentialTemplates }, { data: mySitesRaw },
   ] = await Promise.all([
     (supabase as any)
       .from('clients')
@@ -145,20 +150,93 @@ export default async function CleanerDashboard({
       .is('frequency', null) // templates are expanded virtually below, not shown as-is
       .gte('clean_date', weekStart)
       .lte('clean_date', weekEnd),
+    // Recurring residential templates assigned to this cleaner — expanded into
+    // virtual occurrences below, same as a commercial client's own schedule.
+    (supabase as any)
+      .from('residential_jobs')
+      .select('id, client_name, address, clean_time, clean_date, frequency, service_days')
+      .eq('cleaner_id', profile.id)
+      .is('parent_id', null)
+      .not('frequency', 'is', null),
+    // Sites this cleaner is assigned to individually (multi-site clients). The parent client may
+    // not be assigned to them at the client level, so fetch via admin scoped to this cleaner.
+    adminDb
+      .from('client_sites')
+      .select('id, site_name, address, suburb, client_id, frequency, service_days, start_date, clients(business_name, active, start_date)')
+      .eq('assigned_cleaner_id', profile.id),
   ])
 
   // A cleaner assigned only to a SITE can't read the parent client row under RLS, so
   // the clients(...) embed on their own job rows comes back null and the card shows
   // "Job". Fill those in via admin, limited to clients on this cleaner's own jobs.
-  const adminDb = createAdminClient() as any
+  // Looked up below together with the cover jobs, in one round trip instead of two.
   const ownJobs: any[] = [...(activeJobs ?? []), ...(missedJobsRaw ?? []), ...(weekJobs ?? [])]
   const missingClientIds = Array.from(new Set(ownJobs.filter((j) => !j.clients && j.client_id).map((j) => j.client_id)))
-  if (missingClientIds.length) {
-    const { data: names } = await adminDb
-      .from('clients').select('id, business_name, address, suburb').in('id', missingClientIds)
-    const byId = new Map<string, any>((names ?? []).map((c: any) => [c.id, c]))
+  const missingNamesPromise = missingClientIds.length
+    ? adminDb.from('clients').select('id, business_name, address, suburb').in('id', missingClientIds)
+    : Promise.resolve({ data: null })
+
+  if (clientsErr) console.error('[cleaner-dashboard] clients query failed:', clientsErr.message)
+  const allClients: any[] = clients ?? []
+  // Only an explicit `false` is a pending assignment; a missing/NULL flag counts as
+  // accepted so a client can never be hidden from its assigned cleaner by it.
+  const pending  = allClients.filter((c) => c.assignment_accepted === false)
+  const accepted = allClients.filter((c) => c.assignment_accepted !== false)
+  const inProgressJob = (activeJobs ?? [])[0] ?? null
+
+  const assignedSites: any[] = (mySitesRaw ?? []).filter((s: any) => s.clients?.active !== false)
+
+  // ── Fold this week's recurring schedule into the timetable ──
+  // job_assignments rows only exist once a clean is started (or an admin manually
+  // assigns one), so without this a newly added client — single-site or a commercial
+  // (multi-site) one — would show nothing here until that happens. Compute the
+  // schedule-implied cleans for the week directly from each client/site's own
+  // frequency + service_days, same engine the client detail page already uses.
+  const weekStartDate = new Date(weekStart + 'T00:00:00')
+  type ScheduleSource = {
+    clientId: string; siteId: string | null; label: string
+    address: string | null; suburb: string | null
+    frequency: string | null; serviceDays: string[]; startDate: string | null
+  }
+  const scheduleSources: ScheduleSource[] = [
+    ...accepted.map((c: any): ScheduleSource => ({
+      clientId: c.id, siteId: null, label: c.business_name,
+      address: c.address ?? null, suburb: c.suburb ?? null,
+      frequency: c.frequency ?? null, serviceDays: c.service_days ?? [], startDate: c.start_date ?? null,
+    })),
+    ...assignedSites.map((s: any): ScheduleSource => ({
+      clientId: s.client_id, siteId: s.id,
+      label: s.clients?.business_name ? `${s.clients.business_name} — ${s.site_name}` : s.site_name,
+      address: s.address ?? null, suburb: s.suburb ?? null,
+      frequency: s.frequency ?? null, serviceDays: s.service_days ?? [], startDate: s.start_date ?? s.clients?.start_date ?? null,
+    })),
+  ]
+  // Cleans on these clients/sites handed to someone else this week (Team → Manage Jobs
+  // cover). Read via admin (RLS only shows a cleaner their own jobs) so the regular
+  // cleaner sees "covered by …" with its real status instead of a clean still to do.
+  const coverByKey = new Map<string, any>()
+  const myClientIds = accepted.map((c: any) => c.id)
+  const mySiteIds = assignedSites.map((s: any) => s.id)
+  const ors = [
+    myClientIds.length ? `and(client_id.in.(${myClientIds.join(',')}),site_id.is.null)` : null,
+    mySiteIds.length ? `site_id.in.(${mySiteIds.join(',')})` : null,
+  ].filter(Boolean).join(',')
+  const [{ data: missingNames }, { data: coverJobs }] = await Promise.all([
+    missingNamesPromise,
+    ors
+      ? adminDb
+          .from('job_assignments')
+          .select('client_id, site_id, scheduled_date, status, profiles(full_name)')
+          .gte('scheduled_date', weekStart).lte('scheduled_date', weekEnd)
+          .neq('cleaner_id', profile.id)
+          .or(ors)
+      : Promise.resolve({ data: null }),
+  ])
+  if (missingNames) {
+    const byId = new Map<string, any>((missingNames as any[]).map((c: any) => [c.id, c]))
     for (const j of ownJobs) if (!j.clients && byId.has(j.client_id)) j.clients = byId.get(j.client_id)
   }
+  for (const j of coverJobs ?? []) coverByKey.set(`${j.client_id}::${j.site_id ?? ''}::${j.scheduled_date}`, j)
 
   const weekByDate: Record<string, WeekEntry[]> = {}
   for (const d of weekDates) weekByDate[d] = []
@@ -206,76 +284,6 @@ export default async function CleanerDashboard({
       jobType: 'residential',
       time: formatTime24(res.clean_time),
     })
-  }
-
-  if (clientsErr) console.error('[cleaner-dashboard] clients query failed:', clientsErr.message)
-  const allClients: any[] = clients ?? []
-  // Only an explicit `false` is a pending assignment; a missing/NULL flag counts as
-  // accepted so a client can never be hidden from its assigned cleaner by it.
-  const pending  = allClients.filter((c) => c.assignment_accepted === false)
-  const accepted = allClients.filter((c) => c.assignment_accepted !== false)
-  const inProgressJob = (activeJobs ?? [])[0] ?? null
-
-  // Recurring residential templates assigned to this cleaner — expanded into
-  // virtual occurrences below, same as a commercial client's own schedule.
-  const { data: residentialTemplates } = await (supabase as any)
-    .from('residential_jobs')
-    .select('id, client_name, address, clean_time, clean_date, frequency, service_days')
-    .eq('cleaner_id', profile.id)
-    .is('parent_id', null)
-    .not('frequency', 'is', null)
-
-  // Sites this cleaner is assigned to individually (multi-site clients). The parent client may
-  // not be assigned to them at the client level, so fetch via admin scoped to this cleaner.
-  const { data: mySitesRaw } = await adminDb
-    .from('client_sites')
-    .select('id, site_name, address, suburb, client_id, frequency, service_days, start_date, clients(business_name, active, start_date)')
-    .eq('assigned_cleaner_id', profile.id)
-  const assignedSites: any[] = (mySitesRaw ?? []).filter((s: any) => s.clients?.active !== false)
-
-  // ── Fold this week's recurring schedule into the timetable ──
-  // job_assignments rows only exist once a clean is started (or an admin manually
-  // assigns one), so without this a newly added client — single-site or a commercial
-  // (multi-site) one — would show nothing here until that happens. Compute the
-  // schedule-implied cleans for the week directly from each client/site's own
-  // frequency + service_days, same engine the client detail page already uses.
-  const weekStartDate = new Date(weekStart + 'T00:00:00')
-  type ScheduleSource = {
-    clientId: string; siteId: string | null; label: string
-    address: string | null; suburb: string | null
-    frequency: string | null; serviceDays: string[]; startDate: string | null
-  }
-  const scheduleSources: ScheduleSource[] = [
-    ...accepted.map((c: any): ScheduleSource => ({
-      clientId: c.id, siteId: null, label: c.business_name,
-      address: c.address ?? null, suburb: c.suburb ?? null,
-      frequency: c.frequency ?? null, serviceDays: c.service_days ?? [], startDate: c.start_date ?? null,
-    })),
-    ...assignedSites.map((s: any): ScheduleSource => ({
-      clientId: s.client_id, siteId: s.id,
-      label: s.clients?.business_name ? `${s.clients.business_name} — ${s.site_name}` : s.site_name,
-      address: s.address ?? null, suburb: s.suburb ?? null,
-      frequency: s.frequency ?? null, serviceDays: s.service_days ?? [], startDate: s.start_date ?? s.clients?.start_date ?? null,
-    })),
-  ]
-  // Cleans on these clients/sites handed to someone else this week (Team → Manage Jobs
-  // cover). Read via admin (RLS only shows a cleaner their own jobs) so the regular
-  // cleaner sees "covered by …" with its real status instead of a clean still to do.
-  const coverByKey = new Map<string, any>()
-  const myClientIds = accepted.map((c: any) => c.id)
-  const mySiteIds = assignedSites.map((s: any) => s.id)
-  if (myClientIds.length || mySiteIds.length) {
-    const ors = [
-      myClientIds.length ? `and(client_id.in.(${myClientIds.join(',')}),site_id.is.null)` : null,
-      mySiteIds.length ? `site_id.in.(${mySiteIds.join(',')})` : null,
-    ].filter(Boolean).join(',')
-    const { data: coverJobs } = await adminDb
-      .from('job_assignments')
-      .select('client_id, site_id, scheduled_date, status, profiles(full_name)')
-      .gte('scheduled_date', weekStart).lte('scheduled_date', weekEnd)
-      .neq('cleaner_id', profile.id)
-      .or(ors)
-    for (const j of coverJobs ?? []) coverByKey.set(`${j.client_id}::${j.site_id ?? ''}::${j.scheduled_date}`, j)
   }
 
   for (const src of scheduleSources) {
