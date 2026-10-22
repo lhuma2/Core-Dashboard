@@ -113,9 +113,23 @@ export function getUpcomingDates(client: ClientSchedule, daysAhead = 60, fromDat
           include = weeksSinceAnchor % 4 === 0
           break
         case 'monthly': {
-          // First occurrence of this weekday in the calendar month
           const dom = cursor.getDate()
-          include = dom <= 7
+          if (!firstClean) {
+            // No first clean date — first occurrence of this weekday in the calendar month
+            include = dom <= 7
+            break
+          }
+          // Same week-of-month as the first clean (a clean starting on the 4th Friday
+          // repeats on the 4th Friday). Without this a start date after the 7th was
+          // skipped and the first clean showed up the following month instead.
+          const startWeek = Math.ceil(firstClean.getDate() / 7)
+          if (startWeek === 5) {
+            // 5th-week start: months without a 5th occurrence use the last one
+            const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate()
+            include = dom + 7 > daysInMonth
+          } else {
+            include = Math.ceil(dom / 7) === startWeek
+          }
           break
         }
         case 'quarterly': {
