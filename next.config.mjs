@@ -30,10 +30,12 @@ function cleanUrl(v) {
 
 let previewEnv = {}
 if (isPreview) {
-  // All three must be the test project's own settings. No falling back to the live ones.
-  const service = clean(process.env.PREVIEW_SUPABASE_SERVICE_ROLE_KEY)
-  const url = cleanUrl(process.env.PREVIEW_SUPABASE_URL)
-  const anon = clean(process.env.PREVIEW_SUPABASE_ANON_KEY)
+  // The test project's settings: the PREVIEW_ names if set, otherwise the normal names (when those have been
+  // set to the test project for Preview in Vercel). Whatever they are, they must not be the live database.
+  const LIVE_REF = 'vklzcbbewhyakqfcbdvv'
+  const service = clean(process.env.PREVIEW_SUPABASE_SERVICE_ROLE_KEY) || clean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const url = cleanUrl(process.env.PREVIEW_SUPABASE_URL) || cleanUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const anon = clean(process.env.PREVIEW_SUPABASE_ANON_KEY) || clean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   const missing = [
     !url && 'PREVIEW_SUPABASE_URL',
     !anon && 'PREVIEW_SUPABASE_ANON_KEY',
@@ -48,6 +50,10 @@ if (isPreview) {
   } catch {
     throw new Error('Preview build stopped: PREVIEW_SUPABASE_URL is not a web address (it should look like https://xxxx.supabase.co).')
   }
+  // A preview must never point at the live database, even by mistake.
+  if (urlRef === LIVE_REF) {
+    throw new Error('Preview build stopped: the preview settings point at the live database. Use the test database (core-portal-preview).')
+  }
   // Older keys (long, starting eyJ) carry their project id, so check they match the address. Newer keys
   // (sb_secret_..., sb_publishable_...) don't, but they only work on their own project anyway.
   for (const [name, key] of [['PREVIEW_SUPABASE_SERVICE_ROLE_KEY', service], ['PREVIEW_SUPABASE_ANON_KEY', anon]]) {
@@ -55,13 +61,6 @@ if (isPreview) {
     if (ref && ref !== urlRef) {
       throw new Error(`Preview build stopped: ${name} belongs to a different Supabase project than PREVIEW_SUPABASE_URL.`)
     }
-  }
-  // The live database. A preview must never point at it, even by mistake.
-  const LIVE_REF = 'vklzcbbewhyakqfcbdvv'
-  let liveRef = null
-  try { liveRef = new URL(cleanUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)).hostname.split('.')[0] } catch {}
-  if (urlRef === LIVE_REF || urlRef === liveRef) {
-    throw new Error('Preview build stopped: the PREVIEW_ settings point at the live database. Use the test database (core-portal-preview).')
   }
   previewEnv = {
     NEXT_PUBLIC_SUPABASE_URL: url,
