@@ -9,7 +9,7 @@ type Acc = { street: string; suburb: string; postcode: string; start: string }
 // The client's page around the quote: a status line on top, the quote, then (while it's open) confirm the address
 // and date and accept, ask for changes, or decline. After they answer, their thank-you stays on top even when the
 // page refreshes with the new status.
-export function QuoteClientPanel({ code, open, closedText, oneOff, minDate, initial, children }: { code: string; open: boolean; closedText: string; oneOff: boolean; minDate: string; initial: Acc; children: React.ReactNode }) {
+export function QuoteClientPanel({ code, open, closedText, signHref, oneOff, minDate, initial, children }: { code: string; open: boolean; closedText: string; signHref?: string; oneOff: boolean; minDate: string; initial: Acc; children: React.ReactNode }) {
   const [a, setA] = useState<Acc>(initial)
   const [mode, setMode] = useState<null | 'changes' | 'decline'>(null)
   const [note, setNote] = useState('')
@@ -18,20 +18,23 @@ export function QuoteClientPanel({ code, open, closedText, oneOff, minDate, init
   const [done, setDone] = useState('')
   const [busy, start] = useTransition()
   const upd = (k: keyof Acc, v: string) => { setA({ ...a, [k]: v }); setErr('') }
-  const run = (p: Promise<{ ok: true; message: string } | { ok: false; error: string }>) => start(async () => {
+  const run = (p: Promise<{ ok: true; message: string; next?: string } | { ok: false; error: string }>) => start(async () => {
     const r = await p
     if (!r.ok) { setErr(r.error); return }
     setDone(r.message); window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Accepted: straight on to the service agreement to sign.
+    if (r.next) window.location.assign(r.next)
   })
 
   const banner = done || closedText
   return (
     <>
       {banner && <p className={done ? 'agstatus ok asbanner' : 'agstatus asbanner'} role="status">{banner}</p>}
+      {!done && signHref && <div className="sheetbtns asbanner"><a className="btn call" href={signHref}>Sign your service agreement</a></div>}
       {children}
       {open && !done && <div className="addcard pacc">
       <h2 className="nch">Happy to go ahead?</h2>
-      <p className="nchint">Confirm the address and the date, then press Accept. We’ll confirm the time and email your service agreement to sign.</p>
+      <p className="nchint">Confirm the address and the date, then press Accept. Next you’ll read and sign your service agreement, and we’ll confirm the time.</p>
       <div className="ncgrid">
         <label className="fld span2"><span>Street address</span><input type="text" autoComplete="street-address" value={a.street} onChange={e => upd('street', e.target.value)} /></label>
         <label className="fld subf"><span>Suburb</span><input type="text" value={a.suburb} onChange={e => upd('suburb', e.target.value)} /></label>

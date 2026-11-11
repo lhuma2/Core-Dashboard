@@ -27,11 +27,17 @@ export default async function ClientQuotePage({ params }: { params: { code: stri
   const q = quoteOf(data as QuoteRow)
   if (q.status === 'draft') return bad
   const today = brisbaneToday()
-  const closed = q.status === 'accepted' ? 'You accepted this quote. Thank you.'
+  // Accepted with the agreement still to sign: point them to it.
+  let signHref: string | undefined
+  if (q.status === 'accepted' && q.homeId) {
+    const { data: ag } = await db.from('home_docs').select('code').eq('from_quote', q.id).eq('status', 'sent').maybeSingle()
+    if (ag?.code) signHref = `/agree/${ag.code}`
+  }
+  const closed = q.status === 'accepted' ? (signHref ? 'You accepted this quote. Thank you. The last step is your service agreement.' : 'You accepted this quote. Thank you.')
     : q.status === 'declined' ? 'This quote was declined.'
       : q.status === 'changes' ? 'This quote is being updated. You’ll get the new one by email.' : ''
   return shell(
-    <QuoteClientPanel code={params.code} open={q.status === 'sent'} closedText={closed} oneOff={q.every === 'oneoff'} minDate={isoAdd(today, 1)}
+    <QuoteClientPanel code={params.code} open={q.status === 'sent'} closedText={closed} signHref={signHref} oneOff={q.every === 'oneoff'} minDate={isoAdd(today, 1)}
       initial={{ street: q.street, suburb: q.suburb, postcode: q.postcode, start: q.start && q.start > today ? q.start : '' }}>
       <QuoteDocument d={quoteDoc(q, today)} />
     </QuoteClientPanel>

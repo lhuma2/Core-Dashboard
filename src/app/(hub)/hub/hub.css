@@ -465,3 +465,38 @@
 .hub .card.static{cursor:default}
 .hub .card.static:hover{transform:none;box-shadow:none;border-color:#e1e7e4}
 .hub .card.prob.has.static:hover{border-color:#f1b8b2}
+/* Residential agreements: the document, signing form and signatures (mock-up .doc rules) */
+.hub .doc{background:#fff;border:1px solid #e1e7e4;border-radius:16px;padding:32px 40px;max-width:820px;margin:8px auto 0;line-height:1.55}
+.hub .dochead{display:flex;align-items:center;gap:18px;background:#00250e;color:#fff;margin:-32px -40px 20px;padding:20px 40px;border-radius:16px 16px 0 0}
+.hub .doclogo{height:44px;width:auto;display:block}
+.hub .doccode{font-size:12px;font-weight:600;letter-spacing:.06em;color:#9fe5cc}
+.hub .doctitle{margin:2px 0 0;font-size:24px;font-weight:700;letter-spacing:-.01em;overflow-wrap:anywhere}
+.hub .dh{font-size:16px;font-weight:700;margin:20px 0 6px;color:#00250e}
+.hub .dlabel{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#5d6b65;margin:10px 0 2px}
+.hub .dp{margin:6px 0;font-size:15px;overflow-wrap:anywhere}
+.hub .doc .dul{margin:4px 0;padding-left:20px;font-size:15px;overflow-wrap:anywhere}
+.hub .doc .dul li{margin:2px 0}
+.hub .dsub{font-weight:600;font-size:14px;margin:10px 0 2px}
+.hub .sigblock{border:1px solid #dfe6e2;border-radius:12px;padding:14px 16px;margin:4px 0 8px;background:#f7faf8}
+.hub .sigline{font-family:"Brush Script MT","Segoe Script",cursive;font-size:30px;color:#00250e;border-bottom:1px solid #9fb2a9;padding-bottom:4px;overflow-wrap:anywhere}
+.hub .sigmeta{font-size:13px;color:#5d6b65;margin-top:6px}
+.hub .sig{font-family:"Brush Script MT","Segoe Script",cursive;font-size:22px}
+.hub .stackform{display:flex;flex-direction:column;gap:10px;margin-top:16px;max-width:520px}
+.hub .stackform .btn{align-self:flex-start}
+.hub .doc .sheetbtns{margin:6px 0}
+@media print{.hub .doc{border:0;padding:0;max-width:none}.hub .dochead{margin:0 0 16px;border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}.hub .doc .sheetbtns,.hub .doc .sendbox,.hub .doc .agstatus,.hub .stackform,.hub .noprint{display:none!important}}
+@container (max-width:700px){
+.hub .doc{padding:14px;border-radius:12px;margin-top:4px}
+.hub .dochead{margin:-14px -14px 12px;padding:12px 14px;gap:10px;border-radius:12px 12px 0 0}
+.hub .doclogo{height:26px}
+.hub .doccode{font-size:10px}
+.hub .doctitle{font-size:16px}
+.hub .dh{font-size:14px;margin:14px 0 4px}
+.hub .dlabel{font-size:10px}
+.hub .dp,.hub .doc .dul{font-size:13px}
+.hub .doc .dul{padding-left:16px}
+.hub .dsub{font-size:12px}
+.hub .sigline{font-size:24px}
+.hub .sigmeta{font-size:11px}
+.hub .sig{font-size:18px}
+}

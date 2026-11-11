@@ -13,6 +13,7 @@ import {
   bodyOf, qCheck, qClean, qSaveCheck, quoteOf, quoteRef, quoteDoc, dLong, DECLINE_REASONS, QUOTE_COLS,
   type Quote, type QuoteRow,
 } from '@/lib/hub/home-quotes'
+import { snapFromQuote } from '@/lib/hub/home-agreements'
 
 type Done = { ok: true; id: string; toast: string } | { ok: false; error: string }
 const NO_DB = 'Couldn’t reach the hub. Check your connection and try again.'
@@ -53,6 +54,18 @@ function quoteEmail(q: Quote, link: string, revised: boolean, today: string): st
     <p style="margin:0 0 24px"><a href="${link}" style="background:#0f7a5a;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:8px;display:inline-block">View your quote ${esc(q.ref)}</a></p>
     <p style="margin:0 0 6px;font-size:13px;color:#5d6b65">The quote is valid until ${esc(d.validTo)}.</p>
     <p style="margin:0;font-size:13px;color:#5d6b65">Questions? Reply to this email or call us.</p>
+  </div></div>`
+}
+
+function agreementEmail(name: string, ref: string, link: string): string {
+  const firstName = esc((name || '').trim().split(/\s+/)[0] || 'there')
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px 16px;color:#13201a">
+  <div style="background:#00250e;color:#fff;padding:18px 20px;border-radius:10px 10px 0 0;font-size:18px;font-weight:700">Core Cleaning</div>
+  <div style="border:1px solid #d5dfda;border-top:0;border-radius:0 0 10px 10px;padding:22px 20px">
+    <p style="margin:0 0 12px;font-size:16px">Hi ${firstName},</p>
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.5">Thank you for accepting your quote. Here is your service agreement (${esc(ref)}). Please read it, then sign at the bottom of the page.</p>
+    <p style="margin:8px 0 20px"><a href="${link}" style="background:#0f7a5a;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:8px;display:inline-block">Read and sign your agreement</a></p>
+    <p style="margin:0;font-size:13px;color:#5d6b65">Questions? Reply to this email or call us on 0407 026 360.</p>
   </div></div>`
 }
 
@@ -178,7 +191,7 @@ export async function deleteQuote(id: string): Promise<Done> {
 }
 
 // ── the client's side (public page, matched by the private code) ──
-type Pub = { ok: true; message: string } | { ok: false; error: string }
+type Pub = { ok: true; message: string; next?: string } | { ok: false; error: string }
 const codeOk = (c: string) => /^[0-9a-f]{64}$/.test(c || '')
 
 async function openByCode(code: string): Promise<{ db: any; q: Quote } | null> {
@@ -227,7 +240,9 @@ export async function clientAccept(code: string, a: { street: string; suburb: st
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return { ok: false, error: 'Pick the ' + (cur.every === 'oneoff' ? 'clean date.' : 'first clean date.') }
   if (start <= today) return { ok: false, error: 'Pick a date from tomorrow on.' }
   if (street.length > 300 || suburb.length > 100) return { ok: false, error: 'That address is too long.' }
-  const { error } = await o.db.rpc('hub_accept_home_quote', { p_code: code, p_street: street, p_suburb: suburb, p_postcode: postcode, p_start: start })
+  // The agreement's particulars, scope and clauses, locked in as it's created (already sent, to the quote's email).
+  const snap = snapFromQuote(cur, { street, suburb, postcode, start })
+  const { data: made, error } = await o.db.rpc('hub_accept_home_quote', { p_code: code, p_street: street, p_suburb: suburb, p_postcode: postcode, p_start: start, p_snap: snap })
   if (error) {
     const m = String(error.message || '')
     if (m.includes('not_open')) return { ok: false, error: 'This quote can’t be accepted any more.' }
@@ -235,12 +250,22 @@ export async function clientAccept(code: string, a: { street: string; suburb: st
     if (m.includes('bad_start')) return { ok: false, error: 'Pick a date from tomorrow on.' }
     return { ok: false, error: 'That didn’t go through. Nothing was saved, so you can try again.' }
   }
+  const agreeCode = String(made?.code || '')
+  if (agreeCode && cur.email && process.env.RESEND_API_KEY) {
+    const link = `${siteUrl()}/agree/${agreeCode}`
+    await sendEmail(cur.email, `Your service agreement from Core Cleaning (${made.ref})`, agreementEmail(cur.name, String(made.ref), link)).catch(() => {})
+  }
   await sendPushToRole('admin', {
     title: `${cur.name} accepted ${cur.ref}`,
-    body: `${cur.every === 'oneoff' ? 'Clean on' : 'First clean'} ${dLong(start)}. Add the time, cleaner and cost.`,
+    body: `${cur.every === 'oneoff' ? 'Clean on' : 'First clean'} ${dLong(start)}. Their agreement ${made?.ref || ''} is ready to sign. Add the time, cleaner and cost.`,
     url: '/hub/residential/quotes?show=closed',
   }).catch(() => {})
   refresh()
-  return { ok: true, message: `Thank you, ${cur.name.split(/\s+/)[0]}. Your ${cur.every === 'oneoff' ? 'clean is booked for' : 'first clean is booked for'} ${dLong(start)}. We’ll be in touch to confirm the time, and we’ll email your service agreement to sign.` }
+  revalidatePath('/hub/residential/documents')
+  return {
+    ok: true,
+    message: `Thank you, ${cur.name.split(/\s+/)[0]}. Your ${cur.every === 'oneoff' ? 'clean is booked for' : 'first clean is booked for'} ${dLong(start)}. We’ll be in touch to confirm the time. The last step is your service agreement.`,
+    next: agreeCode ? `/agree/${agreeCode}?from=quote` : undefined,
+  }
 }
 
