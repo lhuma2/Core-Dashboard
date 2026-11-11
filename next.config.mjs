@@ -18,19 +18,29 @@ function projectRef(key) {
 
 let previewEnv = {}
 if (isPreview) {
+  // All three must be the test project's own settings. No falling back to the live ones.
   const service = process.env.PREVIEW_SUPABASE_SERVICE_ROLE_KEY
-  const url = process.env.PREVIEW_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anon = process.env.PREVIEW_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!service || !url || !anon) {
-    throw new Error(
-      'Preview build stopped: set PREVIEW_SUPABASE_SERVICE_ROLE_KEY (and the test database URL and anon key) for Preview in Vercel.'
-    )
+  const url = process.env.PREVIEW_SUPABASE_URL
+  const anon = process.env.PREVIEW_SUPABASE_ANON_KEY
+  const missing = [
+    !url && 'PREVIEW_SUPABASE_URL',
+    !anon && 'PREVIEW_SUPABASE_ANON_KEY',
+    !service && 'PREVIEW_SUPABASE_SERVICE_ROLE_KEY',
+  ].filter(Boolean)
+  if (missing.length) {
+    throw new Error(`Preview build stopped: set ${missing.join(', ')} for Preview in Vercel (the test database's settings).`)
   }
   const urlRef = new URL(url).hostname.split('.')[0]
   if (projectRef(service) !== urlRef || projectRef(anon) !== urlRef) {
     throw new Error(
       'Preview build stopped: the preview database address and keys do not all belong to the same Supabase project.'
     )
+  }
+  // The live database. A preview must never point at it, even by mistake.
+  const LIVE_REF = 'vklzcbbewhyakqfcbdvv'
+  const liveRef = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split('.')[0] : null
+  if (urlRef === LIVE_REF || urlRef === liveRef) {
+    throw new Error('Preview build stopped: the PREVIEW_ settings point at the live database. Use the test database (core-portal-preview).')
   }
   previewEnv = {
     NEXT_PUBLIC_SUPABASE_URL: url,
