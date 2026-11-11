@@ -11,3 +11,6 @@ export const Warning = () => <svg {...base}><path d="M12 3l9.5 17h-19z" /><path 
 export const Star = () => <svg {...base}><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" /></svg>
 export const Back = () => <svg {...base} width={18} height={18}><path d="M15 6l-6 6 6 6" /></svg>
 export const Search = () => <svg {...base} width={16} height={16}><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+export const Prev = () => <svg {...base} width={18} height={18}><path d="M15 6l-6 6 6 6" /></svg>
+export const Next = () => <svg {...base} width={18} height={18}><path d="M9 6l6 6-6 6" /></svg>
+export const Close = () => <svg {...base} width={18} height={18}><path d="M6 6l12 12M18 6L6 18" /></svg>

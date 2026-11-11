@@ -81,6 +81,47 @@
 .hub .h.watch{color:#8a5300}.hub .h.watch::before{background:#e8a33d}
 .hub .h.low{color:#b42318}.hub .h.low::before{background:#d92d20}
 .hub .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:#5d6b65;margin:12px 2px 0}
+.hub .calbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:6px 0 14px}
+.hub .calnav{display:flex;align-items:center;gap:8px}
+.hub .iconnav{all:unset;cursor:pointer;width:44px;height:44px;display:grid;place-items:center;border:1px solid #c7d4ce;border-radius:10px;background:#fff;color:#13201a;box-sizing:border-box}
+.hub .iconnav:focus-visible,.hub .cdhead:focus-visible,.hub .cev:focus-visible,.hub .mcell:focus-visible,.hub .seg2 button:focus-visible,.hub .sday:focus-visible,.hub .close:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.hub .caltitle{margin:0 0 0 6px;font-size:18px;font-weight:700}
+.hub .seg2{display:flex;background:#e6ece9;border-radius:10px;padding:3px}
+.hub .seg2 button{all:unset;cursor:pointer;min-width:72px;min-height:38px;border-radius:8px;font-size:14px;font-weight:600;color:#3d4b45;display:grid;place-items:center}
+.hub .seg2 button.on{background:#fff;color:#13201a;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.hub .calweek{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.hub .cdcol{background:#fff;border:1px solid #dfe6e2;border-radius:12px;display:flex;flex-direction:column;min-height:280px;overflow:hidden}
+.hub .cdcol.today{border-color:#0f7a5a}
+.hub .cdhead{all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:baseline;gap:6px;padding:10px 10px 8px;border-bottom:1px solid #eef1ef}
+.hub .cdcol.today .cdhead{background:#e3f3ec}
+.hub .cdow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#5d6b65}
+.hub .cdate{font-size:18px;font-weight:700;color:#13201a}
+.hub .ccount{margin-left:auto;font-size:11px;font-weight:700;background:#eef1ef;color:#5d6b65;border-radius:999px;padding:1px 7px}
+.hub .cevents{display:flex;flex-direction:column;gap:6px;padding:8px}
+.hub .cev{all:unset;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;gap:1px;border-radius:8px;padding:6px 8px;border-left:3px solid;font-size:12px;line-height:1.3}
+.hub .cetime{font-weight:700}
+.hub .cename{font-weight:600;color:#13201a;overflow:hidden;text-overflow:ellipsis}
+.hub .cesub{color:#5d6b65;overflow:hidden;text-overflow:ellipsis}
+.hub .cev.k0{background:#e3f3ec;border-color:#149e76;color:#0f6e50}.hub .cev.k1{background:#e4eefb;border-color:#3b7dd8;color:#1f5aa6}.hub .cev.k2{background:#fdeedd;border-color:#e08a2c;color:#9a4d00}.hub .cev.k3{background:#eceaf8;border-color:#6f62c9;color:#4b3fa6}.hub .cev.k4{background:#fdecea;border-color:#d92d20;color:#b42318}.hub .cev.k5{background:#e6f4f6;border-color:#2a9bb0;color:#1c6b7a}
+.hub .cev.sel{outline:2px solid #13201a;outline-offset:1px}
+.hub .cnone{font-size:12px;color:#8a9893;padding:4px 2px}
+.hub .calstrip{display:none}
+.hub .calmonth{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.hub .mdow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#5d6b65;padding:0 4px}
+.hub .mcell{all:unset;cursor:pointer;box-sizing:border-box;background:#fff;border:1px solid #dfe6e2;border-radius:10px;min-height:96px;padding:6px;display:flex;flex-direction:column;gap:3px;overflow:hidden;min-width:0}
+.hub .mcell.out{background:#f7f9f8;color:#a9b6b0}
+.hub .mcell.today{border-color:#0f7a5a;box-shadow:inset 0 0 0 1px #0f7a5a}
+.hub .mnum{font-size:13px;font-weight:700}
+.hub .mchip{font-size:11px;border-radius:4px;padding:1px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hub .mchip.k0{background:#e3f3ec;color:#0f6e50}.hub .mchip.k1{background:#e4eefb;color:#1f5aa6}.hub .mchip.k2{background:#fdeedd;color:#9a4d00}.hub .mchip.k3{background:#eceaf8;color:#4b3fa6}.hub .mchip.k4{background:#fdecea;color:#b42318}.hub .mchip.k5{background:#e6f4f6;color:#1c6b7a}
+.hub .mmore{font-size:11px;color:#5d6b65;font-weight:600}
+.hub .mcount{display:none}
+.hub .calsel{margin-top:14px;background:#fff;border:1px solid #c7d4ce;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;max-width:560px}
+.hub .sheethead{display:flex;align-items:center;justify-content:space-between;font-size:16px}
+.hub .close{all:unset;cursor:pointer;color:#3d4b45;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;border-radius:8px}
+.hub .sheetsub{margin:0;font-size:13px;color:#5d6b65}
+.hub .dul{margin:4px 0;padding-left:20px;font-size:15px}
+.hub .dul li{margin:2px 0}
 @container (max-width:700px){
 .hub .top{padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top))}
 .hub .logo{height:30px}
@@ -125,6 +166,34 @@
 .hub .cmoney{font-size:13px}
 .hub .h{font-size:12px;gap:4px}
 .hub .legend{gap:10px;font-size:11px}
+.hub .calbar{gap:8px;margin:4px 0 10px}
+.hub .iconnav{width:40px;height:40px;border-radius:8px}
+.hub .caltitle{font-size:14px;margin-left:2px}
+.hub .seg2 button{min-width:60px;min-height:34px;font-size:12px}
+.hub .calweek{display:flex;flex-direction:column;gap:8px}
+.hub .cdcol{display:none;min-height:0}
+.hub .cdcol.chosen{display:flex}
+.hub .calstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:8px}
+.hub .sday{all:unset;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0;border-radius:10px;background:#fff;border:1px solid #dfe6e2;min-height:56px}
+.hub .sday.on{background:#00250e;border-color:#00250e;color:#fff}
+.hub .sday.today:not(.on){border-color:#0f7a5a}
+.hub .sdow{font-size:10px;font-weight:700;text-transform:uppercase}
+.hub .sdate{font-size:15px;font-weight:700}
+.hub .sdot{width:5px;height:5px;border-radius:50%;background:#149e76}
+.hub .sday.on .sdot{background:#8fe0c4}
+.hub .sdot.none{visibility:hidden}
+.hub .calweek .cdcol .cdhead{display:none}
+.hub .cev{font-size:13px;padding:8px 10px}
+.hub .calmonth{gap:3px}
+.hub .mdow{font-size:10px;padding:0;text-align:center}
+.hub .mcell{min-height:48px;padding:4px;border-radius:8px;align-items:center}
+.hub .mnum{font-size:12px}
+.hub .mchip,.hub .mmore{display:none}
+.hub .mcount{display:grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#0f7a5a;color:#fff;font-size:10px;font-weight:700}
+.hub .calsel{padding:10px 12px;border-radius:12px}
+.hub .sheethead{font-size:14px}
+.hub .sheetsub{font-size:11px}
+.hub .dul{padding-left:16px;font-size:13px}
 }
 .hub .card.static{cursor:default}
 .hub .card.static:hover{transform:none;box-shadow:none;border-color:#e1e7e4}
