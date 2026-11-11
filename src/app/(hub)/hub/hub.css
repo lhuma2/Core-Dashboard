@@ -1,0 +1,89 @@
+/* New hub look, ported from the finished mock-up (v80). Phone sizes come from the mock-up's 700px rules. */
+.hub{container-type:inline-size;font-family:Inter,system-ui,-apple-system,sans-serif;color:#13201a;background:#f3f5f4;min-height:100vh;min-height:100dvh;box-sizing:border-box}
+.hub *{box-sizing:border-box}
+.hub .top{display:flex;align-items:center;justify-content:space-between;padding:14px 40px;padding-top:max(14px,env(safe-area-inset-top));background:#00250e;color:#fff}
+.hub .logo{display:block;height:44px;width:auto}
+.hub .avatar{width:34px;height:34px;border-radius:50%;background:#149e76;color:#fff;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center}
+.hub .wrap{max-width:1200px;margin:0 auto;padding:40px 40px 56px;padding-bottom:max(56px,env(safe-area-inset-bottom))}
+.hub .greet{margin:0;font-size:32px;font-weight:700;letter-spacing:-.02em}
+.hub .sub{margin:6px 0 28px;font-size:15px;color:#4d5c55;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hub .pill{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:#fff3d6;color:#7a4b00;border-radius:999px;padding:3px 9px}
+.hub .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.hub .card{all:unset;box-sizing:border-box;cursor:pointer;background:#fff;border:1px solid #e1e7e4;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px;transition:transform .15s,box-shadow .15s,border-color .15s;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.hub .card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,37,14,.10);border-color:#b9d3c8}
+.hub .card:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.hub .chead{display:flex;align-items:center;gap:12px}
+.hub .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.hub .cname{font-size:17px;font-weight:600;flex:1}
+.hub .chev{color:#7d8c85;flex:none}
+.hub .lbl{font-size:12px;font-weight:500;color:#5d6b65;text-transform:uppercase;letter-spacing:.05em}
+.hub .rev{font-size:34px;font-weight:700;letter-spacing:-.02em;margin-top:4px}
+.hub .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.hub .stat{background:#f5f8f6;border-radius:10px;padding:12px 14px}
+.hub .sval{font-size:20px;font-weight:600;margin-top:4px}
+.hub .margin{font-size:12px;color:#0f7a5a;font-weight:600;margin-left:6px}
+.hub .duo{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:24px;margin-top:24px}
+.hub .total{font-size:14px;color:#4d5c55;font-weight:500}
+.hub .regions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.hub .compstat{margin-top:auto}
+.hub .svdash{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:auto}
+.hub .card.svdc{grid-column:1/-1}
+.hub .card.prob.has{border-color:#f1b8b2}
+.hub .card.prob.has .sval{color:#b42318}
+.hub .card.svdc.has{border-color:#f1b8b2}
+.hub .card.svdc.has .svfu{color:#b42318}
+.hub .card.svdc.due{border-color:#f0d39a}
+.hub .card.svdc.due .svdu{color:#7a4b00}
+.hub .back{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#0f7a5a;padding:10px 0;min-height:44px;box-sizing:border-box}
+.hub .back:focus-visible{outline:3px solid #149e76;outline-offset:2px;border-radius:6px}
+.hub .chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+.hub .chip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;min-height:40px;border:1px solid #c7d4ce;border-radius:999px;background:#fff;font-size:14px;font-weight:600;color:#13201a;box-sizing:border-box}
+.hub .chip.on{background:#00250e;border-color:#00250e;color:#fff}
+.hub .chip:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.hub .chip .n{font-weight:500;opacity:.75}
+.hub .problist{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.hub .probcard{background:#fff;border:1px solid #dfe6e2;border-left:4px solid #d92d20;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.hub .probcard.fixed{border-left-color:#149e76;opacity:.85}
+.hub .probhead{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px}
+.hub .probmeta{font-size:13px;color:#5d6b65}
+.hub .probtext{margin:2px 0 4px;font-size:15px;line-height:1.45;white-space:pre-line;overflow-wrap:anywhere}
+.hub .probacts{display:flex;gap:8px;flex-wrap:wrap}
+.hub .btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;min-height:44px;border-radius:10px;font-size:14px;font-weight:600;box-sizing:border-box;background:#0f6e50;color:#fff;text-decoration:none}
+.hub .btn.ghost{background:#fff;color:#13201a;border:1px solid #c7d4ce}
+.hub .btn:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.hub .btn[disabled]{opacity:.55;cursor:default}
+.hub .empty{padding:24px;text-align:center;color:#5d6b65;font-size:14px}
+.hub .err{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#fdecea;color:#8a1c12;font-size:14px}
+@container (max-width:700px){
+.hub .top{padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top))}
+.hub .logo{height:30px}
+.hub .avatar{width:28px;height:28px;font-size:12px}
+.hub .wrap{padding:16px 16px 28px;padding-bottom:max(28px,env(safe-area-inset-bottom))}
+.hub .greet{font-size:20px}
+.hub .sub{font-size:13px;margin:2px 0 14px}
+.hub .cards{grid-template-columns:minmax(0,1fr);gap:10px}
+.hub .card{padding:14px;gap:10px;border-radius:12px}
+.hub .chead{gap:10px}
+.hub .icon{width:30px;height:30px;border-radius:8px}
+.hub .icon svg{width:16px;height:16px}
+.hub .cname{font-size:15px}
+.hub .lbl{font-size:10px}
+.hub .rev{font-size:22px;margin-top:2px}
+.hub .stats{gap:8px}
+.hub .stat{padding:8px 10px;border-radius:8px}
+.hub .sval{font-size:15px;margin-top:2px}
+.hub .margin{font-size:11px}
+.hub .duo{grid-template-columns:minmax(0,1fr);gap:10px;margin-top:10px}
+.hub .regions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.hub .svdash{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.hub .total{font-size:12px}
+.hub .chip{padding:6px 12px;min-height:36px;font-size:13px}
+.hub .probcard{padding:10px 12px;gap:4px}
+.hub .probhead{font-size:14px}
+.hub .probmeta{font-size:11px}
+.hub .probtext{font-size:13px}
+.hub .btn{padding:8px 12px;min-height:40px;font-size:13px;border-radius:8px}
+}
+.hub .card.static{cursor:default}
+.hub .card.static:hover{transform:none;box-shadow:none;border-color:#e1e7e4}
+.hub .card.prob.has.static:hover{border-color:#f1b8b2}
