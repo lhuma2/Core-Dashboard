@@ -122,6 +122,79 @@
 .hub .sheetsub{margin:0;font-size:13px;color:#5d6b65}
 .hub .dul{margin:4px 0;padding-left:20px;font-size:15px}
 .hub .dul li{margin:2px 0}
+.hub .primary{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#0f7a5a;color:#fff;font-size:14px;font-weight:600;border-radius:10px;padding:0 16px;min-height:44px;box-sizing:border-box;white-space:nowrap;text-decoration:none}
+.hub .primary:hover{background:#00250e}
+.hub .primary:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.hub .btn.call{background:#0f7a5a;color:#fff}
+.hub .btn.call:hover{background:#00250e}
+.hub .btn.log{background:#fff;border:1px solid #c7d4ce;color:#13201a}
+.hub .btn.log:hover{border-color:#0f7a5a}
+.hub .toast{position:sticky;bottom:16px;margin:16px auto 0;max-width:560px;background:#13201a;color:#fff;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.hub .toast span{flex:1}
+.hub .undo{all:unset;cursor:pointer;font-weight:700;color:#7fe0bf;padding:8px 6px;min-height:32px}
+.hub .undo:focus-visible{outline:3px solid #149e76;outline-offset:2px;border-radius:4px}
+.hub .addcard{background:#fff;border:1px solid #c7d4ce;border-radius:14px;padding:16px 18px;margin:0 0 14px;display:flex;flex-direction:column;gap:12px}
+.hub .ncform{width:100%;margin-top:16px;padding:24px 28px;gap:16px}
+.hub .fld{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;color:#3d4b45;text-align:left;align-items:stretch}
+.hub .fld>span{display:block}
+.hub .fld input,.hub .fld select{font:inherit;font-weight:400;font-size:16px;min-height:48px;border:1px solid #c7d4ce;border-radius:10px;padding:0 12px;background:#fff;color:#13201a;width:100%;-webkit-appearance:none;appearance:none}
+.hub .fld select{background-image:linear-gradient(45deg,transparent 50%,#5d6b65 50%),linear-gradient(135deg,#5d6b65 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+.hub .fld input:focus-visible,.hub .fld select:focus-visible,.hub .fld textarea:focus-visible{outline:3px solid #149e76;outline-offset:1px}
+.hub .fld input::placeholder,.hub .fld textarea::placeholder{color:#8a9893}
+.hub .fld textarea{font:inherit;font-weight:400;font-size:16px;border:1px solid #c7d4ce;border-radius:10px;padding:10px 12px;background:#fff;color:#13201a;width:100%;resize:vertical;min-height:84px}
+.hub .fld .btn{align-self:flex-start}
+.hub .ferr{margin:0;background:#fdecea;color:#b42318;border-radius:8px;padding:8px 12px;font-size:14px}
+.hub .nch{font-size:17px;font-weight:700;margin:0;color:#13201a}
+.hub .nchint{margin:0;font-size:14px;color:#5d6b65}
+.hub .fhint{margin:0;font-weight:400;font-size:12px;color:#5d6b65}
+.hub .req{color:#b42318}
+.hub .ncgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));column-gap:16px;row-gap:14px}
+.hub .ncgrid .span2{grid-column:span 6}
+.hub .ncgrid .half{grid-column:span 3}
+.hub .ncgrid .subf{grid-column:span 4}
+.hub .ncgrid .pc{grid-column:span 2}
+.hub .stypes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hub .stype{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border:1px solid #d5dfda;border-radius:12px;background:#fff}
+.hub .stype:focus-visible,.hub .day:focus-visible,.hub .pick:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.hub .stype.on{border-color:#00250e;background:#eef3f0}
+.hub .sticon{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#eef1ef;color:#8a9893;flex:none}
+.hub .stype.on .sticon{background:#00250e;color:#fff}
+.hub .sttext{display:flex;flex-direction:column;min-width:0}
+.hub .sttext strong{font-size:15px;color:#13201a}
+.hub .stype:not(.on) .sttext strong{color:#5d6b65}
+.hub .sttext span{font-size:13px;color:#8a9893}
+.hub .extracard,.hub .sitecard{border:1px solid #e1e8e4;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:#fafcfb;font-weight:400}
+.hub .sitehead{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#13201a}
+.hub .addsite,.hub .assignbtn,.hub .pickdone{align-self:flex-start}
+.hub .ncrow{display:block}
+.hub .ncrow.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:18px;align-items:start;border-top:1px solid #e1e8e4;padding-top:16px}
+.hub .ncrow.pair .svccard{border-top:0;padding-top:0}
+.hub .ncrow.pair .sitecard{position:sticky;top:12px}
+.hub .svccard{border-top:1px solid #e1e8e4;padding-top:16px;display:flex;flex-direction:column;gap:14px}
+.hub .days{display:flex;gap:6px;flex-wrap:wrap}
+.hub .day{all:unset;box-sizing:border-box;cursor:pointer;min-width:52px;min-height:44px;padding:0 10px;border:1px solid #c7d4ce;border-radius:10px;display:grid;place-items:center;font-size:14px;font-weight:600;color:#3d4b45;background:#fff}
+.hub .day.on{background:#00250e;border-color:#00250e;color:#fff}
+.hub .freqread{min-height:48px;display:flex;align-items:center;font-size:16px;font-weight:400;color:#13201a}
+.hub .money{margin:0;font-size:14px;font-weight:600;border-radius:8px;padding:8px 12px;display:block}
+.hub .money.good{background:#e3f3ec}.hub .money.watch{background:#fff3d6}.hub .money.low{background:#fdecea}
+.hub .money::before{display:none}
+.hub .assigned,.hub .pick{display:flex;align-items:center;gap:10px;border:1px solid #d5dfda;border-radius:12px;padding:8px 12px;background:#fff;font-weight:400}
+.hub .avatar.sm{width:32px;height:32px;font-size:12px;flex:none}
+.hub .asname{display:flex;flex-direction:column;flex:1;min-width:0}
+.hub .asname strong{font-size:15px;color:#13201a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hub .asname span{font-size:13px;color:#5d6b65}
+.hub .linkbtn{all:unset;cursor:pointer;font-size:13px;font-weight:600;color:#0f7a5a;padding:6px 0;min-height:32px}
+.hub .linkbtn.danger{color:#b42318}
+.hub .linkbtn:focus-visible{outline:3px solid #149e76;outline-offset:2px;border-radius:4px}
+.hub .picker{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;border:1px solid #c7d4ce;border-radius:12px;padding:8px;background:#fafcfb}
+.hub .pick{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;border:1px solid #e1e8e4;border-radius:10px;padding:8px 12px;background:#fff;min-height:48px}
+.hub .pick.on{border-color:#00250e;background:#eef3f0}
+.hub .pick.off{cursor:not-allowed;opacity:.55}
+.hub .tick{width:22px;height:22px;border-radius:6px;border:2px solid #a9b6b0;display:grid;place-items:center;flex:none;box-sizing:border-box;color:transparent}
+.hub .tick.on{background:#00250e;border-color:#00250e;color:#fff}
+.hub .pickhint{margin:0 2px 2px;font-size:13px;color:#5d6b65;font-weight:400}
+.hub .sheetbtns{display:flex;flex-wrap:wrap;gap:8px}
+.hub .btn[disabled]{opacity:.55;cursor:default}
 @container (max-width:700px){
 .hub .top{padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top))}
 .hub .logo{height:30px}
@@ -166,6 +239,42 @@
 .hub .cmoney{font-size:13px}
 .hub .h{font-size:12px;gap:4px}
 .hub .legend{gap:10px;font-size:11px}
+.hub .primary{padding:0 12px;font-size:13px;border-radius:8px;min-height:40px}
+.hub .toast{font-size:13px;padding:10px 12px}
+.hub .addcard{padding:12px;border-radius:12px;gap:10px}
+.hub .ncform{padding:14px 12px;gap:12px;margin-top:10px}
+.hub .fld{font-size:12px}
+.hub .fld input,.hub .fld select{min-height:42px;border-radius:8px}
+.hub .fld textarea{border-radius:8px}
+.hub .ferr{font-size:12px}
+.hub .nch{font-size:14px}
+.hub .nchint{font-size:12px}
+.hub .ncgrid{column-gap:8px;row-gap:8px}
+.hub .ncgrid .half{grid-column:span 6}
+.hub .stypes{gap:8px}
+.hub .stype{min-height:52px;padding:8px 10px;gap:8px;border-radius:10px}
+.hub .sticon{width:28px;height:28px}
+.hub .sticon svg{width:15px;height:15px}
+.hub .sttext strong{font-size:13px}
+.hub .sttext span{font-size:11px}
+.hub .sitecard,.hub .extracard{padding:10px;gap:8px;border-radius:10px}
+.hub .sitehead{font-size:13px}
+.hub .ncrow.pair{grid-template-columns:minmax(0,1fr);gap:10px;padding-top:12px}
+.hub .ncrow.pair .sitecard{position:static}
+.hub .linkbtn{font-size:12px}
+.hub .svccard{padding-top:12px;gap:10px}
+.hub .days{gap:4px;flex-wrap:nowrap}
+.hub .day{min-width:0;flex:1;min-height:40px;padding:0;font-size:12px;border-radius:8px}
+.hub .freqread{min-height:0;font-size:13px}
+.hub .money{font-size:12px;padding:6px 10px}
+.hub .assigned,.hub .pick{padding:6px 10px;gap:8px;border-radius:10px}
+.hub .avatar.sm{width:28px;height:28px;font-size:11px}
+.hub .asname strong{font-size:13px}
+.hub .asname span{font-size:11px}
+.hub .picker{max-height:300px;padding:6px}
+.hub .pickhint{font-size:11px}
+.hub .tick{width:20px;height:20px}
+.hub .pick{min-height:44px}
 .hub .calbar{gap:8px;margin:4px 0 10px}
 .hub .iconnav{width:40px;height:40px;border-radius:8px}
 .hub .caltitle{font-size:14px;margin-left:2px}

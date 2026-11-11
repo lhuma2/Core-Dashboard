@@ -5,14 +5,14 @@ import { loadCommercial } from '@/lib/hub/commercial-data'
 
 export const dynamic = 'force-dynamic'
 
-export default async function CommercialPage({ searchParams }: { searchParams: { show?: string; q?: string } }) {
+export default async function CommercialPage({ searchParams }: { searchParams: { show?: string; q?: string; added?: string } }) {
   const data = await loadCommercial(brisbaneToday())
   const show = searchParams.show === 'paused' || searchParams.show === 'ended' ? searchParams.show : 'active'
   return (
     <>
       <CommercialHead tab="clients" />
       {data
-        ? <ClientList rows={data.rows} initial={show} initialQuery={searchParams.q ?? ''} />
+        ? <ClientList rows={data.rows} initial={show} initialQuery={searchParams.q ?? ''} added={searchParams.added?.slice(0, 300)} />
         : <p className="err" role="alert">The clients couldn’t load just now. Refresh the page to try again.</p>}
     </>
   )

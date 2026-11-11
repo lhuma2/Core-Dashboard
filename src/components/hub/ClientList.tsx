@@ -1,14 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import { Search } from './icons'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { Search, Plus } from './icons'
 import type { ClientRow } from '@/lib/hub/figures'
 
 type View = 'active' | 'paused' | 'ended'
 const VIEWS: [View, string][] = [['active', 'Active'], ['paused', 'Paused'], ['ended', 'Ended']]
 
-export function ClientList({ rows, initial, initialQuery }: { rows: ClientRow[]; initial: View; initialQuery: string }) {
+export function ClientList({ rows, initial, initialQuery, added }: { rows: ClientRow[]; initial: View; initialQuery: string; added?: string }) {
   const [view, setView] = useState<View>(initial)
+  const [toast, setToast] = useState(added ?? '')
+  // Drop the message from the address so a refresh doesn't show it again.
+  useEffect(() => { if (added) window.history.replaceState(null, '', window.location.pathname) }, [added])
   const [query, setQuery] = useState(initialQuery)
   const q = query.trim().toLowerCase()
   const counts = { active: 0, paused: 0, ended: 0 }
@@ -28,6 +32,7 @@ export function ClientList({ rows, initial, initialQuery }: { rows: ClientRow[];
           <span className="sr">Search clients</span>
           <input type="search" placeholder="Search clients" value={query} onChange={e => setQuery(e.target.value)} />
         </label>
+        <Link className="primary" href="/hub/commercial/new"><Plus />New client</Link>
       </div>
       <div className="chips clchips" role="group" aria-label="Show clients">
         {VIEWS.map(([v, label]) => (
@@ -56,6 +61,12 @@ export function ClientList({ rows, initial, initialQuery }: { rows: ClientRow[];
         ))}
         {!shown.length && <div className="empty">{emptyText}</div>}
       </div>
+      {toast && (
+        <div className="toast" role="status">
+          <span>{toast}</span>
+          <button type="button" className="undo" onClick={() => setToast('')} aria-label="Dismiss">OK</button>
+        </div>
+      )}
       <p className="legend"><span className="h good">Healthy</span><span className="h watch">Watch</span><span className="h low">Low margin</span></p>
     </>
   )

@@ -14,3 +14,4 @@ export const Search = () => <svg {...base} width={16} height={16}><circle cx="11
 export const Prev = () => <svg {...base} width={18} height={18}><path d="M15 6l-6 6 6 6" /></svg>
 export const Next = () => <svg {...base} width={18} height={18}><path d="M9 6l6 6-6 6" /></svg>
 export const Close = () => <svg {...base} width={18} height={18}><path d="M6 6l12 12M18 6L6 18" /></svg>
+export const Plus = () => <svg {...base} width={16} height={16} strokeWidth={2.2}><path d="M12 5v14M5 12h14" /></svg>
