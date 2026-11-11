@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPushToRole } from '@/lib/push'
 import { QUOTE_REQUEST_KIND_LABELS, type QuoteRequest } from '@/lib/documents/quote-request'
 import { draftFromRequest } from '@/lib/documents/quote-request-draft'
+import { draftHomeQuote } from '@/lib/hub/home-quote-request'
 
 // A new quote request from the website's quote form. Makes a draft proposal from
 // the matching template, prefilled with everything but the prices, and lets the
@@ -52,6 +53,21 @@ async function handle(request: Request) {
   if (!req.name || !req.email) return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
 
   const db = createAdminClient() as any
+
+  // Residential requests: a draft quote in the new hub (Residential › Quotes), opened straight from the notification.
+  const home = await draftHomeQuote(db, req)
+  if (home && 'error' in home) return NextResponse.json({ error: home.error }, { status: 500 })
+  if (home) {
+    await sendPushToRole('admin', {
+      title: `New quote request: ${req.name}`,
+      body: `Residential, ${home.kind}. Draft ${home.ref} is filled in from their form. Check it and send.`,
+      url: `/hub/residential/quotes/${home.id}/edit`,
+    }).catch(() => {})
+    revalidatePath('/hub/residential/quotes')
+    revalidatePath('/hub')
+    return NextResponse.json({ success: true, id: home.id, ref: home.ref })
+  }
+
   const res = await draftFromRequest(db, req)
   if ('error' in res) return NextResponse.json({ error: res.error }, { status: 500 })
   if ('skipped' in res) return NextResponse.json({ skipped: res.skipped })

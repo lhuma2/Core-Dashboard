@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 // opening an old-hub screen that reads different data. Fill these in as each screen is built.
 const LINKS: Record<string, string | null> = {
   commercial: '/hub/commercial',
-  residential: null,
+  residential: '/hub/residential/quotes',
   eol: null,
   team: null,
   compliance: null,

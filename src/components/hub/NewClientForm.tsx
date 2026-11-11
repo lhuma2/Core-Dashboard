@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { setFlash } from '@/lib/hub/flash'
 import { createCommercialClient } from '@/actions/hub-clients'
 import {
   DAYS, STATES, EVERY_OPTS, EXTRA_KINDS, EXTRA_FREQS, MAX_SITES, MAX_EXTRAS,
@@ -66,7 +67,8 @@ export function NewClientForm({ team, existing, today }: { team: TeamMember[]; e
       try {
         const res = await createCommercialClient(nc)
         if (!res.ok) { setErr(res.error); return }
-        router.push('/hub/commercial?added=' + encodeURIComponent(res.toast))
+        setFlash(res.toast)
+        router.push('/hub/commercial')
         router.refresh()
       } catch {
         setErr('Couldn’t reach the hub. Check your connection and try again. Nothing was saved.')

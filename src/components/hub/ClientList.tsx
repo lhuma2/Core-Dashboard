@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { takeFlash } from '@/lib/hub/flash'
 import { Search, Plus } from './icons'
 import type { ClientRow } from '@/lib/hub/figures'
 
 type View = 'active' | 'paused' | 'ended'
 const VIEWS: [View, string][] = [['active', 'Active'], ['paused', 'Paused'], ['ended', 'Ended']]
 
-export function ClientList({ rows, initial, initialQuery, added }: { rows: ClientRow[]; initial: View; initialQuery: string; added?: string }) {
+export function ClientList({ rows, initial, initialQuery }: { rows: ClientRow[]; initial: View; initialQuery: string }) {
   const [view, setView] = useState<View>(initial)
-  const [toast, setToast] = useState(added ?? '')
-  // Drop the message from the address so a refresh doesn't show it again.
-  useEffect(() => { if (added) window.history.replaceState(null, '', window.location.pathname) }, [added])
+  const [toast, setToast] = useState('')
+  // The saved message from the New client form, shown once.
+  useEffect(() => { const m = takeFlash(); if (m) setToast(m) }, [])
   const [query, setQuery] = useState(initialQuery)
   const q = query.trim().toLowerCase()
   const counts = { active: 0, paused: 0, ended: 0 }
