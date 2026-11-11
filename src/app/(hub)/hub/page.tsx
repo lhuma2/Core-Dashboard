@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 // Where each card opens. A card whose new screen isn't built yet stays as a plain card (no arrow) rather than
 // opening an old-hub screen that reads different data. Fill these in as each screen is built.
 const LINKS: Record<string, string | null> = {
-  commercial: null,
+  commercial: '/hub/commercial',
   residential: null,
   eol: null,
   team: null,

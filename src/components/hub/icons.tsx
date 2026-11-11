@@ -10,3 +10,4 @@ export const Shield = () => <svg {...base}><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-
 export const Warning = () => <svg {...base}><path d="M12 3l9.5 17h-19z" /><path d="M12 10v4M12 17.5v.01" /></svg>
 export const Star = () => <svg {...base}><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" /></svg>
 export const Back = () => <svg {...base} width={18} height={18}><path d="M15 6l-6 6 6 6" /></svg>
+export const Search = () => <svg {...base} width={16} height={16}><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>

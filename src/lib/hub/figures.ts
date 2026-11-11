@@ -219,3 +219,101 @@ export function teamCard(cleaners: { region?: string | null }[]) {
   const sub = toSort ? `${total} registered cleaners · ${toSort} to sort into a region` : `${total} registered cleaners`
   return { regions, total, toSort, sub }
 }
+
+// ---------- Commercial > Clients list (mock-up recalcClient, v56–v58) ----------
+
+/** "Weekly", "3x a week", "Fortnightly", "2x a fortnight", "Monthly", "Daily". */
+export function freqText(n: number, every?: string | null): string {
+  if (every === 'fortnightly') return n === 1 ? 'Fortnightly' : `${n}x a fortnight`
+  if (every === 'monthly') return 'Monthly'
+  return n === 7 ? 'Daily' : n === 1 ? 'Weekly' : `${n}x a week`
+}
+
+/** "Angela Rachel Joseph" → "Angela J."; a single name stays as it is. */
+export function shortName(n?: string | null): string {
+  const p = (n ?? '').trim().split(/\s+/).filter(Boolean)
+  return p.length > 1 ? `${p[0]} ${p[p.length - 1].charAt(0)}.` : (p[0] ?? '')
+}
+
+/** 2026-11-03 → "3 Nov 2026". */
+export function shortDate(iso?: string | null): string {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return ''
+  const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const [y, m, d] = iso.split('-')
+  return `${+d} ${M[+m - 1]} ${y}`
+}
+
+export interface ListClient {
+  id: string
+  name: string
+  suburb: string
+  status?: string | null
+  paused_from?: string | null
+  resume_on?: string | null
+  ended_on?: string | null
+  sites: number
+  services: {
+    days: string[]
+    every: string
+    price: number
+    cost: number
+    cleaners: { id: string; name: string }[]
+    addons: { freq: string; price: number; cost: number }[]
+  }[]
+}
+
+export interface ClientRow {
+  id: string
+  name: string
+  suburb: string
+  view: Status
+  sites: number
+  freq: string
+  cleaner: string
+  mrr: string
+  margin: string
+  health: 'good' | 'watch' | 'low'
+  meta: string
+  search: string
+}
+
+/** One row of Commercial > Clients, worked out the same way as the mock-up's recalcClient. */
+export function clientRow(c: ListClient, today: string): ClientRow {
+  let monthly = 0, mcost = 0
+  for (const s of c.services) {
+    const cpm = cleansPerMonth(s)
+    monthly += (Number(s.price) || 0) * cpm
+    mcost += (Number(s.cost) || 0) * cpm
+    for (const a of s.addons) {
+      const py = ADDON_PER_YEAR[a.freq as AddonFreq] ?? 0
+      monthly += ((Number(a.price) || 0) * py) / 12
+      mcost += ((Number(a.cost) || 0) * py) / 12
+    }
+  }
+  const freqs = c.services.map(s => freqText(s.days.length, s.every))
+  const freq = !freqs.length ? 'Not set' : freqs.every(f => f === freqs[0]) ? freqs[0] : 'Varies by site'
+  const ids: string[] = []
+  const names = new Map<string, string>()
+  for (const s of c.services) for (const k of s.cleaners) { if (!ids.includes(k.id)) ids.push(k.id); names.set(k.id, k.name) }
+  const cleaner = !ids.length ? 'Unassigned' : ids.length === 1 ? shortName(names.get(ids[0])) : `${ids.length} cleaners`
+
+  let mrr = 'Not on file', margin = '—', health: ClientRow['health'] = 'watch'
+  if (monthly > 0) {
+    const pct = Math.round(((monthly - mcost) / monthly) * 100)
+    mrr = money(Math.round(monthly))
+    margin = `${pct}%`
+    health = pct >= 30 ? 'good' : pct >= 20 ? 'watch' : 'low'
+  }
+
+  const view = currentStatus(c, today)
+  const meta = view === 'paused'
+    ? `Paused from ${shortDate(c.paused_from)}${c.resume_on ? ` until ${shortDate(c.resume_on)}` : ', no restart date'}`
+    : view === 'ended'
+      ? `Ended, last clean ${shortDate(c.ended_on)}`
+      : [c.suburb, freq, cleaner].filter(Boolean).join(' · ')
+
+  return {
+    id: c.id, name: c.name, suburb: c.suburb, view, sites: c.sites, freq, cleaner, mrr, margin, health, meta,
+    search: `${c.name} ${c.suburb} ${c.services.flatMap(s => s.cleaners.map(k => k.name)).join(' ')} ${cleaner}`.toLowerCase(),
+  }
+}
