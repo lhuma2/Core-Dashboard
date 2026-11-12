@@ -500,3 +500,51 @@
 .hub .sigmeta{font-size:11px}
 .hub .sig{font-size:18px}
 }
+
+/* Residential clients: list rows and the client page (mock-up .cp* rules) */
+.hub .cphead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px}
+.hub .cpwho{min-width:0}
+.hub .cpsub{margin:4px 0 0;font-size:14px;color:#5d6b65;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hub .cpstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.hub .cpstats>div{background:#fff;border:1px solid #e1e7e4;border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.hub .cpstats span{font-size:12px;color:#5d6b65}
+.hub .cpstats>div>strong{font-size:20px;color:#13201a;font-weight:700}
+.hub .cpcard{margin:0 0 14px}
+.hub .cpcardh{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hub .cpcardh .btn{min-height:36px}
+.hub .cpsh{margin:0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#3d4b45}
+.hub .cpnone{margin:0;font-size:14px;color:#5d6b65}
+.hub .cpnote{margin:0;font-size:13px;color:#5d6b65}
+.hub .cpdoc{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f1f4f2}
+.hub .cpdoc:last-of-type{border-bottom:0}
+.hub .cpxm{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:14px}
+.hub .cpxm strong{color:#13201a;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hub .cpxm>span{font-size:13px;color:#5d6b65;overflow-wrap:anywhere}
+.hub .cpbanner{margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.hub .cphist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.hub .cphist li{display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #f1f4f2;font-size:14px;color:#13201a}
+.hub .cphist li:last-child{border-bottom:0}
+.hub .cphist time{color:#5d6b65;min-width:96px;flex:none}
+.hub .cpcard .ncform{margin-top:4px;padding:0;border:0;background:none}
+.hub .rlrow{grid-template-columns:minmax(0,2fr) minmax(0,1.3fr) minmax(0,1.3fr) minmax(0,.9fr) minmax(0,.7fr) minmax(0,.6fr)}
+.hub .rsmall{display:block;font-size:12px;color:#5d6b65;margin-top:2px}
+.hub .cmeta.rstat{display:none}
+.hub .rctime{align-self:flex-start;margin:8px 0 4px}
+.hub .rcclean{max-width:360px;margin-top:10px}
+.hub a.lrow{text-decoration:none;color:inherit;cursor:pointer}
+.hub a.lrow:hover{background:#f7faf8}
+@container (max-width:700px){
+.hub .cpstats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.hub .cpstats>div{padding:8px 10px}
+.hub .cpstats>div>strong{font-size:16px}
+.hub .cpsh{font-size:12px}
+.hub .cpnone,.hub .cpxm{font-size:13px}
+.hub .cpxm>span{font-size:12px}
+.hub .cpdoc{flex-wrap:wrap}
+.hub .cphist li{font-size:13px;flex-direction:column;gap:0}
+.hub .rlrow{grid-template-columns:minmax(0,1fr) auto auto}
+.hub .cmeta.rstat{display:block}
+.hub .rcclean{max-width:none}
+.hub .cpsub{font-size:12px}
+}
+.hub .ncgrid .q{grid-column:span 3}
