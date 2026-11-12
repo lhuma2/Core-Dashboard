@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useLiveRefresh } from '@/lib/hub/use-live'
 import { Search, Plus } from './icons'
 import { takeFlash, setFlash } from '@/lib/hub/flash'
 import { createAgreement, sendAgreement, resendAgreement, deleteAgreement } from '@/actions/hub-agreements'
@@ -23,6 +24,7 @@ export function copyLink(code: string, setToast: (m: string) => void) {
 
 export function DocList({ docs, homes, initial }: { docs: HomeDoc[]; homes: { id: string; label: string }[]; initial: Show }) {
   const router = useRouter()
+  useLiveRefresh()
   const [show, setShow] = useState<Show>(initial)
   const [query, setQuery] = useState('')
   const [toast, setToast] = useState('')

@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useLiveRefresh } from '@/lib/hub/use-live'
 import { Search, Plus } from './icons'
 import { takeFlash } from '@/lib/hub/flash'
 import { sendQuote, resendQuote, deleteQuote } from '@/actions/hub-quotes'
@@ -19,6 +20,7 @@ function inShow(q: Quote, f: Show) {
 
 export function QuoteList({ quotes, initial }: { quotes: Quote[]; initial: Show }) {
   const router = useRouter()
+  useLiveRefresh()
   const [show, setShow] = useState<Show>(initial)
   const [query, setQuery] = useState('')
   const [toast, setToast] = useState('')
