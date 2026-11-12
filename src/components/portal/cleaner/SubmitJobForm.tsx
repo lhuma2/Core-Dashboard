@@ -4,9 +4,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { submitJobAction, deleteJobPhotoAction } from '@/actions/jobs'
 import { Camera, Video, X, CheckCircle2, Circle, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { stampPhoto } from '@/lib/stampPhoto'
 import { uploadJobPhoto } from '@/lib/uploadJobPhoto'
+import { photoWorkStarted, photoWorkEnded, photoPickerOpened } from '@/lib/photoActivity'
 
 const MIN_PHOTOS = 0
 const MAX_PHOTOS = 10
@@ -85,16 +85,21 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
     setError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
 
-    for (const file of files) {
-      // 1. Show instant local preview
-      const localUrl = URL.createObjectURL(file)
-      const id       = `${Date.now()}-${Math.random()}`
-      setPhotos((p) => [...p, { id, localUrl, remoteUrl: null, storagePath: null, uploading: true, error: null, file: null }])
+    photoWorkStarted()
+    try {
+      for (const file of files) {
+        // 1. Show instant local preview
+        const localUrl = URL.createObjectURL(file)
+        const id       = `${Date.now()}-${Math.random()}`
+        setPhotos((p) => [...p, { id, localUrl, remoteUrl: null, storagePath: null, uploading: true, error: null, file: null }])
 
-      // 2. Stamp (and shrink) + upload in background
-      const stamped = await stampPhoto(file)
-      setPhotos((p) => p.map((x) => x.id === id ? { ...x, file: stamped } : x))
-      await upload(id, stamped)
+        // 2. Stamp (and shrink) + upload in background
+        const stamped = await stampPhoto(file)
+        setPhotos((p) => p.map((x) => x.id === id ? { ...x, file: stamped } : x))
+        await upload(id, stamped)
+      }
+    } finally {
+      photoWorkEnded()
     }
   }
 
@@ -145,7 +150,11 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
 
   async function uploadVideo(id: string, file: File) {
     setVideos((v) => v.map((x) => x.id === id ? { ...x, uploading: true, error: null } : x))
+    photoWorkStarted()
     try {
+      // Loaded only when a video is actually added: it's the one thing on this screen
+      // that needs the Supabase browser library, which is a big download for a phone.
+      const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
       const ext      = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4'
       const path     = `videos/${jobId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
@@ -166,6 +175,8 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
       }
     } catch {
       setVideos((v) => v.map((x) => x.id === id ? { ...x, uploading: false, error: 'Weak or no signal. Tap to retry.' } : x))
+    } finally {
+      photoWorkEnded()
     }
   }
 
@@ -284,7 +295,7 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
 
           {photos.length < MAX_PHOTOS && (
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => { photoPickerOpened(); fileInputRef.current?.click() }}
               className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1.5 active:scale-[0.97] transition-all"
             >
               <Camera className="w-6 h-6 text-gray-400" />
@@ -375,6 +386,7 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
               if (videoInputRef.current) {
                 videoInputRef.current.removeAttribute('capture')
                 videoInputRef.current.setAttribute('capture', 'environment')
+                photoPickerOpened()
                 videoInputRef.current.click()
               }
             }}
@@ -389,6 +401,7 @@ export function SubmitJobForm({ jobId, checklist }: Props) {
             onClick={() => {
               if (videoInputRef.current) {
                 videoInputRef.current.removeAttribute('capture')
+                photoPickerOpened()
                 videoInputRef.current.click()
               }
             }}

@@ -6,6 +6,7 @@ import { deleteJobPhotoAction } from '@/actions/jobs'
 import { queuePhoto, flushPhotoQueue, removeQueuedPhoto, claimPhoto, releasePhoto, PHOTO_UPLOADED_EVENT, type QueuedPhoto } from '@/lib/photoQueue'
 import { uploadJobPhoto } from '@/lib/uploadJobPhoto'
 import { stampPhotoWithThumb } from '@/lib/stampPhoto'
+import { photoWorkStarted, photoWorkEnded } from '@/lib/photoActivity'
 
 type Phase = 'before' | 'after'
 type PhotoStatus = 'uploading' | 'uploaded' | 'queued' | 'failed'
@@ -76,7 +77,12 @@ export function PhotoCaptureModal({ jobId, phase, jobKind = 'job_assignment', on
   }, [])
 
   useEffect(() => {
-    return () => { photosRef.current.forEach((p) => URL.revokeObjectURL(p.localUrl)) }
+    // While this box is open, coming back from the camera/picker doesn't reload the page.
+    photoWorkStarted()
+    return () => {
+      photoWorkEnded()
+      photosRef.current.forEach((p) => URL.revokeObjectURL(p.localUrl))
+    }
   }, [])
 
   function toQueued(entry: PhotoEntry): QueuedPhoto {

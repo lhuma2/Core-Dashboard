@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { NotificationGate } from '@/components/portal/cleaner/NotificationGate'
 import { SessionKeepAlive } from '@/components/portal/SessionKeepAlive'
-import { RefreshOnFocus } from '@/components/RefreshOnFocus'
+import { CleanerRefreshOnFocus } from '@/components/portal/cleaner/CleanerRefreshOnFocus'
 
 export default async function CleanerLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -16,7 +16,7 @@ export default async function CleanerLayout({ children }: { children: React.Reac
   return (
     <>
       <SessionKeepAlive />
-      <RefreshOnFocus />
+      <CleanerRefreshOnFocus />
       <NotificationGate>{children}</NotificationGate>
     </>
   )

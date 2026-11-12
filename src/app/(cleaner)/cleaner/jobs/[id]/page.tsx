@@ -29,20 +29,22 @@ export default async function CleanerJobPage({ params }: { params: { id: string 
     .from('profiles').select('*').eq('user_id', user.id).single()
   if (!profile) redirect('/login')
 
-  const { data: job } = await (supabase as any)
-    .from('job_assignments')
-    .select('*, clients(id, business_name, address, suburb, state, postcode), client_sites(site_name, address, suburb, access_details)')
-    .eq('id', params.id)
-    .eq('cleaner_id', profile.id)
-    .single()
+  // Job and its submission fetched together — one round trip instead of two.
+  const [{ data: job }, { data: submission }] = await Promise.all([
+    (supabase as any)
+      .from('job_assignments')
+      .select('*, clients(id, business_name, address, suburb, state, postcode), client_sites(site_name, address, suburb, access_details)')
+      .eq('id', params.id)
+      .eq('cleaner_id', profile.id)
+      .single(),
+    (supabase as any)
+      .from('job_submissions')
+      .select('*')
+      .eq('job_id', params.id)
+      .single(),
+  ])
 
   if (!job) notFound()
-
-  const { data: submission } = await (supabase as any)
-    .from('job_submissions')
-    .select('*')
-    .eq('job_id', params.id)
-    .single()
 
   // A cleaner assigned only to a site can't read the parent client under RLS, so the
   // embed is null; this job is theirs (filtered by cleaner_id above), so read it via admin.

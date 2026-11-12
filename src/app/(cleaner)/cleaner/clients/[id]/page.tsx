@@ -48,12 +48,47 @@ export default async function CleanerClientPage({ params, searchParams }: { para
   // Load client + sites via admin so a cleaner assigned only to a SITE (not the whole
   // client) can still reach this page. We authorize manually below.
   const admin = createAdminClient() as any
-  const { data: client } = await admin.from('clients').select('*').eq('id', params.id).single()
+  const today = brisbaneTodayStr()
+  const dates = actionableDates(today)
+
+  // Everything this page shows is fetched at once rather than one query after another
+  // (each is its own round trip). Nothing is shown until the access check below passes.
+  const [
+    { data: client }, { data: sitesRaw }, { data: candidateJobs }, { data: coverJobsRaw }, { data: comps },
+  ] = await Promise.all([
+    admin.from('clients').select('*').eq('id', params.id).single(),
+    admin
+      .from('client_sites').select('*').eq('client_id', params.id).order('sort_order', { ascending: true }),
+    // Check for an actionable job — today's, or a Saturday job carried into Sunday
+    (supabase as any)
+      .from('job_assignments')
+      .select('*, job_submissions(*)')
+      .eq('client_id', params.id)
+      .eq('cleaner_id', profile.id)
+      .in('scheduled_date', dates)
+      .order('scheduled_date', { ascending: false }),
+    // Today's clean handed to a different cleaner (Team → Manage Jobs cover). Read via
+    // admin: RLS only shows a cleaner their own jobs. Used to show "covered" instead of a
+    // Start button, so the regular cleaner doesn't start a duplicate.
+    admin
+      .from('job_assignments')
+      .select('id, status, site_id, cleaner_id, profiles(full_name)')
+      .eq('client_id', params.id)
+      .in('scheduled_date', dates)
+      .neq('cleaner_id', profile.id),
+    // Today's scope-of-works completions for the whole client (task ids are unique per
+    // site, so one set serves every site checklist). Read via admin so site-only cleaners
+    // always see ticks.
+    admin
+      .from('schedule_completions')
+      .select('task_id')
+      .eq('client_id', params.id)
+      .eq('clean_date', today)
+      .eq('done', true),
+  ])
   if (!client) notFound()
   const toPublicUrl = (path: string) => admin.storage.from('job-photos').getPublicUrl(path).data.publicUrl as string
 
-  const { data: sitesRaw } = await admin
-    .from('client_sites').select('*').eq('client_id', params.id).order('sort_order', { ascending: true })
   const sites = (sitesRaw ?? []) as any[]
   const mySites = sites.filter((s) => s.assigned_cleaner_id === profile.id)
   const clientAssigned = client.assigned_cleaner_id === profile.id && client.assignment_accepted !== false
@@ -69,17 +104,6 @@ export default async function CleanerClientPage({ params, searchParams }: { para
     if (!ownJobs?.length) notFound()
   }
 
-  // Check for an actionable job — today's, or a Saturday job carried into Sunday
-  const today = brisbaneTodayStr()
-  const dates = actionableDates(today)
-  const { data: candidateJobs } = await (supabase as any)
-    .from('job_assignments')
-    .select('*, job_submissions(*)')
-    .eq('client_id', params.id)
-    .eq('cleaner_id', profile.id)
-    .in('scheduled_date', dates)
-    .order('scheduled_date', { ascending: false })
-
   // Prefer an in-progress/flagged job, then one still to do, then a completed one
   const jobs = (candidateJobs ?? []) as any[]
   const pickJob = (list: any[]) =>
@@ -90,15 +114,6 @@ export default async function CleanerClientPage({ params, searchParams }: { para
   // Client-level job ignores site-scoped jobs (multi-site shows Start/Finish per site)
   const todayJob = pickJob(jobs.filter((j: any) => !j.site_id))
 
-  // Today's clean handed to a different cleaner (Team → Manage Jobs cover). Read via
-  // admin: RLS only shows a cleaner their own jobs. Used to show "covered" instead of a
-  // Start button, so the regular cleaner doesn't start a duplicate.
-  const { data: coverJobsRaw } = await admin
-    .from('job_assignments')
-    .select('id, status, site_id, cleaner_id, profiles(full_name)')
-    .eq('client_id', params.id)
-    .in('scheduled_date', dates)
-    .neq('cleaner_id', profile.id)
   const coverJobs = (coverJobsRaw ?? []) as any[]
   const coverFor = (siteId: string | null) =>
     pickJob(coverJobs.filter((j: any) => (j.site_id ?? null) === siteId))
@@ -118,14 +133,6 @@ export default async function CleanerClientPage({ params, searchParams }: { para
   }, 60).slice(0, 5)
 
   // ── Scope-of-works checklist(s) ──
-  // Today's completions for the whole client (task ids are unique per site, so one set
-  // serves every site checklist). Read via admin so site-only cleaners always see ticks.
-  const { data: comps } = await admin
-    .from('schedule_completions')
-    .select('task_id')
-    .eq('client_id', params.id)
-    .eq('clean_date', today)
-    .eq('done', true)
   const completedIds: string[] = (comps ?? []).map((r: any) => r.task_id)
   const dateLabel = new Date(today + 'T00:00:00').toLocaleDateString('en-AU', {
     weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Australia/Brisbane',

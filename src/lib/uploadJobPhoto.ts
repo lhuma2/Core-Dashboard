@@ -12,6 +12,7 @@
  */
 
 import { shrinkPhoto } from './stampPhoto'
+import { photoWorkStarted, photoWorkEnded } from './photoActivity'
 
 export type JobKind = 'job_assignment' | 'bond_job' | 'residential_job'
 export type UploadResult =
@@ -40,6 +41,15 @@ async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
 
 /** `photoId` is a stable id for this photo on the phone, so a retry of a photo that already arrived isn't stored twice. */
 export async function uploadJobPhoto(jobId: string, file: File | Blob, phase: 'before' | 'after', jobKind: JobKind = 'job_assignment', photoId?: string): Promise<UploadResult> {
+  photoWorkStarted()
+  try {
+    return await sendJobPhoto(jobId, file, phase, jobKind, photoId)
+  } finally {
+    photoWorkEnded()
+  }
+}
+
+async function sendJobPhoto(jobId: string, file: File | Blob, phase: 'before' | 'after', jobKind: JobKind, photoId?: string): Promise<UploadResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     return { error: 'No signal. The photo will upload when you’re back online.', offline: true }
   }
