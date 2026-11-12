@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { Back, House } from './icons'
 
-// Only the tabs that are built are shown, so there are no dead buttons. Timetable and Team
-// join as each screen lands.
 const TABS = [
   { id: 'clients', label: 'Clients', href: '/hub/residential/clients' },
   { id: 'quotes', label: 'Quotes', href: '/hub/residential/quotes' },
+  { id: 'timetable', label: 'Timetable', href: '/hub/residential/timetable' },
   { id: 'documents', label: 'Documents', href: '/hub/residential/documents' },
+  { id: 'team', label: 'Team', href: '/hub/residential/team' },
 ] as const
 
 export function ResidentialHead({ tab, quotesToDo }: { tab: (typeof TABS)[number]['id']; quotesToDo?: number }) {

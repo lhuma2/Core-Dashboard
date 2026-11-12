@@ -20,7 +20,10 @@ type Act = null | 'time' | 'pause' | 'end' | 'cancel' | 'delete'
 type R = { ok: true; id: string; toast: string } | { ok: false; error: string; needDate?: true }
 
 // The residential client's page: status, money, details, cleans, agreement, status actions and history. Mock-up words.
-export function HomeView({ h, history, docs, cleaners, today }: { h: Home; history: History[]; docs: HomeDoc[]; cleaners: { id: string; name: string }[]; today: string }) {
+const FROM: Record<string, [string, string]> = { timetable: ['/hub/residential/timetable', 'Timetable'], team: ['/hub/residential/team', 'Team'] }
+
+export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home; history: History[]; docs: HomeDoc[]; cleaners: { id: string; name: string }[]; today: string; from?: string }) {
+  const [backHref, backLabel] = FROM[from || ''] || ['/hub/residential/clients', 'Residential']
   const router = useRouter()
   const [act, setAct] = useState<Act>(null)
   const [d1, setD1] = useState('')
@@ -63,7 +66,7 @@ export function HomeView({ h, history, docs, cleaners, today }: { h: Home; histo
 
   return (
     <>
-      <Link className="back" href="/hub/residential/clients"><Back /> Residential</Link>
+      <Link className="back" href={backHref}><Back /> {backLabel}</Link>
       <div className="cphead">
         <div className="cpwho">
           <h1 className="greet">{h.name}</h1>

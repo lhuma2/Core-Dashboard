@@ -548,3 +548,36 @@
 .hub .cpsub{font-size:12px}
 }
 .hub .ncgrid .q{grid-column:span 3}
+/* Residential timetable and team */
+.hub .cev.k6{background:#2b3040;border-color:#2b3040;color:#fff}.hub .mchip.k6{background:#2b3040;color:#fff}
+.hub .rcalchips{margin:0 0 10px}
+.hub .cev.unas{border-left-style:dashed;border-color:#d92d20}
+.hub .cev.done{opacity:.6}
+.hub .cev.k6 .cename,.hub .cev.k6 .cesub,.hub .cev.k6 .cetime{color:#fff}.hub .cev.k6 .cesub{opacity:.8}
+.hub .rkey{display:inline-flex;align-items:center;gap:6px}
+.hub .rkey::before{content:"";width:12px;height:12px;border-radius:3px;display:inline-block}
+.hub .rkey.k1::before{background:#3b7dd8}.hub .rkey.k6::before{background:#2b3040}.hub .rkey.unas::before{background:#fff;border:2px dashed #d92d20;box-sizing:border-box}
+.hub .tname{font-weight:600;font-size:15px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.hub .tcontact{font-size:13px;color:#5d6b65;margin-top:2px;overflow-wrap:anywhere}
+.hub .ctlist{display:flex;flex-direction:column;gap:10px}
+.hub .ctcard{background:#fff;border:1px solid #e1e7e4;border-radius:14px;padding:14px 18px}
+.hub .cthead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hub .ctwho{min-width:0}
+.hub .ctclients{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;border-top:1px solid #edf1ef}
+.hub .ctclients li{display:flex;flex-direction:column;gap:2px;padding:9px 0 9px 14px;border-bottom:1px solid #f1f4f2;position:relative}
+.hub .ctclients li:last-child{border-bottom:0;padding-bottom:0}
+.hub .ctclients li::before{content:"";position:absolute;left:0;top:15px;width:6px;height:6px;border-radius:50%;background:#149e76}
+.hub .ctcname{cursor:pointer;font-weight:600;font-size:14px;color:#0f6e50;align-self:flex-start;min-height:28px;display:inline-flex;align-items:center;text-decoration:none}
+.hub .ctcname:hover{text-decoration:underline}
+.hub .ctcname:focus-visible{outline:3px solid #149e76;outline-offset:2px;border-radius:4px}
+.hub .ctline{font-size:13px;color:#5d6b65}
+.hub .ctnone{margin:10px 0 0;font-size:13px;color:#5d6b65;border-top:1px solid #edf1ef;padding-top:10px}
+.hub .unascard{border-color:#f3c3be;background:#fffafa;margin-bottom:12px}
+.hub .cthead .btn{flex-shrink:0}
+@container (max-width:700px){
+.hub .tname{font-size:14px;gap:6px}
+.hub .tcontact{font-size:12px}
+.hub .ctcard{padding:12px;border-radius:12px}
+.hub .ctline{font-size:12px}
+.hub .ctcname{font-size:13px}
+}

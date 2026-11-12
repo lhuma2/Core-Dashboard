@@ -120,3 +120,48 @@ export function homeRow(h: Home, today: string, cleanerName: (id: string | null)
 }
 
 export { addr, freqLong, homeText, longDate, dLong, dShort, cash, cash2, t12 }
+
+// ----- Timetable (mock-up rEventsOn) -----
+export type CalShow = 'all' | 'recurring' | 'oneoff'
+export interface HomeEvent { key: string; id: string; iso: string; client: string; suburb: string; start: string; finish: string; cleaner: string; unassigned: boolean; k: 'k1' | 'k6'; done: boolean; h: Home }
+export function homeEventsOn(homes: Home[], iso: string, show: CalShow, cleanerName: (id: string | null) => string): HomeEvent[] {
+  const out: HomeEvent[] = []
+  for (const h of homes) {
+    if (show !== 'all' && (show === 'oneoff') !== (h.kind === 'oneoff')) continue
+    if (!homeOn(h, iso)) continue
+    out.push({
+      key: h.id + '|' + iso, id: h.id, iso, client: h.name, suburb: h.suburb || '', start: h.start_time || '', finish: h.finish_time || '',
+      cleaner: cleanerName(h.cleaner_id), unassigned: !h.cleaner_id, k: h.kind === 'oneoff' ? 'k6' : 'k1', done: h.kind === 'oneoff' && !!h.done, h,
+    })
+  }
+  return out.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.client.localeCompare(b.client)))
+}
+
+// ----- Team (mock-up rt*) -----
+const live = (h: Home, today: string) => !rFinished(h, today)
+export function homeLine(h: Home, today: string): string {
+  const s = rState(h, today)
+  return schedText(h) + (h.kind === 'oneoff' && h.start_time ? ' ' + t12(h.start_time) : '')
+    + (s === 'paused' ? ' · paused' + (h.resume_on ? ' until ' + dShort(h.resume_on) : '') : s === 'starting' ? ' · starts ' + dShort(h.first_clean) : s === 'overdue' ? ' · not marked done' : '')
+}
+export interface TeamHome { id: string; name: string; line: string }
+export interface TeamRow { id: string; name: string; sub: string; phone: string; homes: TeamHome[]; search: string }
+const teamHomes = (list: Home[], today: string): TeamHome[] =>
+  list.slice().sort((a, b) => a.name.localeCompare(b.name)).map(h => ({ id: h.id, name: h.name + (h.suburb ? ', ' + h.suburb : ''), line: homeLine(h, today) }))
+export function teamData(homes: Home[], cleaners: { id: string; name: string; phone?: string | null }[], today: string): { unassigned: TeamHome[]; rows: TeamRow[] } {
+  const mine = (id: string | null) => homes.filter(h => (h.cleaner_id || null) === id && live(h, today))
+  const rows = cleaners.map(c => {
+    const list = mine(c.id)
+    let pm = 0
+    for (const h of list) if (h.kind !== 'oneoff' && rState(h, today) !== 'paused') pm += perMonth(h)
+    const n = Math.round(pm)
+    return {
+      id: c.id, name: c.name, phone: c.phone || '', homes: teamHomes(list, today),
+      sub: [list.length + (list.length === 1 ? ' home' : ' homes'), n ? 'about ' + n + (n === 1 ? ' regular clean a month' : ' regular cleans a month') : '', c.phone || ''].filter(Boolean).join(' · '),
+      search: [c.name, ...list.map(h => h.name + ' ' + (h.suburb || ''))].join(' ').toLowerCase(),
+    }
+  }).sort((a, b) => b.homes.length - a.homes.length || a.name.localeCompare(b.name))
+  // A home whose cleaner is no longer on the team counts as having no cleaner.
+  const ids = new Set(cleaners.map(c => c.id))
+  return { unassigned: teamHomes(homes.filter(h => live(h, today) && (!h.cleaner_id || !ids.has(h.cleaner_id))), today), rows }
+}
