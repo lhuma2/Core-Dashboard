@@ -16,6 +16,8 @@ import {
   type CpClient, type CpCleaner, type CpHistory, type CpProblem, type CpService,
 } from '@/lib/hub/client-page'
 
+import { type HubRequest, rqState, rqTitle } from '@/lib/hub/requests'
+
 type R = { ok: true; toast: string } | { ok: false; error: string }
 export interface CpStats { mrr: string; margin: string; health: 'good' | 'watch' | 'low' }
 
@@ -27,8 +29,8 @@ const Person = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
 const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
 const X = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
 
-export function CommercialClientView({ c, cleaners, problems, history, stats, today, from, photos }: {
-  c: CpClient; cleaners: CpCleaner[]; problems: CpProblem[]; history: CpHistory[]; stats: CpStats; today: string; from?: string; photos?: React.ReactNode
+export function CommercialClientView({ c, cleaners, problems, history, stats, today, from, photos, requests = [] }: {
+  c: CpClient; cleaners: CpCleaner[]; problems: CpProblem[]; history: CpHistory[]; stats: CpStats; today: string; from?: string; photos?: React.ReactNode; requests?: HubRequest[]
 }) {
   const router = useRouter()
   const [edit, setEdit] = useState<string | null>(null)
@@ -41,7 +43,7 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
   const [toast, setToast] = useState('')
   const [busy, start] = useTransition()
 
-  const [backHref, backLabel] = from === 'timetable' ? ['/hub/commercial/timetable', 'Timetable'] : from === 'problems' ? ['/hub/problems', 'Problems'] : ['/hub/commercial', 'Clients']
+  const [backHref, backLabel] = from === 'timetable' ? ['/hub/commercial/timetable', 'Timetable'] : from === 'problems' ? ['/hub/problems', 'Problems'] : from === 'requests' ? ['/hub/commercial/requests', 'Requests'] : ['/hub/commercial', 'Clients']
   const st = currentStatus(c, today)
   const open = (key: string, draft: Record<string, any>) => { setEdit(key); setD(draft); setErr(''); setPick(null); setDelX(null) }
   const close = () => { setEdit(null); setD({}); setErr('') }
@@ -340,6 +342,16 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
       {!c.services.length && <section className="addcard cpcard"><h2 className="nch">Service details</h2><p className="cpnone">No cleans set up for this client yet.</p></section>}
 
       {photos}
+
+      <section className="addcard cpcard" aria-label="Requests from the client">
+        <div className="cpcardh"><h2 className="nch">Requests</h2><Link className="linkbtn" href={`/hub/commercial/requests?show=all&q=${encodeURIComponent(c.name)}`}>Open in Requests</Link></div>
+        {requests.slice(0, 5).map(q => {
+          const s9 = rqState(q)
+          return <div className="cpdoc" key={q.id}><span className="cpxm"><strong>{rqTitle(q)}</strong><span>{[q.site, 'sent ' + dShort(q.created)].filter(Boolean).join(' · ')}</span></span><span className={s9.tagCls}>{s9.tag}</span></div>
+        })}
+        {!requests.length && <p className="cpnone">Nothing sent from their portal yet.</p>}
+        {requests.length > 5 && <p className="cpnone">Showing the latest 5 of {requests.length}.</p>}
+      </section>
 
       <section className="addcard cpcard" aria-label="Problems reported">
         <div className="cpcardh"><h2 className="nch">Problems reported</h2>{problems.length > 0 && <Link className="linkbtn" href="/hub/problems">Open in Problems</Link>}</div>

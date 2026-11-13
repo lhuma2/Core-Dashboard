@@ -13,6 +13,8 @@ export async function loadCommercial(today: string): Promise<{ rows: ClientRow[]
     supabase.from('client_addons').select('service_id, freq, price, cost'),
     supabase.from('client_service_cleaners').select('service_id, cleaner:profiles(id, full_name)'),
   ])
+  const oneQ = await supabase.from('one_offs').select('service_id, clean_date, start_time, finish_time')
+  const ones: any[] = oneQ.error ? [] : oneQ.data || []
   if ([clientsQ, sitesQ, servicesQ, addonsQ, crewQ].some(q => q.error)) return null
 
   const group = <T,>(list: T[], key: (x: T) => string) => {
@@ -55,6 +57,7 @@ export async function loadCommercial(today: string): Promise<{ rows: ClientRow[]
         start: (s.start_time ?? '').slice(0, 5), finish: (s.finish_time ?? '').slice(0, 5),
         cleaners: names.length ? names.join(', ') : 'Unassigned',
         status: c.status, paused_from: day(c.paused_from), resume_on: day(c.resume_on), ended_on: day(c.ended_on),
+        extras: ones.filter(o => o.service_id === s.id).map(o => ({ iso: day(o.clean_date) || '', start: (o.start_time ?? '').slice(0, 5), finish: (o.finish_time ?? '').slice(0, 5) })),
       })
     }
   }

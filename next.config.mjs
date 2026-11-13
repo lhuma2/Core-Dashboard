@@ -75,7 +75,10 @@ const nextConfig = {
   env: previewEnv,
   // The new cleaner app replaces the old dashboard (old links and phone notifications still point there).
   async redirects() {
-    return [{ source: '/cleaner/dashboard', destination: '/cleaner/app', permanent: false }]
+    return [
+      { source: '/cleaner/dashboard', destination: '/cleaner/app', permanent: false },
+      ...['dashboard', 'services', 'compliance', 'contact'].map(p => ({ source: '/client/' + p, destination: '/client/app', permanent: false })),
+    ]
   },
   serverExternalPackages: ['pdf-parse'],
   experimental: {

@@ -5,7 +5,7 @@ import './hub.css'
 
 const ROLE_HOME: Record<string, string> = {
   cleaner: '/cleaner/app',
-  client: '/client/dashboard',
+  client: '/client/app',
   manager: '/manager/dashboard',
 }
 

@@ -5,7 +5,7 @@ import { RefreshOnFocus } from '@/components/RefreshOnFocus'
 
 const ROLE_HOME: Record<string, string> = {
   cleaner: '/cleaner/dashboard',
-  client:  '/client/dashboard',
+  client:  '/client/app',
   manager: '/manager/dashboard',
 }
 

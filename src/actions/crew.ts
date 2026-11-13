@@ -96,7 +96,10 @@ export async function finishClean(key: string, photos: number): Promise<R<{ toas
   }
   const db = createAdminClient() as any
   const at = new Date().toISOString()
-  const { data: upd, error } = await db.from('jobs').update({ status: 'done', finished_at: at, photo_count: n, photo_ack: ackd }).eq('id', job.jobId).eq('status', 'in_progress').select('id')
+  const fin = (extra: Record<string, any>) => db.from('jobs').update({ status: 'done', finished_at: at, photo_count: n, photo_ack: ackd, ...extra }).eq('id', job.jobId).eq('status', 'in_progress').select('id')
+  let { data: upd, error } = await fin({ finished_by: me.profileId })
+  // before test-db update 068 there's no finished_by column
+  if (error && /finished_by/.test(String(error.message || ''))) ({ data: upd, error } = await fin({}))
   if (error) return { ok: false, error: OFFLINE }
   if (!(upd || []).length) return { ok: true, toast: 'Clean finished. Thanks ' + me.first + '!' }
 

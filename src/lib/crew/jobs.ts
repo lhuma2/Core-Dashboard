@@ -77,6 +77,8 @@ export interface SvcSrc {
   id: string; clientId: string; name: string; address: string; suburb: string; days: string[]; every: string; anchor: string | null; first: string | null
   start: string; finish: string; access: string; team: string[]; scope: SowBox[]
   status: string | null; paused_from: string | null; resume_on: string | null; ended_on: string | null; addons: AddonSrc[]
+  /** Extra cleans booked from a client request: that site's clean on that day, at that time. */
+  extras?: { iso: string; start: string; finish: string }[]
 }
 export interface JobRow { id: string; home_id: string | null; service_id: string | null; clean_date: string; status: string; started_at: string | null; finished_at: string | null; ticks: Record<string, boolean> | null; photo_count: number; note: string | null }
 
@@ -88,6 +90,7 @@ export function homeOnDay(h: HomeSrc, iso: string): boolean {
   return onCadence({ every: h.every, anchor: h.anchor, first: h.first_clean }, iso)
 }
 export function svcOnDay(s: SvcSrc, iso: string): boolean {
+  if (s.extras?.some(e => e.iso === iso)) return !offOn(s, iso)
   if (!s.days.includes(CAL_DOW[isoDow(iso)])) return false
   if (s.first && iso < s.first) return false
   if (offOn(s, iso)) return false
@@ -146,9 +149,10 @@ export function homeJob(h: HomeSrc, iso: string, me: string, run: JobRow | undef
   }
 }
 export function svcJob(s: SvcSrc, iso: string, today: string, run: JobRow | undefined, todayRun: JobRow | undefined): CrewJob {
+  const ex = s.extras?.find(e => e.iso === iso)
   return {
     key: jobKey('s', s.id, iso), kind: 'com', refId: s.id, clientId: s.clientId, iso,
-    name: s.name, address: s.address, suburb: s.suburb, start: s.start, finish: s.finish, team: s.team, homeLabel: '',
+    name: s.name, address: s.address, suburb: s.suburb, start: ex ? ex.start : s.start, finish: ex ? ex.finish : s.finish, team: s.team, homeLabel: ex ? 'Extra clean, booked by the client' : '',
     access: s.access.trim(), sow: s.scope, excludes: '', addons: addonsOn(s, iso, today, todayRun),
     ...runFields(run), minPh: MINPH,
   }

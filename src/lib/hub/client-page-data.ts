@@ -14,12 +14,17 @@ const when = (iso: string) =>
 export async function loadClientPage(id: string): Promise<{ c: CpClient; cleaners: CpCleaner[]; problems: CpProblem[]; history: CpHistory[] } | null | 'missing'> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return 'missing'
   const db = createClient() as any
+  const issues = async () => {
+    const q = await db.from('issues').select('id, body, created_at, resolved_at, cleaner_id, site_id, from_client').eq('client_id', id).order('created_at', { ascending: false }).limit(20)
+    // before test-db update 068 there's no from_client column
+    return q.error ? db.from('issues').select('id, body, created_at, resolved_at, cleaner_id, site_id').eq('client_id', id).order('created_at', { ascending: false }).limit(20) : q
+  }
   const [cQ, sitesQ, svcQ, teamQ, issQ, histQ] = await Promise.all([
     db.from('clients').select('id, business_name, contact_name, contact_phone, contact_email, address, suburb, state, postcode, status, paused_from, resume_on, ended_on, status_reason, is_multi_site, scope, scope_of_work, access_details').eq('id', id).maybeSingle(),
     db.from('client_sites').select('id, site_name, address, suburb, postcode, scope, scope_of_work, access_details, sort_order').eq('client_id', id).order('sort_order'),
     db.from('client_services').select('id, site_id, sort_order, days, every, anchor, first_clean, start_time, finish_time, price, cost, access').eq('client_id', id).order('sort_order'),
     db.from('profiles').select('id, full_name, region, is_team_leader, pack_signed_at').eq('role', 'cleaner').order('full_name'),
-    db.from('issues').select('id, body, created_at, resolved_at, cleaner_id, site_id').eq('client_id', id).order('created_at', { ascending: false }).limit(20),
+    issues(),
     db.from('client_history').select('date, text, created_at').eq('client_id', id).order('date', { ascending: false }).order('created_at', { ascending: false }),
   ])
   if (cQ.error || sitesQ.error || svcQ.error || teamQ.error) return null
@@ -60,7 +65,7 @@ export async function loadClientPage(id: string): Promise<{ c: CpClient; cleaner
   const team: CpCleaner[] = ((teamQ.data || []) as any[]).map(p => ({ id: p.id, name: p.full_name || 'Cleaner', region: p.region || null, leader: !!p.is_team_leader, signed: !!p.pack_signed_at }))
   const nameOf = (cid: string | null) => { const t = team.find(x => x.id === cid); return t ? shortName(t.name) : 'A cleaner' }
   const problems: CpProblem[] = issQ.error ? [] : ((issQ.data || []) as any[]).map(p => ({
-    id: p.id, body: p.body || '', when: when(p.created_at), cleaner: nameOf(p.cleaner_id), site: multi && p.site_id ? siteBy.get(p.site_id)?.site_name || '' : '', fixed: !!p.resolved_at,
+    id: p.id, body: p.body || '', when: when(p.created_at), cleaner: p.from_client ? 'The client' : nameOf(p.cleaner_id), site: multi && p.site_id ? siteBy.get(p.site_id)?.site_name || '' : '', fixed: !!p.resolved_at,
   }))
   const history: CpHistory[] = histQ.error ? [] : ((histQ.data || []) as any[]).map(h => ({ date: d10(h.date) || '', text: h.text || '' }))
   return {

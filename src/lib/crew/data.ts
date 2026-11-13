@@ -63,11 +63,12 @@ export async function loadCrewJobs(me: Me, from: string, days: number, only: Fil
   const svcIds: string[] = Array.from(new Set(((onQ.data || []) as any[]).map(x => x.service_id)))
   const homeIds = homeRows.map(h => h.id)
 
-  const [docsQ, svcQ, crewQ, addQ, hRuns, sRuns] = await Promise.all([
+  const [docsQ, svcQ, crewQ, addQ, oneQ, hRuns, sRuns] = await Promise.all([
     homeIds.length ? db.from('home_docs').select('home_id, status, snap, created_on').in('home_id', homeIds) : { data: [] },
     svcIds.length ? db.from('client_services').select('id, client_id, site_id, days, every, anchor, first_clean, start_time, finish_time, access').in('id', svcIds) : { data: [] },
     svcIds.length ? db.from('client_service_cleaners').select('service_id, cleaner:profiles(full_name)').in('service_id', svcIds) : { data: [] },
     svcIds.length ? addonsFor(db, svcIds) : { data: [] },
+    svcIds.length ? db.from('one_offs').select('service_id, clean_date, start_time, finish_time').in('service_id', svcIds).gte('clean_date', isoAdd(from, -1)).lte('clean_date', isoAdd(from, days + 1)) : { data: [] },
     homeIds.length ? db.from('jobs').select('id, home_id, service_id, clean_date, status, started_at, finished_at, ticks, photo_count, note').in('home_id', homeIds).gte('clean_date', lo).lte('clean_date', hi) : { data: [] },
     svcIds.length ? db.from('jobs').select('id, home_id, service_id, clean_date, status, started_at, finished_at, ticks, photo_count, note').in('service_id', svcIds).gte('clean_date', lo).lte('clean_date', hi) : { data: [] },
   ])
@@ -118,6 +119,7 @@ export async function loadCrewJobs(me: Me, from: string, days: number, only: Fil
       scope: sow.length ? sow : scopeBoxes(c.scope, c.scope_of_work),
       status: c.status, paused_from: d10(c.paused_from), resume_on: d10(c.resume_on), ended_on: d10(c.ended_on),
       addons: (addBy.get(s.id) || []).map(a => ({ id: a.id, name: a.name, freq: a.freq, next_date: d10(a.next_date), items: a.items || null })),
+      extras: ((oneQ.error ? [] : oneQ.data || []) as any[]).filter(o => o.service_id === s.id).map(o => ({ iso: d10(o.clean_date)!, start: (o.start_time || '').slice(0, 5), finish: (o.finish_time || '').slice(0, 5) })),
     })
   }
   const runs: JobRow[] = [...(hRuns.data || []), ...(sRuns.data || [])].map((r: any) => ({ ...r, clean_date: d10(r.clean_date) }))

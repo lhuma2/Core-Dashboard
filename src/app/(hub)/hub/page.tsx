@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { loadDashboard } from '@/lib/hub/dashboard-data'
 import { greeting, money, noPriceNote, type Totals } from '@/lib/hub/figures'
-import { Chev, Building, House, Key, People, Shield, Warning, Star } from '@/components/hub/icons'
+import { Chev, Building, House, Key, People, Shield, Warning, Star, Chat } from '@/components/hub/icons'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +14,7 @@ const LINKS: Record<string, string | null> = {
   team: null,
   compliance: null,
   problems: '/hub/problems',
+  requests: '/hub/commercial/requests',
   surveys: null,
 }
 
@@ -120,6 +121,18 @@ export default async function HubDashboard() {
           <div className="stat compstat">
             <div className="lbl">Open</div>
             <div className="sval" data-testid="problems-open">{d.problemsOpen}</div>
+          </div>
+        </Card>
+        <Card className={d.requestsNew ? 'card comp prob reqc has' : 'card comp prob reqc'} href={LINKS.requests}
+          label={`Client requests: ${d.requestsNew} need you.`}>
+          <div className="chead">
+            <span className="icon" style={{ background: '#e4eefb', color: '#1f5aa6' }}><Chat /></span>
+            <span className="cname">Client requests</span>
+            <Arrow href={LINKS.requests} />
+          </div>
+          <div className="stat compstat">
+            <div className="lbl">Need you</div>
+            <div className="sval" data-testid="requests-new">{d.requestsNew}</div>
           </div>
         </Card>
         <Card className={svCls} href={LINKS.surveys}

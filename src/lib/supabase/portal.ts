@@ -23,5 +23,5 @@ export const PORTAL_LOGIN: Record<PortalKey, string> = {
   admin:   '/login',
   manager: '/login',
   cleaner: '/cleaner/login',
-  client:  '/login',
+  client:  '/client/login',
 }

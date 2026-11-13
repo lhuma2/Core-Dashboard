@@ -41,7 +41,7 @@ export default function LoginPage() {
       admin:   '/dashboard',
       manager: '/manager/dashboard',
       cleaner: '/cleaner/app',
-      client:  '/client/dashboard',
+      client:  '/client/app',
     }
 
     // Non-admin roles read a different cookie namespace. Sign in again with the

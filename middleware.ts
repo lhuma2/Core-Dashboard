@@ -8,6 +8,7 @@ const PUBLIC_ROUTES = [
   '/manager/login',
   '/cleaner/login',
   '/client/login',
+  '/client/reset',
   '/api/cleaner-calendar',
   '/api/quote-requests',
   '/api/cron',          // Vercel cron: each route checks CRON_SECRET itself
@@ -26,7 +27,7 @@ const ROLE_HOME: Record<string, string> = {
   admin:   '/dashboard',
   manager: '/manager/dashboard',
   cleaner: '/cleaner/app',
-  client:  '/client/dashboard',
+  client:  '/client/app',
 }
 
 /** URL prefixes each non-admin role is allowed to visit */
