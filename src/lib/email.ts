@@ -5,7 +5,8 @@
 export async function sendEmail(
   to: string,
   subject: string,
-  html: string
+  html: string,
+  attachments?: { filename: string; content: Buffer }[]
 ): Promise<{ success: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
@@ -20,6 +21,7 @@ export async function sendEmail(
       to,
       subject,
       html,
+      ...(attachments?.length ? { attachments } : {}),
     })
     if (result.error) {
       console.error('Resend error:', result.error)

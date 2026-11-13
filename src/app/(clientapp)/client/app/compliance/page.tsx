@@ -1,19 +1,19 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { clientMe } from '@/lib/clientapp/data'
-import { SWMS_LIST, POLICIES, MODERN_SLAVERY } from '@/lib/documents/safety'
+import { COMPLIANCE_DOCS, GROUP_ORDER, docSlug } from '@/lib/hub/compliance-docs'
 
 const Back = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+
+const KIND = ['Safe Work Method Statement', 'Policy', '', 'Insurance', 'ABN registration']
 
 /** Compliance pack: our Safe Work Method Statements and policies. Each opens as a printable page. */
 export default async function ClientCompliancePage() {
   const me = await clientMe()
   if (!me) redirect('/client/login')
-  const docs = [
-    ...SWMS_LIST.map(s => ({ slug: s.code.replace(/\s+/g, '-').toLowerCase(), title: s.title, sub: 'Safe Work Method Statement · ' + s.code })),
-    ...POLICIES.map(p => ({ slug: p.slug, title: p.title, sub: 'Policy · ' + p.code })),
-    { slug: 'modern-slavery', title: MODERN_SLAVERY.title, sub: 'Policy statement' },
-  ]
+  // the client pack: everything but the subcontractor agreement and induction (group 2), in the hub's order
+  const docs = GROUP_ORDER.filter(g => g !== 2).flatMap(g => COMPLIANCE_DOCS.filter(d => d.group === g))
+    .map(d => ({ slug: docSlug(d.id), title: d.title, sub: KIND[d.group] + ' · ' + d.code }))
   return (
     <>
       <Link className="back" href="/client/app?tab=docs"><Back /> Documents</Link>

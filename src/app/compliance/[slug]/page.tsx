@@ -1,21 +1,20 @@
 import { notFound } from 'next/navigation'
-import { findSwms, findPolicy } from '@/lib/documents/safety'
-import { SafetyPrint } from '@/components/documents/SafetyPrint'
+import { PubShell } from '@/components/hub/PubShell'
+import { DocArticle } from '@/components/hub/DocArticle'
+import { docFileName, publicDoc } from '@/lib/hub/compliance-docs'
 
 export const dynamic = 'force-dynamic'
+export const metadata = { title: 'Compliance document from Core Cleaning', robots: { index: false, follow: false } }
 
-// Public, client-facing view of Core Cleaning's compliance library — the unsigned SWMS,
-// policies, SDS register and Modern Slavery declaration. Shared with clients (in
-// their portal) and subcontractors (in the onboarding pack) so they can see our
-// compliance. Internal signed docs (Subcontractor Agreement, Induction) are NOT
-// exposed here — those are handled by the private onboarding flow.
+// Public view of one compliance document, from the same library as the hub's Compliance pack. Linked from the client
+// portal and the subcontractor pack. The subcontractor agreement and induction are not public: those are on the
+// private signing page.
 export default function PublicComplianceDocPage({ params }: { params: { slug: string } }) {
-  const { slug } = params
-  if (slug === 'modern-slavery') return <SafetyPrint viewOnly />
-  if (slug === 'sds-register') return <SafetyPrint sds viewOnly />
-  const policy = findPolicy(slug)
-  if (policy) return <SafetyPrint policy={policy} viewOnly />
-  const swms = findSwms(slug)
-  if (!swms) notFound()
-  return <SafetyPrint swms={swms} viewOnly />
+  const d = publicDoc(params.slug)
+  if (!d) notFound()
+  return (
+    <PubShell>
+      <DocArticle d={d} pdfHref={`/compliance/${params.slug.toLowerCase()}/pdf`} fileName={docFileName(d)} />
+    </PubShell>
+  )
 }

@@ -4,7 +4,7 @@ import {
   brisbaneToday, brisbaneHour, commercialTotals, homeTotals, surveyCard, teamCard,
   type CommercialClient, type Home, type SurveyClient, type Survey,
 } from './figures'
-import { COMPLIANCE_PACK } from './compliance-pack'
+import { COMPLIANCE_DOCS } from './compliance-docs'
 
 /** Everything the dashboard shows, read live (no cache) as the signed-in admin. */
 export async function loadDashboard(now: Date = new Date()) {
@@ -59,7 +59,7 @@ export async function loadDashboard(now: Date = new Date()) {
     residential: homeTotals(homes.filter((h: Home & { division: string }) => h.division === 'res'), today),
     eol: homeTotals(homes.filter((h: Home & { division: string }) => h.division === 'eol'), today),
     team: teamCard([...cleanersQ.data, ...(packsQ.error ? [] : packsQ.data || [])]),
-    compliance: COMPLIANCE_PACK.length,
+    compliance: COMPLIANCE_DOCS.length,
     problemsOpen: issuesQ.count ?? 0,
     requestsNew: reqQ.error ? 0 : reqQ.count ?? 0,
     surveys: surveyCard(surveyClients, surveys, today),

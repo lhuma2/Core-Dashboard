@@ -17,6 +17,7 @@ const PUBLIC_ROUTES = [
   '/quote',
   '/q',
   '/pack',
+  '/d',
   '/agree',
   '/welcome',
   '/onboard',
