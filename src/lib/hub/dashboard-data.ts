@@ -11,7 +11,7 @@ export async function loadDashboard(now: Date = new Date()) {
   const supabase = createClient() as any
   const today = brisbaneToday(now)
 
-  const [clientsQ, servicesQ, addonsQ, homesQ, cleanersQ, issuesQ, surveysQ, reqQ] = await Promise.all([
+  const [clientsQ, servicesQ, addonsQ, homesQ, cleanersQ, issuesQ, surveysQ, reqQ, packsQ] = await Promise.all([
     supabase.from('clients').select('id, status, resume_on, surveys_off, survey_snooze_until'),
     supabase.from('client_services').select('id, client_id, days, every, price, cost, first_clean'),
     supabase.from('client_addons').select('service_id, freq, price, cost'),
@@ -21,6 +21,8 @@ export async function loadDashboard(now: Date = new Date()) {
     supabase.from('client_surveys').select('client_id, sent_at, answered_at, followed_at, comm, qual, rel, value, rec'),
     // before test-db update 068 there's no requests table: shows 0
     supabase.from('client_requests').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+    // cleaners sent the pack who haven't signed yet are on the team too (none before test-db update 069)
+    supabase.from('cleaner_packs').select('region').is('profile_id', null),
   ])
   const failed = [clientsQ, servicesQ, addonsQ, homesQ, cleanersQ, issuesQ, surveysQ].find(q => q.error)
   if (failed) throw new Error(failed.error.message)
@@ -56,7 +58,7 @@ export async function loadDashboard(now: Date = new Date()) {
     commercial: commercialTotals(commercial, today),
     residential: homeTotals(homes.filter((h: Home & { division: string }) => h.division === 'res'), today),
     eol: homeTotals(homes.filter((h: Home & { division: string }) => h.division === 'eol'), today),
-    team: teamCard(cleanersQ.data),
+    team: teamCard([...cleanersQ.data, ...(packsQ.error ? [] : packsQ.data || [])]),
     compliance: COMPLIANCE_PACK.length,
     problemsOpen: issuesQ.count ?? 0,
     requestsNew: reqQ.error ? 0 : reqQ.count ?? 0,

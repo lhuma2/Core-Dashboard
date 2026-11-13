@@ -6,6 +6,7 @@ const TABS = [
   { id: 'clients', label: 'Clients', href: '/hub/commercial' },
   { id: 'timetable', label: 'Timetable', href: '/hub/commercial/timetable' },
   { id: 'requests', label: 'Requests', href: '/hub/commercial/requests' },
+  { id: 'team', label: 'Team', href: '/hub/commercial/team' },
 ] as const
 
 /** `requests`: how many client requests need Laith (shown on the tab). Pages that don't pass it look it up. */

@@ -654,3 +654,68 @@
 .hub .duo .card.svdc{grid-column:auto}
 .hub .rqcard .sheetbtns .btn{min-height:38px;padding:0 12px;font-size:13px}
 }
+/* Team, the subcontractor pack and the signed pack (mock-up v80) */
+.hub .titlerow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hub .titlerow .greet{margin:0}
+.hub .cgh{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#5d6b65;margin:0 0 8px;display:flex;gap:8px}
+.hub .fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.hub .teamchips{margin:0 0 12px}
+.hub .trow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 20px;border-top:1px solid #edf1ef}
+.hub .trow:first-child{border-top:0}
+.hub .tmain{flex:999 1 320px;min-width:0}
+.hub .tmain .tname{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hub .tlinks{display:flex;gap:14px;margin-top:4px;flex-wrap:wrap}
+.hub .tlinks a.linkbtn{text-decoration:none}
+.hub .tact{display:flex;align-items:center;gap:8px;flex:1 0 auto;justify-content:flex-end}
+.hub .tsel select{font:inherit;font-size:16px;min-height:44px;border:1px solid #c7d4ce;border-radius:10px;padding:0 10px;background:#fff;color:#13201a}
+.hub .tsel select:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.hub .tsel select:disabled{opacity:.6}
+.hub .drow{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:14px;padding:14px 20px;border-top:1px solid #edf1ef;cursor:pointer;min-height:44px;font-size:15px;color:#13201a}
+.hub .drow:first-child{border-top:0}
+.hub .drow:hover{background:#f7faf8}
+.hub .drow:focus-visible{outline:3px solid #149e76;outline-offset:-3px}
+.hub .dcode{font-size:12px;font-weight:600;color:#5d6b65;min-width:72px;font-variant-numeric:tabular-nums}
+.hub .dtitle{flex:1;min-width:0;font-weight:500}
+.hub .drow .chev{color:#8a9893;flex:none}
+.hub .sharedlist{margin:14px 0}
+.hub .previewnote{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff3d6;color:#7a4b00;border-radius:10px;padding:4px 14px;font-size:13px;font-weight:500;margin:0 auto 12px;max-width:820px;box-sizing:border-box}
+.hub .previewnote .back{color:#7a4b00;margin:0}
+.hub .dlall{margin:12px 0 8px}
+.hub .mailprev{border:1px solid #dfe6e2;border-radius:12px;padding:14px 16px;background:#fff;font-size:15px}
+.hub .mailprev p{margin:8px 0}
+.hub .mailhead{display:flex;flex-direction:column;gap:2px;font-size:13px;color:#5d6b65;border-bottom:1px solid #eef1ef;padding-bottom:8px;margin-bottom:4px;overflow-wrap:anywhere}
+.hub .mailcreds{background:#f3f5f4;border-radius:8px;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;font-size:14px;overflow-wrap:anywhere}
+.hub .esig{display:flex;align-items:center;gap:16px;border-top:1px solid #eef1ef;margin-top:10px;padding-top:12px}
+.hub .esig img{width:110px;height:auto;padding-right:16px;border-right:2px solid #20BD82;flex:none}
+.hub .esig div{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:#5A5F6A;min-width:0;overflow-wrap:anywhere}
+.hub .esig strong{font-size:16px;color:#2D3142}
+.hub .esigco{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#20BD82}
+.hub .esigsub{font-size:11px;color:#9095A0}
+.hub .packdoc{border:1px solid #dfe6e2;border-radius:12px;padding:4px 16px 12px;margin:10px 0}
+.hub .packdoc h3{font-size:15px;margin:12px 0 4px;color:#00250e}
+.hub .packdoc .dp,.hub .packdoc .dul{font-size:14px}
+.hub .certpick{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hub .certpick .cpnote{flex:1;min-width:0;overflow-wrap:anywhere}
+.hub .packdone{text-align:center;padding:12px 0}
+.hub .packdone .dp{margin:8px auto;max-width:520px}
+@container (max-width:700px){
+.hub .cgh{font-size:11px;margin-bottom:6px}
+.hub .fgrid{grid-template-columns:minmax(0,1fr);gap:8px}
+.hub .trow{padding:10px 12px;gap:8px}
+.hub .tact{justify-content:flex-start;width:100%}
+.hub .tsel{flex:1}
+.hub .tsel select{width:100%;min-height:40px;border-radius:8px;font-size:14px}
+.hub .drow{padding:10px 12px;gap:10px;font-size:13px;min-height:40px}
+.hub .dcode{font-size:11px;min-width:58px}
+.hub .previewnote{font-size:11px;padding:2px 10px}
+.hub .mailprev{font-size:13px;padding:10px 12px}
+.hub .mailhead{font-size:11px}
+.hub .mailcreds{font-size:12px;padding:8px 10px;word-break:break-all}
+.hub .esig{gap:10px}
+.hub .esig img{width:70px;padding-right:10px}
+.hub .esig div{font-size:11px}
+.hub .esig strong{font-size:13px}
+.hub .packdoc{padding:2px 12px 10px}
+.hub .packdoc h3{font-size:13px}
+.hub .packdoc .dp,.hub .packdoc .dul{font-size:12px}
+}

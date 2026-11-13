@@ -11,7 +11,7 @@ const LINKS: Record<string, string | null> = {
   commercial: '/hub/commercial',
   residential: '/hub/residential/clients',
   eol: '/hub/end-of-lease/clients',
-  team: null,
+  team: '/hub/team',
   compliance: null,
   problems: '/hub/problems',
   requests: '/hub/commercial/requests',
