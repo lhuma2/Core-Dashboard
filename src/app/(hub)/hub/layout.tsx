@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import './hub.css'
 
 const ROLE_HOME: Record<string, string> = {
-  cleaner: '/cleaner/dashboard',
+  cleaner: '/cleaner/app',
   client: '/client/dashboard',
   manager: '/manager/dashboard',
 }

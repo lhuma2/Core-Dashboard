@@ -32,7 +32,7 @@ export async function markProblemFixed(id: string): Promise<Result> {
   if (cleanerUser) {
     const short = row.body.length > 80 ? row.body.slice(0, 77) + '…' : row.body
     // A failed notification shouldn't undo the fix.
-    await sendPushToUser(cleanerUser, { title: 'Problem sorted', body: `Thanks for reporting it: ${short}`, url: '/cleaner/dashboard' }).catch(() => {})
+    await sendPushToUser(cleanerUser, { title: 'Problem sorted', body: `Thanks for reporting it: ${short}`, url: '/cleaner/app' }).catch(() => {})
   }
   revalidatePath('/hub')
   revalidatePath('/hub/problems')

@@ -40,7 +40,7 @@ export default function LoginPage() {
     const roleHome: Record<string, string> = {
       admin:   '/dashboard',
       manager: '/manager/dashboard',
-      cleaner: '/cleaner/dashboard',
+      cleaner: '/cleaner/app',
       client:  '/client/dashboard',
     }
 

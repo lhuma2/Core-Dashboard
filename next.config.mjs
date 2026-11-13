@@ -73,6 +73,10 @@ if (isPreview) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: previewEnv,
+  // The new cleaner app replaces the old dashboard (old links and phone notifications still point there).
+  async redirects() {
+    return [{ source: '/cleaner/dashboard', destination: '/cleaner/app', permanent: false }]
+  },
   serverExternalPackages: ['pdf-parse'],
   experimental: {
     serverComponentsExternalPackages: ['pdf-parse'],

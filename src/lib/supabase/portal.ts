@@ -22,6 +22,6 @@ export function cookiePrefix(portal: PortalKey): string {
 export const PORTAL_LOGIN: Record<PortalKey, string> = {
   admin:   '/login',
   manager: '/login',
-  cleaner: '/login',
+  cleaner: '/cleaner/login',
   client:  '/login',
 }

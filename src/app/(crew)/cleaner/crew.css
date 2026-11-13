@@ -1,0 +1,180 @@
+/* Cleaner app: the mock-up's styles (Cleaner.dc.html), every rule scoped under .cp. */
+body{margin:0;background:#f3f5f4}
+
+.cp{container-type:inline-size;font-family:Inter,system-ui,sans-serif;color:#13201a;background:#f3f5f4;min-height:760px;box-sizing:border-box;-webkit-text-size-adjust:100%}
+.cp *{box-sizing:border-box}
+.cp .top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#00250e;color:#fff;position:sticky;top:0;z-index:3}
+.cp .logo{display:block;height:28px;width:auto}
+.cp .avatar{all:unset;cursor:pointer;width:32px;height:32px;border-radius:50%;background:#149e76;color:#fff;font-weight:600;font-size:13px;display:grid;place-items:center}
+.cp .avatar:focus-visible{outline:3px solid #8fe0c4;outline-offset:2px}
+.cp .menu{position:absolute;right:12px;top:52px;background:#fff;color:#13201a;border:1px solid #c7d4ce;border-radius:12px;box-shadow:0 12px 30px rgba(0,37,14,.18);padding:6px;min-width:180px;z-index:4}
+.cp .menu .who{font-size:12px;color:#5d6b65;padding:6px 10px}
+.cp .wrap{max-width:480px;margin:0 auto;padding:16px 16px 28px}
+.cp .greet{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.cp .sub{margin:2px 0 14px;font-size:13px;color:#4d5c55}
+.cp .back{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#0f7a5a;min-height:40px}
+.cp .back:focus-visible,.cp .btn:focus-visible,.cp .seg button:focus-visible,.cp .job:focus-visible,.cp .task:focus-visible,.cp .linkbtn:focus-visible,.cp .mitem:focus-visible{outline:3px solid #149e76;outline-offset:2px;border-radius:8px}
+.cp .btn{all:unset;cursor:pointer;box-sizing:border-box;min-height:44px;padding:0 16px;border-radius:10px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-align:center}
+.cp .btn.main{background:#0f7a5a;color:#fff;width:100%}
+.cp .btn.main:hover{background:#00250e}
+.cp .btn.ghost{background:#fff;border:1px solid #c7d4ce;color:#13201a}
+.cp .btn.warn{background:#fff;border:1px solid #f1b8b2;color:#b42318}
+.cp .btn[aria-disabled="true"]{opacity:.5}
+.cp .linkbtn{all:unset;cursor:pointer;font-size:13px;font-weight:600;color:#0f7a5a;min-height:36px;display:inline-flex;align-items:center}
+.cp .mitem{all:unset;cursor:pointer;display:flex;width:100%;box-sizing:border-box;padding:10px;border-radius:8px;font-size:14px;min-height:40px;align-items:center}
+.cp .mitem:hover{background:#f3f5f4}
+.cp .card{background:#fff;border:1px solid #dfe6e2;border-radius:14px;padding:14px}
+.cp .fld{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#3d4b45;text-align:left}
+.cp .fld input,.cp .fld textarea{font:inherit;font-weight:400;font-size:16px;min-height:44px;border:1px solid #c7d4ce;border-radius:10px;padding:0 12px;background:#fff;color:#13201a;width:100%}
+.cp .fld textarea{padding:10px 12px;min-height:80px;resize:vertical}
+.cp .fld input:focus-visible,.cp .fld textarea:focus-visible{outline:3px solid #149e76;outline-offset:1px}
+.cp .pwrow{position:relative}
+.cp .pwrow input{padding-right:64px}
+.cp .pwrow .linkbtn{position:absolute;right:10px;top:4px}
+.cp .stack{display:flex;flex-direction:column;gap:12px}
+.cp .hint{margin:0;font-size:12px;color:#5d6b65}
+.cp .ferr{margin:0;background:#fdecea;color:#b42318;border-radius:8px;padding:8px 12px;font-size:13px}
+.cp .loginlogo{display:flex;justify-content:center;background:#00250e;border-radius:14px;padding:18px;margin:8px 0 18px}
+.cp .loginlogo img{height:40px}
+.cp .h1{margin:0 0 4px;font-size:20px;font-weight:700}
+.cp .rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:12px}
+.cp .rules li{display:flex;gap:6px;align-items:center;color:#5d6b65}
+.cp .rules li.ok{color:#0f6e50}
+.cp .dot{width:8px;height:8px;border-radius:50%;background:#c7d4ce;flex:none}
+.cp .ok .dot{background:#149e76}
+.cp .seg{display:flex;background:#e6ece9;border-radius:10px;padding:3px;margin:0 0 12px}
+.cp .seg button{all:unset;cursor:pointer;flex:1;text-align:center;min-height:36px;border-radius:8px;font-size:13px;font-weight:600;color:#3d4b45;display:grid;place-items:center}
+.cp .seg button.on{background:#fff;color:#13201a;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.cp .jobs{display:flex;flex-direction:column;gap:8px}
+.cp .job{all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #dfe6e2;border-radius:12px;padding:12px;width:100%}
+.cp .jtime{flex:none;width:58px;font-size:13px;font-weight:700;color:#0f6e50;line-height:1.2}
+.cp .jtime span{display:block;font-size:11px;font-weight:500;color:#5d6b65}
+.cp .jmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.cp .jname{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp .jsub{font-size:12px;color:#5d6b65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp .chev{color:#a9b6b0;flex:none}
+.cp .st{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:999px;padding:2px 7px;flex:none}
+.cp .st.todo{background:#eef1ef;color:#5d6b65}
+.cp .st.going{background:#fff3d6;color:#7a4b00}
+.cp .st.done{background:#e3f3ec;color:#0f6e50}
+.cp .empty{background:#fff;border:1px dashed #c7d4ce;border-radius:12px;padding:18px;text-align:center;font-size:13px;color:#5d6b65}
+.cp .dayh{margin:14px 2px 6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5d6b65}
+.cp .daycol:first-child .dayh{margin-top:0}
+.cp .jhead{display:flex;flex-direction:column;gap:2px;margin:0 0 12px}
+.cp .jhead .greet{font-size:19px}
+.cp .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.cp .chip{font-size:12px;background:#fff;border:1px solid #dfe6e2;border-radius:999px;padding:3px 9px;color:#3d4b45}
+.cp .sect{margin:14px 0 6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#0f6e50}
+.cp .access{background:#fff8e6;border:1px solid #f3d998;border-radius:12px;padding:12px;font-size:14px;line-height:1.45;white-space:pre-line}
+.cp .access small{display:block;margin-top:6px;font-size:11px;color:#7a4b00}
+.cp .addr{font-size:13px;color:#3d4b45}
+.cp .maplink{font-size:13px;font-weight:600;color:#0f7a5a}
+.cp .status{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #dfe6e2;border-radius:12px;padding:10px 12px;font-size:13px;margin:0 0 4px}
+.cp .status strong{font-size:14px}
+.cp .prog{height:6px;border-radius:999px;background:#e6ece9;overflow:hidden;margin:6px 0 0}
+.cp .prog span{display:block;height:100%;background:#149e76;border-radius:999px}
+.cp .sowsec{background:#fff;border:1px solid #dfe6e2;border-radius:12px;padding:4px 12px;margin:0 0 8px}
+.cp .sowh{margin:8px 0 2px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#13201a}
+.cp .task{all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:flex-start;gap:10px;width:100%;padding:10px 0;border-bottom:1px solid #eef1ef;font-size:14px;min-height:44px}
+.cp .sowsec .task:last-child{border-bottom:0}
+.cp .box{width:22px;height:22px;border:2px solid #a9b6b0;border-radius:6px;flex:none;display:grid;place-items:center;color:transparent;background:#fff}
+.cp .task.on .box{background:#0f7a5a;border-color:#0f7a5a;color:#fff}
+.cp .task.on .tt{color:#5d6b65;text-decoration:line-through}
+.cp .task.locked{cursor:default}
+.cp .tt{flex:1;min-width:0;line-height:1.35}
+.cp .ftag{font-size:10px;font-weight:600;border-radius:999px;padding:2px 6px;white-space:nowrap;background:#eef1ef;color:#5d6b65;flex:none;margin-top:2px}
+.cp .ftag.periodic{background:#fff3d6;color:#7a4b00}
+.cp .sowsec.addon{border:2px solid #149e76;background:#f2fbf7;padding-bottom:12px}
+.cp .sowsec.addon.late{border-color:#c9822a;background:#fff8ec}
+.cp .xnote{margin:0 0 4px;font-size:13px;color:#4a5a53}
+.cp .xdone{margin-top:10px;width:100%}
+.cp .actions{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.cp .donecard{background:#e3f3ec;border:1px solid #b9e2d0;border-radius:12px;padding:12px;font-size:14px;color:#0f4f3a}
+.cp .toast{position:sticky;bottom:12px;margin:14px auto 0;background:#13201a;color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.2);max-width:440px}
+.cp .jobgrid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "access" "scope" "actions"}
+.cp .ga-head{grid-area:head}.cp .ga-access{grid-area:access}.cp .ga-scope{grid-area:scope}.cp .ga-actions{grid-area:actions}
+.cp .weekgrid{display:block}
+@container (min-width:701px){
+.cp .top{padding:14px 40px}
+.cp .logo{height:40px}
+.cp .avatar{width:36px;height:36px;font-size:14px}
+.cp .menu{right:32px;top:66px}
+.cp .wrap{max-width:1100px;padding:36px 40px 48px}
+.cp .greet{font-size:30px}
+.cp .sub{font-size:15px;margin:4px 0 22px}
+.cp .seg{max-width:360px}
+.cp .seg button{min-height:40px;font-size:14px}
+.cp .job{padding:16px;gap:16px;border-radius:14px}
+.cp .jtime{width:72px;font-size:15px}
+.cp .jtime span{font-size:12px}
+.cp .jname{font-size:16px;white-space:normal}
+.cp .jsub{font-size:13px}
+.cp .st{font-size:11px;padding:3px 9px}
+.cp .jobs{gap:10px}
+.cp .empty{font-size:14px;padding:22px}
+.cp .weekgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px 20px}
+.cp .daycol .dayh{margin-top:0}
+.cp .dayh{font-size:13px}
+.cp .jobgrid{grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);grid-template-areas:"head scope" "access scope" "actions scope";grid-template-rows:auto auto 1fr;column-gap:32px;align-items:start}
+.cp .ga-scope .sect:first-child{margin-top:0}
+.cp .tracknote{font-size:13px}
+.cp .jhead .greet{font-size:26px}
+.cp .addr,.cp .maplink{font-size:15px}
+.cp .chip{font-size:13px;padding:4px 11px}
+.cp .sect{font-size:13px}
+.cp .access{font-size:15px;padding:16px}
+.cp .access small{font-size:12px}
+.cp .status{font-size:14px;padding:12px 14px}
+.cp .sowsec{padding:6px 16px}
+.cp .sowh{font-size:13px}
+.cp .task{font-size:15px;padding:12px 0}
+.cp .ftag{font-size:11px}
+.cp .actions{position:sticky;top:90px}
+.cp .wrap>.stack,.cp .wrap .stack{max-width:440px;margin:24px auto 0}
+.cp .h1{font-size:26px}
+.cp .hint{font-size:14px}
+.cp .fld{font-size:13px}
+.cp .fld input,.cp .fld textarea{min-height:48px}
+.cp .btn{min-height:48px;font-size:15px}
+.cp .toast{font-size:14px}
+}
+.cp .tracknote{margin:0 0 8px;font-size:12px;color:#5d6b65;background:#eef3f0;border-radius:8px;padding:8px 10px}
+.cp .excl{font-size:12px;color:#5d6b65;background:#fff;border:1px dashed #c7d4ce;border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.cp .excl strong{color:#13201a}
+.cp .phbox{margin-top:4px;border:1px solid #c7d4ce;border-radius:12px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:10px}
+.cp .phbox h3{margin:0;font-size:15px}
+.cp .phcount{font-size:13px;font-weight:600;color:#9a5b00}
+.cp .phcount.ok{color:#0f7a5a}
+.cp .phgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cp .phcell{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:#e8efeb}
+.cp .phcell img{width:100%;height:100%;object-fit:cover;display:block}
+.cp .phcell .phst{position:absolute;left:4px;bottom:4px;background:rgba(19,32,26,.78);color:#fff;font-size:11px;border-radius:6px;padding:2px 6px}
+.cp .phrm{all:unset;cursor:pointer;position:absolute;top:2px;right:2px;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.cp .phrm span{width:24px;height:24px;border-radius:50%;background:rgba(19,32,26,.8);color:#fff;font-size:15px;line-height:24px;text-align:center}
+.cp .phrm:focus-visible{outline:3px solid #149e76;border-radius:50%}
+.cp .phadd{width:100%;position:relative}
+.cp .phadd:focus-within{outline:3px solid #149e76;outline-offset:2px}
+.cp .phack{all:unset;cursor:pointer;box-sizing:border-box;display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;border:1px dashed #c7d4ce;border-radius:10px;padding:10px 12px;color:#13201a}
+.cp .phack .box{flex:none;width:22px;height:22px;border:2px solid #9fb2aa;border-radius:6px;display:flex;align-items:center;justify-content:center;color:transparent;background:#fff}
+.cp .phack[aria-checked="true"]{border-style:solid;border-color:#0f7a5a;background:#e7f5ef}
+.cp .phack[aria-checked="true"] .box{background:#0f7a5a;border-color:#0f7a5a;color:#fff}
+.cp .phack:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.cp .tray{margin:10px 0 4px;border-radius:12px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:4px;background:#e7f5ef;color:#0f4d3a}
+.cp .tray.off{background:#fff4e0;color:#7a4500}
+.cp .tray strong{font-size:14px}
+.cp .tray .linkbtn{align-self:flex-start;font-size:12px}
+.cp .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.cp .pill{font-size:10px;font-weight:600;background:#e6ece9;color:#3d4b45;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:2px}
+/* real build additions */
+.cp{position:relative;min-height:100dvh}
+.cp a.back,.cp a.job{text-decoration:none;color:inherit}
+.cp a.back{color:#0f7a5a}
+.cp a.linkbtn{text-decoration:none}
+.cp .toast{position:fixed;left:16px;right:16px;bottom:max(16px,env(safe-area-inset-bottom));margin:0 auto;z-index:20}
+.cp .top{padding-top:max(10px,env(safe-area-inset-top))}
+.cp .btn[disabled]{opacity:.55;cursor:default}
+.cp .forgot{font-size:13px;color:#3d4b45;background:#eef3f0;border-radius:8px;padding:10px 12px;margin:0}
+.cp .phcell .phst.wait{background:rgba(154,91,0,.85)}
+.cp .loaderr{margin:0 0 10px}
+.cp .jtime{width:66px}
+.cp .jtime span{white-space:nowrap}

@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/quote-followups",
       "schedule": "30 22 * * *"
+    },
+    {
+      "path": "/api/cron/clean-photos",
+      "schedule": "0 16 * * *"
     }
   ]
 }

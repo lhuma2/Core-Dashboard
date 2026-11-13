@@ -25,7 +25,7 @@ const PUBLIC_ROUTES = [
 const ROLE_HOME: Record<string, string> = {
   admin:   '/dashboard',
   manager: '/manager/dashboard',
-  cleaner: '/cleaner/dashboard',
+  cleaner: '/cleaner/app',
   client:  '/client/dashboard',
 }
 
