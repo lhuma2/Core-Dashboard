@@ -72,7 +72,7 @@ export interface HomeSrc {
   status: string | null; paused_from: string | null; resume_on: string | null; ended_on: string | null; done: boolean; cancelled: boolean
   windows_freq: string | null; scope: { heading: string; items: string[] }[] | null
 }
-export interface AddonSrc { id: string; name: string; freq: string; next_date: string | null }
+export interface AddonSrc { id: string; name: string; freq: string; next_date: string | null; items?: string[] | null }
 export interface SvcSrc {
   id: string; clientId: string; name: string; address: string; suburb: string; days: string[]; every: string; anchor: string | null; first: string | null
   start: string; finish: string; access: string; team: string[]; scope: SowBox[]
@@ -108,7 +108,7 @@ export function addonsOn(s: SvcSrc, iso: string, today: string, todayRun: JobRow
     if (d && d === today && todayRun && todayRun.status === 'done' && !(todayRun.ticks || {})['x:' + a.id]) d = visitOnOrAfter(s, isoAdd(today, 1))
     if (d !== iso) continue
     const firstDue = visitOnOrAfter(s, a.next_date)
-    out.push({ id: a.id, name: a.name, freq: a.freq, items: addonItems(a.name), carried: !!firstDue && firstDue < iso, from: firstDue })
+    out.push({ id: a.id, name: a.name, freq: a.freq, items: a.items && a.items.length ? a.items : addonItems(a.name), carried: !!firstDue && firstDue < iso, from: firstDue })
   }
   return out
 }

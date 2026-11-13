@@ -47,7 +47,7 @@ export function ClientList({ rows, initial, initialQuery }: { rows: ClientRow[];
           <span>Client</span><span>Sites</span><span>Frequency</span><span>Cleaner</span><span className="r">Monthly</span><span className="r">Margin</span>
         </div>
         {shown.map(r => (
-          <div key={r.id} className="lrow" data-testid="client-row">
+          <Link key={r.id} className="lrow" href={`/hub/commercial/clients/${r.id}`} data-testid="client-row">
             <span className="cmain">
               <span className="cbiz">{r.name}</span>
               <span className="csub">{r.suburb}</span>
@@ -58,7 +58,7 @@ export function ClientList({ rows, initial, initialQuery }: { rows: ClientRow[];
             <span className="col">{r.cleaner}</span>
             <span className="r cmoney">{r.mrr}</span>
             <span className="r"><span className={`h ${r.health}`}>{r.margin}</span></span>
-          </div>
+          </Link>
         ))}
         {!shown.length && <div className="empty">{emptyText}</div>}
       </div>

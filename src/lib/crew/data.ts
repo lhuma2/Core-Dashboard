@@ -25,6 +25,12 @@ const HOME_SRC = 'id, division, name, street, suburb, state, postcode, kind, eve
 const d10 = (v: any) => (v ? String(v).slice(0, 10) : null)
 const RANK: Record<string, number> = { signed: 3, sent: 2, draft: 1 }
 
+/** Add-ons with their own task lists. Falls back to the standard lists if the test database hasn't had update 067 yet. */
+async function addonsFor(db: any, ids: string[]) {
+  const q = await db.from('client_addons').select('id, service_id, name, freq, next_date, items').in('service_id', ids)
+  return q.error ? db.from('client_addons').select('id, service_id, name, freq, next_date').in('service_id', ids) : q
+}
+
 function homeSrc(r: any, scope: HomeSrc['scope']): HomeSrc {
   return {
     ...r, days: r.days || [], anchor: d10(r.anchor), first_clean: d10(r.first_clean), paused_from: d10(r.paused_from), resume_on: d10(r.resume_on), ended_on: d10(r.ended_on),
@@ -61,7 +67,7 @@ export async function loadCrewJobs(me: Me, from: string, days: number, only: Fil
     homeIds.length ? db.from('home_docs').select('home_id, status, snap, created_on').in('home_id', homeIds) : { data: [] },
     svcIds.length ? db.from('client_services').select('id, client_id, site_id, days, every, anchor, first_clean, start_time, finish_time, access').in('id', svcIds) : { data: [] },
     svcIds.length ? db.from('client_service_cleaners').select('service_id, cleaner:profiles(full_name)').in('service_id', svcIds) : { data: [] },
-    svcIds.length ? db.from('client_addons').select('id, service_id, name, freq, next_date').in('service_id', svcIds) : { data: [] },
+    svcIds.length ? addonsFor(db, svcIds) : { data: [] },
     homeIds.length ? db.from('jobs').select('id, home_id, service_id, clean_date, status, started_at, finished_at, ticks, photo_count, note').in('home_id', homeIds).gte('clean_date', lo).lte('clean_date', hi) : { data: [] },
     svcIds.length ? db.from('jobs').select('id, home_id, service_id, clean_date, status, started_at, finished_at, ticks, photo_count, note').in('service_id', svcIds).gte('clean_date', lo).lte('clean_date', hi) : { data: [] },
   ])
@@ -108,10 +114,10 @@ export async function loadCrewJobs(me: Me, from: string, days: number, only: Fil
       address: place(site?.address ? site : c), suburb: (site?.address ? site.suburb : c.suburb) || '',
       days: s.days || [], every: s.every || 'weekly', anchor: d10(s.anchor), first: d10(s.first_clean),
       start: (s.start_time || '').slice(0, 5), finish: (s.finish_time || '').slice(0, 5),
-      access: s.access || site?.access_details || c.access_details || '', team: (teamBy.get(s.id) || [me.name]).sort((a, b) => (a === me.name ? -1 : b === me.name ? 1 : a.localeCompare(b))),
+      access: s.access != null ? String(s.access) : site?.access_details || c.access_details || '', team: (teamBy.get(s.id) || [me.name]).sort((a, b) => (a === me.name ? -1 : b === me.name ? 1 : a.localeCompare(b))),
       scope: sow.length ? sow : scopeBoxes(c.scope, c.scope_of_work),
       status: c.status, paused_from: d10(c.paused_from), resume_on: d10(c.resume_on), ended_on: d10(c.ended_on),
-      addons: (addBy.get(s.id) || []).map(a => ({ id: a.id, name: a.name, freq: a.freq, next_date: d10(a.next_date) })),
+      addons: (addBy.get(s.id) || []).map(a => ({ id: a.id, name: a.name, freq: a.freq, next_date: d10(a.next_date), items: a.items || null })),
     })
   }
   const runs: JobRow[] = [...(hRuns.data || []), ...(sRuns.data || [])].map((r: any) => ({ ...r, clean_date: d10(r.clean_date) }))

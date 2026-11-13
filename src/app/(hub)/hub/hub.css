@@ -602,3 +602,34 @@
 .hub .phlbnav{display:flex;gap:10px;justify-content:center}
 .hub .phlb .btn.log{min-width:96px}
 .hub .phthumb img{background:#e8efeb}
+/* commercial client page (mock-up rules) */
+.hub .cpaddr{margin:2px 0 0;font-size:13px;color:#5d6b65}
+.hub .cpxm>span.cpxdue{color:#1f6b4a}.hub .cpxm>span.cpxdue.warn{color:#a4441b;font-weight:600}
+.hub .cpxbtns{display:flex;gap:14px;flex-wrap:wrap}
+.hub .cpxitems{margin:-4px 0 0;padding:0 0 10px 20px;font-size:13px;color:#4a5060;border-bottom:1px solid #f1f4f2}
+.hub .cpx:has(+ .cpxitems){border-bottom:0}
+.hub .cpradio{display:flex;flex-direction:column;gap:2px}
+.hub .sow{display:flex;flex-direction:column;gap:14px;border:1px solid #e1e8e4;border-radius:12px;padding:14px 16px;background:#fff;font-weight:400}
+.hub .sowsec{display:flex;flex-direction:column;gap:6px}
+.hub .sowh{margin:0;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#0f6e50}
+.hub .sowlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.hub .sowlist li{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #eef1ef;font-size:15px;color:#13201a}
+.hub .sowlist li:last-child{border-bottom:0}
+.hub .sowlist .box{width:18px;height:18px;border:2px solid #a9b6b0;border-radius:5px;flex:none;margin-top:1px;box-sizing:border-box}
+.hub .sowt{flex:1;min-width:0}
+.hub .ftag{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap;background:#eef1ef;color:#5d6b65}
+.hub .ftag.periodic{background:#fff3d6;color:#7a4b00}
+@container (max-width:700px){
+.hub .sow{padding:10px 12px;gap:10px}
+.hub .sowh{font-size:12px}
+.hub .sowlist li{font-size:13px;padding:6px 0;gap:8px}
+.hub .sowlist .box{width:16px;height:16px}
+.hub .ftag{font-size:10px;padding:1px 6px}
+.hub .cpxbtns{gap:12px}
+}
+.hub .cpsec{border-top:1px solid #edf1ef;padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.hub .cptext{margin:0;font-size:15px;color:#13201a;white-space:pre-wrap;overflow-wrap:anywhere}
+.hub .cpx{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f1f4f2}
+.hub .cpx:last-of-type{border-bottom:0}
+.hub .cpsec .assignbtn,.hub .cpsec .addsite{align-self:flex-start}
+@container (max-width:700px){.hub .cptext{font-size:13px}.hub .cpx{flex-wrap:wrap}}
