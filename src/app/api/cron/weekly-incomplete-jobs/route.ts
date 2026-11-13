@@ -1,14 +1,11 @@
-﻿import { NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
-import { getUpcomingDates } from '@/lib/schedule'
+import { allCrewJobs } from '@/lib/crew/all-jobs'
 
 // Vercel cron: runs every Monday at 8 AM Brisbane time (Monday 22:00 UTC Sun)
-// Sends a weekly summary of all jobs in the past 7 days that were not completed.
-// Covers two cases:
-//   1. job_assignment exists but was never marked complete (not_started / in_progress)
-//   2. A job was scheduled per the client's recurring schedule but no record was ever created
+// Sends a weekly summary of the cleans in the past 7 days that weren't finished in the new cleaner app
+// (commercial sites, homes and End of Lease, from the same schedule the app shows).
 
 const REPORT_EMAIL = 'admin@corecleaning.services'
 
@@ -32,93 +29,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createAdminClient()
-  const today    = brisbaneDate(0)
-  const weekAgo  = brisbaneDate(-7)
+  const today   = brisbaneDate(0)
+  const weekAgo = brisbaneDate(-7)
 
-  // ── 1. Job assignments that exist but weren't completed ───────────────────
-  const { data: incompleteJobs, error: jobsError } = await (supabase as any)
-    .from('job_assignments')
-    .select('id, scheduled_date, status, client_id, clients(business_name, suburb), client_sites(site_name), profiles(full_name, user_id)')
-    .gte('scheduled_date', weekAgo)
-    .lt('scheduled_date', today)
-    .neq('status', 'completed')
-    .order('scheduled_date', { ascending: true })
-
-  if (jobsError) {
-    console.error('weekly-incomplete-jobs: jobs query error', jobsError)
-    return NextResponse.json({ error: jobsError.message }, { status: 500 })
-  }
-
-  // Build a lookup of clientId::date → true for any existing job record
-  const existingJobKeys = new Set<string>()
-  for (const job of incompleteJobs ?? []) {
-    existingJobKeys.add(`${job.client_id}::${job.scheduled_date}`)
-  }
-
-  // Also grab completed jobs so we don't flag those dates as missing
-  const { data: completedJobs } = await (supabase as any)
-    .from('job_assignments')
-    .select('client_id, scheduled_date')
-    .gte('scheduled_date', weekAgo)
-    .lt('scheduled_date', today)
-    .eq('status', 'completed')
-
-  for (const job of completedJobs ?? []) {
-    existingJobKeys.add(`${job.client_id}::${job.scheduled_date}`)
-  }
-
-  // ── 2. Scheduled dates with no job record at all ──────────────────────────
-  const { data: scheduleClients } = await (supabase as any)
-    .from('clients')
-    .select('id, business_name, suburb, frequency, service_days, start_date, profiles!assigned_cleaner_id(full_name)')
-    .eq('active', true)
-    .eq('is_multi_site', false)
-    .not('frequency', 'is', null)
-
-  type MissingItem = { clientName: string; suburb: string | null; cleanerName: string | null; date: string }
-  const missingRecords: MissingItem[] = []
-
-  const fromDate = new Date(weekAgo + 'T00:00:00')
-
-  for (const client of scheduleClients ?? []) {
-    if (!(client.service_days ?? []).length) continue
-    const dates = getUpcomingDates(
-      {
-        id: client.id,
-        business_name: client.business_name,
-        address: null,
-        suburb: client.suburb ?? null,
-        frequency: client.frequency,
-        service_days: client.service_days,
-        start_date: client.start_date ?? null,
-      },
-      8,
-      fromDate,
-    )
-    for (const d of dates) {
-      const dateStr = d.toISOString().split('T')[0]
-      if (dateStr >= today) continue
-      const key = `${client.id}::${dateStr}`
-      if (!existingJobKeys.has(key)) {
-        missingRecords.push({
-          clientName:  client.business_name,
-          suburb:      client.suburb ?? null,
-          cleanerName: client.profiles?.full_name ?? null,
-          date:        dateStr,
-        })
-      }
+  // Every clean booked in the last 7 days (not today) that wasn't finished in the cleaner app. A clean with two
+  // cleaners shows once, with both names.
+  type Item = { label: string; cleaners: string[]; date: string; started: boolean }
+  const byKey = new Map<string, Item>()
+  for (const { me, jobs } of await allCrewJobs(weekAgo, 7)) {
+    for (const j of jobs) {
+      if (j.iso >= today || j.status === 'done') continue
+      const it = byKey.get(j.key) ?? { label: j.name, cleaners: [], date: j.iso, started: j.status === 'in_progress' }
+      it.cleaners.push(me.name)
+      byKey.set(j.key, it)
     }
   }
-
-  missingRecords.sort((a, b) => a.date.localeCompare(b.date))
-
-  const incompleteList  = (incompleteJobs ?? []) as any[]
-  const totalIssues     = incompleteList.length + missingRecords.length
+  const items = Array.from(byKey.values()).sort((a, b) => a.date.localeCompare(b.date) || a.label.localeCompare(b.label))
+  const totalIssues = items.length
 
   // ── Nothing to report ─────────────────────────────────────────────────────
   if (totalIssues === 0) {
-    return NextResponse.json({ sent: false, reason: 'All jobs completed this week — no report needed' })
+    return NextResponse.json({ sent: false, reason: 'All cleans finished this week, no report needed' })
   }
 
   // ── Build email ───────────────────────────────────────────────────────────
@@ -128,16 +59,11 @@ export async function GET(request: Request) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.corecleaning.services'
 
-  const jobCards = incompleteList.map((j: any) => {
-    const site    = j.client_sites?.site_name
-    const label   = site ? `${j.clients?.business_name ?? 'a client'} — ${site}` : (j.clients?.business_name ?? 'a client')
-    const cleaner = j.profiles?.full_name ?? 'No cleaner assigned'
-    return `
+  const jobCards = items.map(j => `
       <div style="border:1px solid #eef2f6;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
-        <p style="margin:0;font-weight:700;color:#0f172a;font-size:14px;">${label}</p>
-        <p style="margin:4px 0 0;color:#64748b;font-size:12px;">${cleaner} · ${formatDate(j.scheduled_date)}</p>
-      </div>`
-  }).join('')
+        <p style="margin:0;font-weight:700;color:#0f172a;font-size:14px;">${j.label}</p>
+        <p style="margin:4px 0 0;color:#64748b;font-size:12px;">${j.cleaners.join(' and ')} · ${formatDate(j.date)} · ${j.started ? 'started, not finished' : 'not started'}</p>
+      </div>`).join('')
 
   const html = `
     <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px 18px;color:#0f172a;">
@@ -146,10 +72,9 @@ export async function GET(request: Request) {
         <h1 style="margin:6px 0 0;color:#fff;font-size:20px;">${totalIssues} clean${totalIssues !== 1 ? 's' : ''} not marked off</h1>
       </div>
       <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:26px;">
-        <p style="font-size:13px;color:#64748b;margin:0 0 16px;">Mark each off if it was done — keeps billing and reports accurate.</p>
+        <p style="font-size:13px;color:#64748b;margin:0 0 16px;">These weren't finished in the cleaner app. Check with the cleaner whether each one was done.</p>
         ${jobCards}
-        ${missingRecords.length ? `<p style="font-size:12px;color:#94a3b8;margin:14px 0 0;">+ ${missingRecords.length} scheduled clean${missingRecords.length !== 1 ? 's' : ''} with no job record.</p>` : ''}
-        <a href="${appUrl}/dashboard" style="display:inline-block;margin-top:18px;background:#00250e;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Mark it off →</a>
+        <a href="${appUrl}/hub" style="display:inline-block;margin-top:18px;background:#00250e;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;padding:12px 22px;">Open the hub</a>
         <p style="font-size:11px;color:#94a3b8;margin:22px 0 0;border-top:1px solid #f1f5f9;padding-top:14px;">Sent Monday mornings · Core Cleaning Operations Hub</p>
       </div>
     </div>
@@ -158,11 +83,8 @@ export async function GET(request: Request) {
   // Admin only — managers and cleaners are intentionally NOT notified about missed jobs.
   sendPushToRole('admin', {
     title: `${totalIssues} clean${totalIssues !== 1 ? 's' : ''} not marked off`,
-    body: [
-      incompleteList.length ? `${incompleteList.length} not completed` : '',
-      missingRecords.length ? `${missingRecords.length} with no record` : '',
-    ].filter(Boolean).join(' · ') || 'Review the weekly job report.',
-    url: '/dashboard',
+    body: 'Check the weekly report in your email.',
+    url: '/hub',
   }).catch(() => {})
 
   const subject = `Missed cleans — ${totalIssues} to mark off (${periodLabel})`
@@ -171,8 +93,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     sent:         result.success,
     totalIssues,
-    incomplete:   incompleteList.length,
-    noRecord:     missingRecords.length,
     recipient:    REPORT_EMAIL,
     error:        result.error,
   })
