@@ -43,7 +43,7 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
   const [toast, setToast] = useState('')
   const [busy, start] = useTransition()
 
-  const [backHref, backLabel] = from === 'timetable' ? ['/hub/commercial/timetable', 'Timetable'] : from === 'problems' ? ['/hub/problems', 'Problems'] : from === 'requests' ? ['/hub/commercial/requests', 'Requests'] : from === 'team' ? ['/hub/commercial/team', 'Team'] : ['/hub/commercial', 'Clients']
+  const [backHref, backLabel] = from === 'timetable' ? ['/hub/commercial/timetable', 'Timetable'] : from === 'problems' ? ['/hub/problems', 'Problems'] : from === 'requests' ? ['/hub/commercial/requests', 'Requests'] : from === 'team' ? ['/hub/commercial/team', 'Team'] : from === 'surveys' ? ['/hub/commercial/surveys', 'Surveys'] : ['/hub/commercial', 'Clients']
   const st = currentStatus(c, today)
   const open = (key: string, draft: Record<string, any>) => { setEdit(key); setD(draft); setErr(''); setPick(null); setDelX(null) }
   const close = () => { setEdit(null); setD({}); setErr('') }

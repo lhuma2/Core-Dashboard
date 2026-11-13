@@ -32,8 +32,8 @@
 .hub .card.prob.has .sval{color:#b42318}
 .hub .card.svdc.has{border-color:#f1b8b2}
 .hub .card.svdc.has .svfu{color:#b42318}
-.hub .card.svdc.due{border-color:#f0d39a}
-.hub .card.svdc.due .svdu{color:#7a4b00}
+.hub .card.svdc.due{border-color:#b9cdea}
+.hub .card.svdc.due .svdu,.hub .card.svdc.has .svdu{color:#1f5aa6}
 .hub .back{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#0f7a5a;padding:10px 0;min-height:44px;box-sizing:border-box}
 .hub .back:focus-visible{outline:3px solid #149e76;outline-offset:2px;border-radius:6px}
 .hub .chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
@@ -43,7 +43,8 @@
 .hub .chip .n{font-weight:500;opacity:.75}
 .hub .problist{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 .hub .probcard{background:#fff;border:1px solid #dfe6e2;border-left:4px solid #d92d20;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
-.hub .probcard.fixed{border-left-color:#149e76;opacity:.85}
+/* position: the app's Tailwind also has a .fixed class (position:fixed), which a done card would pick up */
+.hub .probcard.fixed{border-left-color:#149e76;opacity:.85;position:static}
 .hub .probhead{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px}
 .hub .probmeta{font-size:13px;color:#5d6b65}
 .hub .probtext{margin:2px 0 4px;font-size:15px;line-height:1.45;white-space:pre-line;overflow-wrap:anywhere}
@@ -756,4 +757,43 @@
 .hub .docmeta{font-size:10px;gap:2px 10px}
 .hub .docpdf{margin:2px 8px 8px 0}
 .hub .sddl{margin-right:8px;padding:0 10px;min-height:36px;font-size:12px}
+}
+
+/* ── Commercial → Surveys and the client's survey page (mock-up v76, v78) ── */
+.hub .svstats strong span{font-size:inherit;color:inherit}
+.hub .svall{display:flex;justify-content:flex-end}
+.hub .svcard{border-left-color:#d92d20}
+.hub .svcard.fixed{border-left-color:#149e76;opacity:1}
+.hub .svscores{list-style:none;margin:2px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.hub .svs{border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.hub .svs span{font-size:11px;line-height:1.2;color:inherit;opacity:.85}
+.hub .svs strong{font-size:17px}
+.hub .svs.good{background:#e3f3ec;color:#0f6e50}
+.hub .svs.mid{background:#e4eefb;color:#1f5aa6}
+.hub .svs.low{background:#fdecea;color:#b42318}
+.hub .svflag{background:#fdecea;color:#7a1a12}
+.hub .svbanner{margin:0 0 12px}
+.hub .svdoc .svhi{font-size:20px;margin:6px 0 4px;color:#13201a}
+.hub .svqcard{border:1px solid #e1e7e4;border-radius:12px;padding:14px;margin:12px 0}
+.hub .svqlabel{margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5d6b65;display:flex;align-items:center;gap:8px}
+.hub .svqn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:#0f6e50;color:#fff;font-size:12px;letter-spacing:0}
+.hub .svqtext{margin:0 0 12px;font-size:16px;font-weight:600;color:#13201a;line-height:1.4}
+.hub .svbtns{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px}
+.hub .svb{all:unset;box-sizing:border-box;cursor:pointer;min-height:44px;border-radius:10px;border:2px solid #dfe6e2;background:#fff;color:#3d4b45;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.hub .svb:focus-visible{outline:2px solid #1f5aa6;outline-offset:2px}
+.hub .svb.on.lo{background:#d92d20;border-color:#d92d20;color:#fff}
+.hub .svb.on.md{background:#d98a00;border-color:#d98a00;color:#fff}
+.hub .svb.on.hi{background:#149e76;border-color:#149e76;color:#fff}
+.hub .svends{display:flex;justify-content:space-between;font-size:12px;color:#5d6b65;margin-top:6px}
+.hub .svnotes{margin-top:8px}
+.hub .svsend{width:100%;justify-content:center;margin-top:8px;min-height:48px}
+.hub .req{color:#b42318}
+@container (max-width:700px){
+.hub .svscores{grid-template-columns:repeat(3,minmax(0,1fr))}
+.hub .svbtns{grid-template-columns:repeat(5,minmax(0,1fr))}
+.hub .svqcard{padding:12px}
+.hub .svqtext{font-size:15px}
+.hub .svs strong{font-size:15px}
+.hub .svb{font-size:15px}
+.hub .svdoc .svhi{font-size:17px}
 }

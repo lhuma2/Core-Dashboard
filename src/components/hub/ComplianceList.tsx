@@ -11,7 +11,7 @@ const NO_DB = 'Couldn’t reach the hub. Check your connection and try again.'
 const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10" /></svg>
 
 /** Copy a link; if the phone or browser blocks copying, show the link so it can be copied by hand (mock-up copyLink). */
-async function copy(link: string, okMsg: string): Promise<string> {
+export async function copy(link: string, okMsg: string): Promise<string> {
   try { await navigator.clipboard.writeText(link); return okMsg } catch { return 'Couldn’t copy on this device. Here’s the link to copy by hand: ' + link }
 }
 

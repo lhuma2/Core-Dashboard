@@ -15,7 +15,7 @@ const LINKS: Record<string, string | null> = {
   compliance: '/hub/compliance',
   problems: '/hub/problems',
   requests: '/hub/commercial/requests',
-  surveys: null,
+  surveys: '/hub/commercial/surveys',
 }
 
 /** A dashboard card: a link when its screen exists, otherwise a plain box. */
