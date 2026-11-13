@@ -25,8 +25,13 @@ export async function loadClientPage(id: string): Promise<{ c: CpClient; cleaner
   if (cQ.error || sitesQ.error || svcQ.error || teamQ.error) return null
   if (!cQ.data) return 'missing'
   const svcIds: string[] = (svcQ.data || []).map((s: any) => s.id)
+  const addons = async () => {
+    const q = await db.from('client_addons').select('id, service_id, name, freq, price, cost, next_date, items, created_at').in('service_id', svcIds).order('created_at')
+    // before test-db update 067 there's no items column: show the standard lists
+    return q.error ? db.from('client_addons').select('id, service_id, name, freq, price, cost, next_date, created_at').in('service_id', svcIds).order('created_at') : q
+  }
   const [addQ, crewQ] = await Promise.all([
-    svcIds.length ? db.from('client_addons').select('id, service_id, name, freq, price, cost, next_date, items, created_at').in('service_id', svcIds).order('created_at') : { data: [] },
+    svcIds.length ? addons() : { data: [] },
     svcIds.length ? db.from('client_service_cleaners').select('service_id, cleaner_id').in('service_id', svcIds) : { data: [] },
   ])
   if (addQ.error || crewQ.error) return null
