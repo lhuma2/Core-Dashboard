@@ -6,30 +6,32 @@ import { useRouter } from 'next/navigation'
 import { Back } from './icons'
 import { saveQuote } from '@/actions/hub-quotes'
 import { setFlash } from '@/lib/hub/flash'
+import { useDiv } from '@/lib/hub/use-div'
 import {
-  EVERY_OPTS, Q_WINF_OPTS, addTotal, cash2, priceNote, qAddItems, qMoney, residentialScope, residentialTermsGlance, standardAddItems, webRows,
-  type Quote, type QEvery, type WinFreq,
+  EVERY_OPTS, Q_WINF_OPTS, EOL_ADDK, EOL_TERMS, eolAddNote, eolAutoPrice, eolRateNote, eolScope, addTotal, cash2, priceNote, qAddItems, qMoney, residentialScope, residentialTermsGlance, standardAddItems, webRows,
+  type EolAdd, type Quote, type QEvery, type WinFreq,
 } from '@/lib/hub/home-quotes'
 
 const X = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
 const NUMS = (max: number) => Array.from({ length: max + 1 }, (_, i) => String(i))
 
 export function QuoteEditor({ initial, today, from }: { initial: Quote; today: string; from: 'list' | 'view' }) {
+  const { base, div, name: divName, lower: divLower } = useDiv()
   const router = useRouter()
   const [q, setQState] = useState<Quote>(initial)
   const [touched, setTouched] = useState(false)
   const [err, setErr] = useState('')
   const [busy, start] = useTransition()
   const set = (fn: (y: Quote) => void) => { const y: Quote = JSON.parse(JSON.stringify(q)); fn(y); setQState(y); setErr(''); setTouched(true) }
-  const backHref = from === 'view' && q.id ? `/hub/residential/quotes/${q.id}` : '/hub/residential/quotes'
+  const backHref = from === 'view' && q.id ? `${base}/quotes/${q.id}` : base + '/quotes'
 
   function own(y: Quote, k: 'windows' | 'carpet') { y[k].items = qAddItems(y, k).map(z => ({ text: z.text })); return y[k].items }
   function act(mode: 'draft' | 'preview' | 'send') {
     start(async () => {
       const r = await saveQuote(q, mode)
       if (!r.ok) { setErr(r.error); return }
-      if (mode === 'preview') router.push(`/hub/residential/quotes/${r.id}`)
-      else { setFlash(r.toast); router.push(mode === 'send' ? '/hub/residential/quotes?show=sent' : '/hub/residential/quotes') }
+      if (mode === 'preview') router.push(`${base}/quotes/${r.id}`)
+      else { setFlash(r.toast); router.push(mode === 'send' ? base + '/quotes?show=sent' : base + '/quotes') }
       router.refresh()
     })
   }
@@ -39,7 +41,10 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
   const price = qMoney(q.price)
   const pNote = priceNote(q)
   const total = addTotal(q)
-  const terms = residentialTermsGlance(q.type, q.every)
+  const eol = q.type === 'eol'
+  const terms = eol ? EOL_TERMS : residentialTermsGlance(q.type, q.every)
+  const stdScope = (y: Quote) => (y.type === 'eol' ? eolScope(y.eol?.garage, y.eol?.balcony) : residentialScope(y.type))
+  const setAdd = (ai: number, fn: (a: EolAdd, y: Quote) => void) => set(y => { if (y.eol) fn(y.eol.adds[ai], y) })
   const winNote = q.windows.fromWeb ? 'Picked on the website at ' + cash2(qMoney(q.windows.webPrice)) + '. Shows on the quote.' : (q.windows.on ? 'Added by you. Shows on the quote.' : 'Not picked, so it is not on the quote. Tick it only if they asked another way.')
   const carNote = q.carpet.fromWeb ? 'Picked on the website at ' + cash2(qMoney(q.carpet.webPrice)) + '. Shows on the quote.' : (q.carpet.on ? 'Added by you. Shows on the quote.' : 'Not picked, so it is not on the quote. Tick it only if they asked another way.')
 
@@ -94,7 +99,8 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
         </div>
 
         <h2 className="nch"><span className="qstep">2</span> Scope of works</h2>
-        <div className="stypes" role="radiogroup" aria-label="Type of clean">
+        {eol ? <div className="stypes"><div className="stype on"><span className="sttext"><strong>End of Lease</strong><span>Your standard end of lease scope, plus Garage and Balcony boxes when the form has them</span></span></div></div>
+        : <div className="stypes" role="radiogroup" aria-label="Type of clean">
           <button type="button" role="radio" className={q.type === 'deep' ? 'stype on' : 'stype'} aria-checked={q.type === 'deep'}
             onClick={() => { if (q.type !== 'deep') set(y => { y.type = 'deep'; y.scope = residentialScope('deep'); if (y.every !== 'oneoff') y.every = 'oneoff' }) }}>
             <span className="sttext"><strong>Deep-Clean</strong><span>One-off, top to bottom</span></span>
@@ -103,7 +109,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
             onClick={() => { if (q.type !== 'general') set(y => { y.type = 'general'; y.scope = residentialScope('general'); if (y.every === 'oneoff') y.every = 'fortnightly'; y.carpet.on = false }) }}>
             <span className="sttext"><strong>General Maintenance</strong><span>Standard clean, regular or one-off</span></span>
           </button>
-        </div>
+        </div>}
         <p className="nchint">Your standard boxes are pulled in for the type you pick. Change, add or remove anything for this quote.</p>
         <div className="pscope">
           {q.scope.map((g, gi) => (
@@ -125,7 +131,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
           {!q.scope.length && <p className="nchint">No boxes yet.</p>}
           <div className="sheetbtns">
             <button type="button" className="btn log" onClick={() => set(y => { y.scope.push({ heading: 'New area', items: [{ text: '' }] }) })}>+ Add box</button>
-            <button type="button" className="btn log" onClick={() => set(y => { y.scope = residentialScope(y.type) })}>Reset to my standard scope</button>
+            <button type="button" className="btn log" onClick={() => set(y => { y.scope = stdScope(y) })}>Reset to my standard scope</button>
           </div>
         </div>
 
@@ -135,16 +141,50 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
 
         <h2 className="nch"><span className="qstep">4</span> Price</h2>
         <div className="ncgrid">
-          {q.type === 'general'
+          {eol ? <div className="fld half"><span>How often</span><div className="freqread">One-off end of lease clean</div></div>
+            : q.type === 'general'
             ? <label className="fld half"><span>How often</span><select value={q.every} onChange={e => { const v = e.target.value as QEvery; set(y => { y.every = v }) }}>{EVERY_OPTS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}</select></label>
             : <div className="fld half"><span>How often</span><div className="freqread">One-off deep clean</div></div>}
-          <label className="fld half"><span>Preferred date (optional)</span><input type="date" min={today} value={q.start} onChange={e => { const v = e.target.value; set(y => { y.start = v }) }} /></label>
-          <label className="fld half"><span>Price per clean ($, incl GST) <span className="req" aria-hidden="true">*</span><span className="sr">(required)</span></span><input type="text" inputMode="decimal" autoComplete="off" value={q.price} onChange={e => { const v = e.target.value; set(y => { y.price = v; y.priceFromWeb = false }) }} /></label>
+          <label className="fld half"><span>{eol ? 'Move-out / clean date (optional)' : 'Preferred date (optional)'}</span><input type="date" min={today} value={q.start} onChange={e => { const v = e.target.value; set(y => { y.start = v }) }} /></label>
+          <label className="fld half"><span>{eol ? 'Price for the clean ($, incl GST)' : 'Price per clean ($, incl GST)'} <span className="req" aria-hidden="true">*</span><span className="sr">(required)</span></span><input type="text" inputMode="decimal" autoComplete="off" value={q.price} onChange={e => { const v = e.target.value; set(y => { y.price = v; y.priceFromWeb = false }) }} /></label>
           <label className="fld half"><span>Estimated hours (optional)</span><input type="text" inputMode="decimal" autoComplete="off" value={q.hours} onChange={e => { const v = e.target.value.replace(/[^0-9.]/g, ''); set(y => { y.hours = v }) }} /></label>
         </div>
         {pNote && <p className="fhint">{pNote}</p>}
         {price > 0 && <p className="money">Ex GST {cash2(price / 1.1)} · GST {cash2(price - price / 1.1)}</p>}
-        <div className="extracard">
+        {eol && <>
+          <p className="nchint">Add-ons from the website form. Ticked ones show on the quote with their own list of what’s included.</p>
+          {(q.eol?.adds || []).map((a, ai) => {
+            const d = EOL_ADDK[a.k]
+            return (
+              <div className="extracard" key={a.k} data-testid={'eoladd-' + a.k}>
+                <label className="check"><input type="checkbox" checked={a.on} onChange={e => { const v = e.target.checked; setAdd(ai, (x, y) => { x.on = v; if (v && !qMoney(x.price)) x.price = eolAutoPrice(x, y.price) }) }} /><span><strong>{d.label}</strong> add-on</span></label>
+                <p className="fhint">{eolAddNote(a)}</p>
+                {a.on && <>
+                  <div className="ncgrid">
+                    {d.unit && <label className="fld q"><span>How many {d.unit}s</span><select value={a.qty || '1'} onChange={e => { const v = e.target.value; setAdd(ai, (x, y) => { x.qty = v; x.price = eolAutoPrice(x, y.price) }) }}>{Array.from({ length: d.max || 1 }, (_, i) => String(i + 1)).map(n => <option key={n} value={n}>{n}</option>)}</select></label>}
+                    <label className="fld half"><span>Price ($, incl GST)</span><input type="text" inputMode="decimal" autoComplete="off" value={a.price} onChange={e => { const v = e.target.value; setAdd(ai, x => { x.price = v }) }} /></label>
+                  </div>
+                  <p className="fhint">{eolRateNote(a)}</p>
+                  <div className="addsow">
+                    <span className="addsowh">What’s included</span>
+                    {!a.items.length && <p className="nchint">Nothing listed. Add a task or reset to the standard list.</p>}
+                    {a.items.map((it, ii) => (
+                      <div className="sowiedit" key={ii}>
+                        <input type="text" className="sowin" value={it.text} aria-label="Task" onChange={e => { const v = e.target.value; setAdd(ai, x => { x.items[ii].text = v }) }} />
+                        <button type="button" className="iconbtn" aria-label={`Remove ${it.text || 'task ' + (ii + 1)} from ${d.label.toLowerCase()}`} onClick={() => setAdd(ai, x => { x.items.splice(ii, 1) })}><X /></button>
+                      </div>
+                    ))}
+                    <div className="addsowbtns">
+                      <button type="button" className="linkbtn" onClick={() => setAdd(ai, x => { if (x.items.length < 30) x.items.push({ text: '' }) })}>+ Add task</button>
+                      <button type="button" className="linkbtn" onClick={() => setAdd(ai, x => { x.items = d.items.map(text => ({ text })) })}>Reset to standard list</button>
+                    </div>
+                  </div>
+                </>}
+              </div>
+            )
+          })}
+        </>}
+        {!eol && <div className="extracard">
           <label className="check"><input type="checkbox" checked={q.windows.on} onChange={e => { const v = e.target.checked; set(y => { y.windows.on = v }) }} /><span><strong>Internal windows</strong> add-on</span></label>
           <p className="fhint">{winNote}</p>
           {q.windows.on && <>
@@ -154,7 +194,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
             </div>
             {addList('windows', 'windows')}
           </>}
-        </div>
+        </div>}
         {q.type === 'deep' && (
           <div className="extracard">
             <label className="check"><input type="checkbox" checked={q.carpet.on} onChange={e => { const v = e.target.checked; set(y => { y.carpet.on = v }) }} /><span><strong>Carpet Steam Cleaning</strong> add-on</span></label>

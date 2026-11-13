@@ -13,17 +13,19 @@ import {
   rState, homeNext, perMonth, moneyLine, timeText, STATE_TXT, STATE_CLS, addr, freqLong, homeText, longDate, dLong, dShort, cash, cash2,
   type Home, type History,
 } from '@/lib/hub/homes'
-import { docMeta, docTag, AGR_TITLE, type HomeDoc } from '@/lib/hub/home-agreements'
+import { docMeta, docTag, type HomeDoc } from '@/lib/hub/home-agreements'
+import { AGRN } from '@/lib/hub/div'
+import { useDiv } from '@/lib/hub/use-div'
 import { isoAdd } from '@/lib/hub/timetable'
 
 type Act = null | 'time' | 'pause' | 'end' | 'cancel' | 'delete'
 type R = { ok: true; id: string; toast: string } | { ok: false; error: string; needDate?: true }
 
 // The residential client's page: status, money, details, cleans, agreement, status actions and history. Mock-up words.
-const FROM: Record<string, [string, string]> = { timetable: ['/hub/residential/timetable', 'Timetable'], team: ['/hub/residential/team', 'Team'] }
 
 export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home; history: History[]; docs: HomeDoc[]; cleaners: { id: string; name: string }[]; today: string; from?: string }) {
-  const [backHref, backLabel] = FROM[from || ''] || ['/hub/residential/clients', 'Residential']
+  const { div, base, name: divName } = useDiv()
+  const [backHref, backLabel] = from === 'timetable' ? [base + '/timetable', 'Timetable'] : from === 'team' ? [base + '/team', 'Team'] : [base + '/clients', divName]
   const router = useRouter()
   const [act, setAct] = useState<Act>(null)
   const [d1, setD1] = useState('')
@@ -45,7 +47,7 @@ export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home;
   const run = (p: () => Promise<R>, after?: (r: R & { ok: true }) => void) => start(async () => {
     const r = await p()
     if (!r.ok) {
-      if ('needDate' in r && r.needDate) { setFlash(r.error); router.push(`/hub/residential/clients/${h.id}/edit?redate=1`); return }
+      if ('needDate' in r && r.needDate) { setFlash(r.error); router.push(`${base}/clients/${h.id}/edit?redate=1`); return }
       setErr(r.error); if (!act) setToast(r.error); return
     }
     setAct(null); setErr('')
@@ -72,7 +74,7 @@ export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home;
           <h1 className="greet">{h.name}</h1>
           <p className="cpsub">{h.suburb} <span className="tag draft">{h.kind === 'oneoff' ? 'One-off' : 'Recurring'}</span> <span className={STATE_CLS[hs]}>{STATE_TXT[hs]}</span></p>
         </div>
-        <Link className="btn log" href={`/hub/residential/clients/${h.id}/edit`}>Edit</Link>
+        <Link className="btn log" href={`${base}/clients/${h.id}/edit`}>Edit</Link>
       </div>
       {banner && (
         <div className={hs === 'ended' || hs === 'cancelled' ? 'agstatus cpbanner' : 'agstatus warn cpbanner'}><span>{banner}</span>
@@ -89,7 +91,7 @@ export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home;
       </div>
 
       <section className="addcard cpcard" aria-label="Client details">
-        <div className="cpcardh"><h2 className="nch">Details</h2><Link className="linkbtn" href={`/hub/residential/clients/${h.id}/edit`}>Edit</Link></div>
+        <div className="cpcardh"><h2 className="nch">Details</h2><Link className="linkbtn" href={`${base}/clients/${h.id}/edit`}>Edit</Link></div>
         <dl className="cpkv">
           <div><dt>Phone</dt><dd>{h.phone ? <a href={'tel:' + h.phone.replace(/[^\d+]/g, '')}>{h.phone}</a> : 'Not on file'}</dd></div>
           <div><dt>Email</dt><dd>{h.email ? <a href={'mailto:' + h.email}>{h.email}</a> : 'Not on file'}</dd></div>
@@ -100,7 +102,7 @@ export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home;
       </section>
 
       <section className="addcard cpcard" aria-label="Cleans">
-        <div className="cpcardh"><h2 className="nch">Cleans</h2><Link className="linkbtn" href={`/hub/residential/clients/${h.id}/edit`}>Change</Link></div>
+        <div className="cpcardh"><h2 className="nch">Cleans</h2><Link className="linkbtn" href={`${base}/clients/${h.id}/edit`}>Change</Link></div>
         <dl className="cpkv">
           <div><dt>How often</dt><dd>{freqLong(h)}</dd></div>
           <div><dt>Time</dt><dd>{timeText(h)}</dd></div>
@@ -141,19 +143,19 @@ export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home;
       </section>
 
       <section className="addcard cpcard" aria-label="Agreement and files">
-        <div className="cpcardh"><h2 className="nch">Agreement and files</h2><Link className="linkbtn" href="/hub/residential/documents">Open in Documents</Link></div>
+        <div className="cpcardh"><h2 className="nch">Agreement and files</h2><Link className="linkbtn" href={base + '/documents'}>Open in Documents</Link></div>
         {docs.map(d => {
           const [tag, cls] = docTag(d)
           return (
             <div className="cpdoc" key={d.id}>
-              <span className="cpxm"><strong>{AGR_TITLE} <span className={cls}>{tag}</span></strong><span>{d.ref} · {docMeta(d)}</span></span>
-              <Link className="btn log" href={`/hub/residential/documents/${d.id}`} aria-label={'Open ' + d.ref}>Open</Link>
+              <span className="cpxm"><strong>{AGRN[div]} <span className={cls}>{tag}</span></strong><span>{d.ref} · {docMeta(d)}</span></span>
+              <Link className="btn log" href={`${base}/documents/${d.id}`} aria-label={'Open ' + d.ref}>Open</Link>
             </div>
           )
         })}
         {!docs.length && <p className="cpnone">No agreement or files yet.</p>}
         {!hasOpen && !finished && (
-          <div className="cpbtns"><button type="button" className={hasSigned ? 'btn log' : 'btn call'} disabled={busy} onClick={() => run(() => createAgreement(h.id), r => { setFlash(r.toast); router.push(`/hub/residential/documents/${r.id}`) })}>{hasSigned ? 'Send a new agreement' : 'Create agreement'}</button></div>
+          <div className="cpbtns"><button type="button" className={hasSigned ? 'btn log' : 'btn call'} disabled={busy} onClick={() => run(() => createAgreement(h.id), r => { setFlash(r.toast); router.push(`${base}/documents/${r.id}`) })}>{hasSigned ? 'Send a new agreement' : 'Create agreement'}</button></div>
         )}
       </section>
 
@@ -174,7 +176,7 @@ export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home;
             <div className="cpbtns">{canDone && doneBtn}<button type="button" className="btn log dangerbtn" onClick={() => go('cancel')}>Cancel this clean</button></div>
           </>}
           {(hs === 'done' || hs === 'cancelled') && <>
-            <p className="cpnone">Want them back on a schedule? Tap Edit and switch to Recurring.</p>
+            {div === 'res' && <p className="cpnone">Want them back on a schedule? Tap Edit and switch to Recurring.</p>}
             <div className="cpbtns"><button type="button" className="btn log" disabled={busy} onClick={() => run(() => reopenHome(h.id))}>Book it again</button></div>
           </>}
           {!hasSigned && <div className="cpbtns"><button type="button" className="linkbtn danger" onClick={() => go('delete')}>Delete client (for mistakes)</button></div>}
@@ -210,7 +212,7 @@ export function HomeView({ h, history, docs, cleaners, today, from }: { h: Home;
         {act === 'delete' && <>
           <div className="inlineconfirm">
             <span>Delete {h.name} for good? Use this for a mistake. {docs.length ? `Their ${docs.length}${docs.length === 1 ? ' document goes' : ' documents go'} too.` : ''}</span>
-            <button type="button" className="btn call dangerfill" disabled={busy} onClick={() => run(() => deleteHome(h.id), r => { setFlash(r.toast); router.push('/hub/residential/clients'); router.refresh() })}>Yes, delete</button>
+            <button type="button" className="btn call dangerfill" disabled={busy} onClick={() => run(() => deleteHome(h.id), r => { setFlash(r.toast); router.push(base + '/clients'); router.refresh() })}>Yes, delete</button>
             <button type="button" className="btn log" onClick={() => go(null)}>Keep</button>
           </div>
           {errP}

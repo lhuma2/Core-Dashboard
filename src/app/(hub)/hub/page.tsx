@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 const LINKS: Record<string, string | null> = {
   commercial: '/hub/commercial',
   residential: '/hub/residential/clients',
-  eol: null,
+  eol: '/hub/end-of-lease/clients',
   team: null,
   compliance: null,
   problems: '/hub/problems',

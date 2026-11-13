@@ -41,7 +41,9 @@ export function QuoteDocument({ d }: { d: QuoteDoc }) {
             </div>
           ))}
         </div>
-        <p className="pexcl">{d.excl}</p>
+        {d.isEol
+          ? <div className="pcharges"><div className="pchargesh">✶ Subject to additional charges</div><p>{d.charges}</p></div>
+          : <p className="pexcl">{d.excl}</p>}
       </section>
 
       <section className="ppage">

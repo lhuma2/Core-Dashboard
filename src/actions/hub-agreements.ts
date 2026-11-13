@@ -10,7 +10,8 @@ import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { brisbaneToday } from '@/lib/hub/figures'
 import { EMAIL_RE, dLong } from '@/lib/hub/home-quotes'
-import { agreeRef, snapFromHome, AGR_TITLE, type HomeLike } from '@/lib/hub/home-agreements'
+import { agreeRef, refDiv, snapFromHome, type HomeLike } from '@/lib/hub/home-agreements'
+import { AGRN, asDiv, divBase } from '@/lib/hub/div'
 
 type Done = { ok: true; id: string; toast: string } | { ok: false; error: string }
 const NO_DB = 'Couldn’t reach the hub. Check your connection and try again.'
@@ -40,7 +41,7 @@ const signMail = (name: string, ref: string, link: string) => mail(first(name), 
   'Here is your Core Cleaning service agreement (' + esc(ref) + '). Please read it, then sign at the bottom of the page.',
 ], 'Read and sign your agreement', link)
 
-function refresh() { revalidatePath('/hub/residential/documents'); revalidatePath('/hub') }
+function refresh() { revalidatePath('/hub', 'layout') }
 
 async function staffDb(): Promise<{ db: any } | { error: string }> {
   const denied = await requireStaff()
@@ -63,10 +64,10 @@ export async function createAgreement(homeId: string): Promise<Done> {
   const { data: open, error: oe } = await db.from('home_docs').select('id').eq('home_id', homeId).in('status', ['draft', 'sent']).limit(1)
   if (oe) return { ok: false, error: NO_DB }
   if (open?.length) return { ok: false, error: `${h.name} already has an agreement waiting. Open it from Documents.` }
-  const { data: n, error: ne } = await db.rpc('hub_next_number', { p_key: 'agree_res' })
+  const { data: n, error: ne } = await db.rpc('hub_next_number', { p_key: h.division === 'eol' ? 'agree_eol' : 'agree_res' })
   if (ne || !n) return { ok: false, error: NO_DB }
-  const ref = agreeRef(n)
-  const { data: row, error } = await db.from('home_docs').insert({ division: 'res', ref, home_id: homeId, status: 'draft' }).select('id').single()
+  const ref = agreeRef(n, asDiv(h.division))
+  const { data: row, error } = await db.from('home_docs').insert({ division: asDiv(h.division), ref, home_id: homeId, status: 'draft' }).select('id').single()
   if (error || !row) return { ok: false, error: NO_DB }
   refresh()
   return { ok: true, id: row.id, toast: `Draft ${ref} for ${h.name} is ready. Check it, then send it for signature.` }
@@ -152,11 +153,11 @@ export async function clientSign(code: string, name: string, agree: boolean): Pr
   const ref = String(data?.ref || '')
   const link = `${siteUrl()}/agree/${code}`
   if (process.env.RESEND_API_KEY) {
-    const copy = (hi: string) => mail(hi, [`${esc(nm)} signed ${AGR_TITLE.toLowerCase()} ${esc(ref)} on ${esc(dLong(brisbaneToday()))}.`, 'You can open the signed copy, and save it as a PDF, here:'], 'Open the signed agreement', link)
+    const copy = (hi: string) => mail(hi, [`${esc(nm)} signed ${AGRN[refDiv(ref)].toLowerCase()} ${esc(ref)} on ${esc(dLong(brisbaneToday()))}.`, 'You can open the signed copy, and save it as a PDF, here:'], 'Open the signed agreement', link)
     if (data?.sent_to) await sendEmail(data.sent_to, `Your signed service agreement (${ref})`, copy(first(nm))).catch(() => {})
     await sendEmail('admin@corecleaning.services', `${nm} signed ${ref}`, copy('Laith')).catch(() => {})
   }
-  await sendPushToRole('admin', { title: `${nm} signed ${ref}`, body: 'Their residential service agreement is signed.', url: '/hub/residential/documents?show=signed' }).catch(() => {})
+  await sendPushToRole('admin', { title: `${nm} signed ${ref}`, body: `Their ${AGRN[refDiv(ref)].toLowerCase()} is signed.`, url: divBase(refDiv(ref)) + '/documents?show=signed' }).catch(() => {})
   refresh()
   return { ok: true, message: `Thank you, ${first(nm)}. Your agreement is signed. A signed copy is on its way to your email, and you can save it below.` }
 }

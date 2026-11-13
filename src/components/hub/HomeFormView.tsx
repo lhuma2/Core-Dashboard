@@ -7,6 +7,7 @@ import { Back } from './icons'
 import { setFlash, takeFlash } from '@/lib/hub/flash'
 import { saveHome, type HomeForm } from '@/actions/hub-homes'
 import { moneyLine } from '@/lib/hub/homes'
+import { useDiv } from '@/lib/hub/use-div'
 
 const DAYS: [string, string, string][] = [['mon', 'Mon', 'Monday'], ['tue', 'Tue', 'Tuesday'], ['wed', 'Wed', 'Wednesday'], ['thu', 'Thu', 'Thursday'], ['fri', 'Fri', 'Friday'], ['sat', 'Sat', 'Saturday'], ['sun', 'Sun', 'Sunday']]
 const opts = (max: number) => Array.from({ length: max + 1 }, (_, i) => String(i))
@@ -16,6 +17,7 @@ const money = (v: string) => { const t = String(v || '').replace(/[$,\s]/g, '');
 export function HomeFormView({ initial, started, wasKind, today, cleaners, signed, backHref, backLabel }: {
   initial: HomeForm; started: boolean; wasKind: '' | 'recurring' | 'oneoff'; today: string; cleaners: { id: string; name: string }[]; signed: boolean; backHref: string; backLabel: string
 }) {
+  const { base, div } = useDiv()
   const router = useRouter()
   const [f, setF] = useState<HomeForm>(initial)
   const [err, setErr] = useState('')
@@ -26,12 +28,12 @@ export function HomeFormView({ initial, started, wasKind, today, cleaners, signe
   const isRec = f.kind === 'recurring'
   const dateMode = !isRec ? 'oneoff' : started && wasKind === 'recurring' ? (f.every === 'weekly' ? 'none' : 'pattern') : 'first'
   const ml = moneyLine(money(f.price) || 0, money(f.cost) || 0)
-  const showKind = isNew || wasKind === 'oneoff'
+  const showKind = div !== 'eol' && (isNew || wasKind === 'oneoff')
 
   return (
     <>
       <Link className="back" href={backHref}><Back /> {backLabel}</Link>
-      <h1 className="greet">{isNew ? 'New residential client' : 'Edit ' + (initial.name || 'client')}</h1>
+      <h1 className="greet">{isNew ? (div === 'eol' ? 'New end of lease clean' : 'New residential client') : 'Edit ' + (initial.name || 'client')}</h1>
       <div role="form" className="addcard ncform">
         {showKind && <>
           <h2 className="nch">Type of clean</h2>
@@ -113,10 +115,10 @@ export function HomeFormView({ initial, started, wasKind, today, cleaners, signe
         {err && <p className="ferr" role="alert">{err}</p>}
         <div className="cpbtns">
           <button type="button" className="btn call" disabled={busy} onClick={() => start(async () => {
-            const r = await saveHome(f)
+            const r = await saveHome({ ...f, division: div })
             if (!r.ok) { setErr(r.error); return }
             setFlash(r.toast)
-            router.push(`/hub/residential/clients/${r.id}`)
+            router.push(`${base}/clients/${r.id}`)
             router.refresh()
           })}>{busy ? 'Saving…' : isNew ? 'Add client' : 'Save changes'}</button>
           <Link className="btn log" href={backHref}>Cancel</Link>

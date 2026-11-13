@@ -1,5 +1,6 @@
 'use server'
 
+import { asDiv, divBase } from '@/lib/hub/div'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { z } from 'zod'
@@ -10,7 +11,7 @@ import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { brisbaneToday } from '@/lib/hub/figures'
 import {
-  bodyOf, qCheck, qClean, qSaveCheck, quoteOf, quoteRef, quoteDoc, dLong, DECLINE_REASONS, QUOTE_COLS,
+  bodyOf, cash2, eAddsOn, eTotal, eUnits, EOL_ADDK, qMoney, qCheck, qClean, qSaveCheck, quoteOf, quoteRef, quoteDoc, dLong, DECLINE_REASONS, QUOTE_COLS,
   type Quote, type QuoteRow,
 } from '@/lib/hub/home-quotes'
 import { snapFromQuote } from '@/lib/hub/home-agreements'
@@ -25,12 +26,16 @@ const quoteSchema = z.object({
   id: z.string().uuid().optional(), ref: s(20), status: z.enum(['draft', 'sent', 'changes', 'accepted', 'declined']), source: z.enum(['website', 'manual']),
   created: s(10), req: z.record(z.any()), name: s(200), email: s(320), phone: s(40),
   region: s(100), street: s(300), suburb: s(100), postcode: s(4), heading: s(200), intro: s(1000),
-  type: z.enum(['deep', 'general']), every: z.enum(['oneoff', 'weekly', 'fortnightly', 'monthly']),
+  type: z.enum(['deep', 'general', 'eol']), every: z.enum(['oneoff', 'weekly', 'fortnightly', 'monthly']),
   beds: z.number().int().min(0).max(7), baths: z.number().int().min(0).max(7), living: z.number().int().min(0).max(7),
   start: s(10), hours: s(8), price: s(20), priceFromWeb: z.boolean(), notes: s(3000),
   scope: z.array(z.object({ heading: s(120), items: z.array(task).max(40) })).max(30),
   windows: z.object({ on: z.boolean(), price: s(20), detail: s(100), items: z.array(task).max(30), fromWeb: z.boolean(), webPrice: s(20), freq: z.enum(['each', 'monthly', 'quarterly', 'once']) }),
   carpet: z.object({ on: z.boolean(), items: z.array(task).max(30), price: s(20), rooms: s(2), halls: s(2), fromWeb: z.boolean(), webPrice: s(20) }),
+  eol: z.object({
+    kitchens: z.number().int().min(0).max(20), garage: z.number().int().min(0).max(20), balcony: z.number().int().min(0).max(20),
+    adds: z.array(z.object({ k: z.enum(['carpet', 'blinds', 'walls', 'furnished', 'mattress', 'sofa', 'fridge']), on: z.boolean(), qty: s(3), price: s(20), fromWeb: z.boolean(), webPrice: s(20), items: z.array(task).max(30) })).max(10),
+  }).optional(),
 }).passthrough()
 
 function siteUrl(): string {
@@ -86,7 +91,7 @@ const sentToast = (q: Quote, to: string, tested: boolean, revised: boolean) => t
   ? `${revised ? 'Revised ' : ''}${q.ref} marked as sent to ${to}. This is the test site, so no email went out. Use Copy link to open the client’s page.`
   : `${revised ? 'Revised ' : ''}${q.ref} sent to ${to} from admin@. They can accept it straight from the email.`
 
-function refresh() { revalidatePath('/hub/residential/quotes'); revalidatePath('/hub') }
+function refresh() { revalidatePath('/hub', 'layout') }
 
 async function loadQuote(db: any, id: string): Promise<Quote | null> {
   const { data } = await db.from('home_quotes').select(QUOTE_COLS).eq('id', id).maybeSingle()
@@ -111,6 +116,7 @@ export async function saveQuote(input: Quote, mode: 'draft' | 'preview' | 'send'
     cur = await loadQuote(db, y.id)
     if (!cur) return { ok: false, error: 'That quote was deleted.' }
     if (cur.status === 'accepted' || cur.status === 'declined') return { ok: false, error: `${cur.ref} was ${cur.status} by the client, so it can’t be changed.` }
+    if ((cur.division === 'eol') !== (y.type === 'eol')) return { ok: false, error: 'Some of the details didn’t come through properly. Refresh the page and try again.' }
   }
   const row = { name: y.name, email: y.email || null, phone: (y.phone || '').trim() || null, body: bodyOf(y) }
   let id = y.id
@@ -118,9 +124,10 @@ export async function saveQuote(input: Quote, mode: 'draft' | 'preview' | 'send'
     const { error } = await db.from('home_quotes').update(row).eq('id', cur.id)
     if (error) return { ok: false, error: NO_DB }
   } else {
-    const { data: n, error: nErr } = await db.rpc('hub_next_number', { p_key: 'quote_res' })
+    const div = y.type === 'eol' ? 'eol' : 'res'
+    const { data: n, error: nErr } = await db.rpc('hub_next_number', { p_key: 'quote_' + div })
     if (nErr || !n) return { ok: false, error: NO_DB }
-    const { data, error } = await db.from('home_quotes').insert({ ...row, division: 'res', ref: quoteRef(n), source: 'manual', status: 'draft', created_on: today }).select('id').single()
+    const { data, error } = await db.from('home_quotes').insert({ ...row, division: div, ref: quoteRef(n, div), source: 'manual', status: 'draft', created_on: today }).select('id').single()
     if (error) return { ok: false, error: NO_DB }
     id = data.id
   }
@@ -209,7 +216,7 @@ export async function clientAskChanges(code: string, note: string): Promise<Pub>
   if (o.q.status !== 'sent') return { ok: false, error: 'This quote can’t be changed any more.' }
   const { error } = await o.db.from('home_quotes').update({ status: 'changes', change_note: n, changed_at: brisbaneToday() }).eq('id', o.q.id).eq('status', 'sent')
   if (error) return { ok: false, error: 'That didn’t go through. Try again in a minute.' }
-  await sendPushToRole('admin', { title: `${o.q.name} asked for changes`, body: `${o.q.ref}: “${n.slice(0, 120)}”`, url: `/hub/residential/quotes/${o.q.id}/edit` }).catch(() => {})
+  await sendPushToRole('admin', { title: `${o.q.name} asked for changes`, body: `${o.q.ref}: “${n.slice(0, 120)}”`, url: `${divBase(asDiv(o.q.division))}/quotes/${o.q.id}/edit` }).catch(() => {})
   refresh()
   return { ok: true, message: 'Thanks. We’ll update your quote and email you the new one.' }
 }
@@ -222,7 +229,7 @@ export async function clientDecline(code: string, reason: string, note: string):
   const why = reason + (String(note || '').trim() ? ', ' + String(note).trim().slice(0, 1000) : '')
   const { error } = await o.db.from('home_quotes').update({ status: 'declined', declined_at: brisbaneToday(), decline_reason: why }).eq('id', o.q.id).eq('status', 'sent')
   if (error) return { ok: false, error: 'That didn’t go through. Try again in a minute.' }
-  await sendPushToRole('admin', { title: `${o.q.name} declined ${o.q.ref}`, body: why.slice(0, 160), url: '/hub/residential/quotes?show=closed' }).catch(() => {})
+  await sendPushToRole('admin', { title: `${o.q.name} declined ${o.q.ref}`, body: why.slice(0, 160), url: divBase(asDiv(o.q.division)) + '/quotes?show=closed' }).catch(() => {})
   refresh()
   return { ok: true, message: 'Thanks for letting us know. This quote was declined.' }
 }
@@ -250,6 +257,21 @@ export async function clientAccept(code: string, a: { street: string; suburb: st
     if (m.includes('bad_start')) return { ok: false, error: 'Pick a date from tomorrow on.' }
     return { ok: false, error: 'That didn’t go through. Nothing was saved, so you can try again.' }
   }
+  // End of Lease: the price is the clean plus its add-ons, carpet rooms come from the carpet add-on, and the add-ons go
+  // in the notes and the history line (mock-up v73).
+  if (cur.type === 'eol' && made?.home) {
+    const adds = eAddsOn(cur), ca = adds.find(x => x.k === 'carpet')
+    const list = (withPrice: boolean) => adds.map(x => (EOL_ADDK[x.k]?.label || x.k) + (eUnits(x) ? ' × ' + eUnits(x) : '') + (withPrice ? ' (' + cash2(qMoney(x.price)) + ')' : '')).join(', ')
+    await o.db.from('homes').update({
+      price: Math.round(eTotal(cur) * 100) / 100, carpet_rooms: ca ? Math.min(+ca.qty || 0, 40) : 0, hallways: 0,
+      notes: [(cur.notes || '').trim(), adds.length ? 'Add-ons: ' + list(false) : ''].filter(Boolean).join('. ').slice(0, 3000) || null,
+    }).eq('id', made.home)
+    if (adds.length) {
+      const { data: hist } = await o.db.from('home_history').select('id, text').eq('home_id', made.home)
+      const first = ((hist as any[]) || []).find(r => String(r.text).startsWith('Accepted quote'))
+      if (first) await o.db.from('home_history').update({ text: (first.text + '. Add-ons: ' + list(true)).slice(0, 1000) }).eq('id', first.id)
+    }
+  }
   const agreeCode = String(made?.code || '')
   if (agreeCode && cur.email && process.env.RESEND_API_KEY) {
     const link = `${siteUrl()}/agree/${agreeCode}`
@@ -258,10 +280,9 @@ export async function clientAccept(code: string, a: { street: string; suburb: st
   await sendPushToRole('admin', {
     title: `${cur.name} accepted ${cur.ref}`,
     body: `${cur.every === 'oneoff' ? 'Clean on' : 'First clean'} ${dLong(start)}. Their agreement ${made?.ref || ''} is ready to sign. Add the time, cleaner and cost.`,
-    url: '/hub/residential/quotes?show=closed',
+    url: divBase(asDiv(cur.division)) + '/quotes?show=closed',
   }).catch(() => {})
   refresh()
-  revalidatePath('/hub/residential/documents')
   return {
     ok: true,
     message: `Thank you, ${cur.name.split(/\s+/)[0]}. Your ${cur.every === 'oneoff' ? 'clean is booked for' : 'first clean is booked for'} ${dLong(start)}. We’ll be in touch to confirm the time. The last step is your service agreement.`,

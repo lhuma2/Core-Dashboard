@@ -2,11 +2,10 @@
 // An agreement reads from the home while it's a draft; when it's sent, everything shown (particulars, scope and the
 // clauses) is locked into `snap`, so a signed agreement never changes afterwards.
 import { RES_CLAUSES } from './res-clauses'
-import { cash2, dLong, dShort, qAddLines, qMoney, Q_TYPE, Q_WINF, type Quote, type WinFreq } from './home-quotes'
+import { cash2, dLong, dShort, eAddsOn, eLines, eTotal, eUnits, EOL_ADDK, qAddLines, qMoney, Q_TYPE, Q_WINF, type Quote, type WinFreq } from './home-quotes'
 
 export const RES_PAY = 'Due on the day of each service; payments not made on the day incur a 10% late fee'
 export const RES_TERM = 'No fixed term'
-export const AGR_TITLE = 'Residential service agreement'
 
 export type DocStatus = 'draft' | 'sent' | 'signed'
 export interface Part { k: string; v: string }
@@ -18,7 +17,7 @@ export interface HomeLike {
   name: string; street?: string | null; suburb?: string | null; state?: string | null; postcode?: string | null
   kind: 'recurring' | 'oneoff'; every?: string | null; days?: string[] | null; anchor?: string | null; first_clean?: string | null
   start_time?: string | null; price: number; beds?: number | null; baths?: number | null; carpet_rooms?: number | null; hallways?: number | null
-  windows_price?: number | null; windows_freq?: string | null
+  windows_price?: number | null; windows_freq?: string | null; division?: 'res' | 'eol' | null
 }
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -59,7 +58,7 @@ export function particulars(h: HomeLike, extras: Part[] = []): Part[] {
     { k: 'Client', v: h.name },
     { k: 'Premises', v: addr(h) || 'To be confirmed' },
     { k: 'Commencement date', v: h.first_clean ? dLong(h.first_clean) : 'To be confirmed' },
-    { k: 'Services', v: 'Residential clean: ' + homeText(h) },
+    { k: 'Services', v: (h.division === 'eol' ? 'End of lease clean: ' : 'Residential clean: ') + homeText(h) },
     { k: 'Frequency', v: freqLong(h) + (h.start_time ? ', from ' + t12s(h.start_time) : '') },
     { k: 'Fees', v: (h.price > 0 ? cash2(h.price) : '$0.00') + ' per clean, including GST' },
   ]
@@ -88,18 +87,22 @@ export function standardScope(h: HomeLike): ScopeBox[] {
 
 /** Snapshot for the agreement that follows an accepted quote: the quote's own scope and add-ons (clause 3). */
 export function snapFromQuote(q: Quote, a: { street: string; suburb: string; postcode: string; start: string }): AgrSnap {
-  const rec = q.every !== 'oneoff'
+  const eol = q.type === 'eol'
+  const rec = !eol && q.every !== 'oneoff'
   const deepCarpet = q.carpet.on && q.type === 'deep'
+  const eCarpet = eol ? eAddsOn(q).find(x => x.k === 'carpet') : undefined
   const dow = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date(a.start + 'T00:00:00Z').getUTCDay()]
   const h: HomeLike = {
     name: q.name.trim(), street: a.street.trim(), suburb: a.suburb.trim(), postcode: a.postcode, state: 'QLD',
     kind: rec ? 'recurring' : 'oneoff', every: rec ? q.every : null, days: rec ? [dow] : [], anchor: rec && q.every !== 'weekly' ? a.start : null,
-    first_clean: a.start, price: Math.round(qMoney(q.price) * 100) / 100, beds: q.beds, baths: q.baths,
-    carpet_rooms: deepCarpet ? +q.carpet.rooms || 0 : 0, hallways: deepCarpet ? +q.carpet.halls || 0 : 0,
+    first_clean: a.start, price: Math.round((eol ? eTotal(q) : qMoney(q.price)) * 100) / 100, beds: q.beds, baths: q.baths,
+    carpet_rooms: deepCarpet ? +q.carpet.rooms || 0 : eCarpet ? +eCarpet.qty || 0 : 0, hallways: deepCarpet ? +q.carpet.halls || 0 : 0,
+    division: eol ? 'eol' : 'res',
   }
   const adds: string[] = []
   if (q.windows.on) adds.push('Internal windows ' + cash2(qMoney(q.windows.price)) + (rec ? ', ' + Q_WINF[q.windows.freq || 'monthly'] : ''))
   if (deepCarpet) adds.push('Carpet steam cleaning ' + cash2(qMoney(q.carpet.price)))
+  if (eol) for (const x of eAddsOn(q)) adds.push((EOL_ADDK[x.k]?.label || x.k) + (eUnits(x) ? ' × ' + eUnits(x) : '') + ' ' + cash2(qMoney(x.price)))
   const extras = adds.length ? [{ k: 'Add-ons', v: adds.join('; ') + ' (including GST)' }] : []
   const parts = particulars(h, extras)
   parts.splice(4, 0, { k: 'Quote', v: q.ref + ', ' + Q_TYPE[q.type] })
@@ -108,6 +111,7 @@ export function snapFromQuote(q: Quote, a: { street: string; suburb: string; pos
     .filter(g => g.items.length)
   if (q.windows.on) scope.push({ heading: 'Internal windows (add-on)', items: qAddLines(q, 'windows') })
   if (deepCarpet) scope.push({ heading: 'Carpet steam cleaning (add-on)', items: qAddLines(q, 'carpet') })
+  if (eol) for (const x of eAddsOn(q)) scope.push({ heading: (EOL_ADDK[x.k]?.label || x.k) + ' (add-on)', items: eLines(x) })
   return { parts, scope, clauses: RES_CLAUSES }
 }
 
@@ -118,14 +122,14 @@ export function snapFromHome(h: HomeLike): AgrSnap {
 
 // ── rows ──────────────────────────────────────────────────────
 export interface HomeDoc {
-  id: string; ref: string; code: string; homeId: string | null; homeName: string; homeEmail: string; status: DocStatus; created: string
+  id: string; division: 'res' | 'eol'; ref: string; code: string; homeId: string | null; homeName: string; homeEmail: string; status: DocStatus; created: string
   sentTo: string | null; sentAt: string | null; signedBy: string | null; signedAt: string | null; fromQuote: string | null; snap: AgrSnap | null
 }
-export const DOC_COLS = 'id, ref, code, home_id, status, snap, created_on, sent_to, sent_at, signed_by, signed_at, from_quote, homes(name, email)'
+export const DOC_COLS = 'id, division, ref, code, home_id, status, snap, created_on, sent_to, sent_at, signed_by, signed_at, from_quote, homes(name, email)'
 const d10 = (v: string | null) => (v ? String(v).slice(0, 10) : null)
 export function docOf(r: any): HomeDoc {
   return {
-    id: r.id, ref: r.ref, code: r.code, homeId: r.home_id, homeName: r.homes?.name || 'Removed client', homeEmail: r.homes?.email || '', status: r.status, created: d10(r.created_on) || '',
+    id: r.id, division: r.division === 'eol' ? 'eol' : 'res', ref: r.ref, code: r.code, homeId: r.home_id, homeName: r.homes?.name || 'Removed client', homeEmail: r.homes?.email || '', status: r.status, created: d10(r.created_on) || '',
     sentTo: r.sent_to, sentAt: d10(r.sent_at), signedBy: r.signed_by, signedAt: d10(r.signed_at), fromQuote: r.from_quote,
     snap: r.snap && Array.isArray(r.snap.parts) ? r.snap : null,
   }
@@ -140,4 +144,6 @@ export function docMeta(d: HomeDoc): string {
   if (d.status === 'sent') return 'Sent to ' + d.sentTo + ' on ' + dShort(d.sentAt)
   return 'Created ' + dShort(d.created) + ', not sent yet'
 }
-export function agreeRef(n: number): string { return 'CCR-' + String(n).padStart(4, '0') }
+export function agreeRef(n: number, div: 'res' | 'eol' = 'res'): string { return (div === 'eol' ? 'CCE-' : 'CCR-') + String(n).padStart(4, '0') }
+/** CCE- refs are End of Lease. */
+export const refDiv = (ref: string): 'res' | 'eol' => (/^CCE-/.test(ref) ? 'eol' : 'res')

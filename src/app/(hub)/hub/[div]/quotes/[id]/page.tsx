@@ -1,3 +1,4 @@
+import { asDiv, divBase, divFromSlug, DIVN } from '@/lib/hub/div'
 import Link from 'next/link'
 import { QuoteDocument } from '@/components/hub/QuoteDocument'
 import { QuoteAdminBar } from '@/components/hub/QuoteAdminBar'
@@ -8,9 +9,10 @@ import { Q_STATE, qMeta, quoteDoc } from '@/lib/hub/home-quotes'
 
 export const dynamic = 'force-dynamic'
 
-export default async function QuoteViewPage({ params }: { params: { id: string } }) {
-  const q = await loadQuote(params.id)
-  const back = <Link className="back" href="/hub/residential/quotes"><Back /> Quotes</Link>
+export default async function QuoteViewPage({ params }: { params: { id: string; div: string } }) {
+  const div = asDiv(divFromSlug(params.div)), base = divBase(div)
+  const q = await loadQuote(params.id, div)
+  const back = <Link className="back" href={base + '/quotes'}><Back /> Quotes</Link>
   if (q === null) return <>{back}<p className="err" role="alert">The quote couldn’t load just now. Refresh the page to try again.</p></>
   if (q === 'missing') return <>{back}<p className="err" role="alert">That quote was deleted.</p></>
   const cls = 'agstatus' + (q.status === 'sent' ? ' wait' : q.status === 'accepted' ? ' ok' : q.status === 'changes' ? ' warn' : '')

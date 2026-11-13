@@ -6,9 +6,11 @@ import { sendAgreement, resendAgreement, deleteAgreement } from '@/actions/hub-a
 import { setFlash, takeFlash } from '@/lib/hub/flash'
 import { copyLink } from './DocList'
 import type { DocStatus } from '@/lib/hub/home-agreements'
+import { useDiv } from '@/lib/hub/use-div'
 
 // On the agreement view: send a draft for signature, or resend / copy link / client view / withdraw, and Download PDF.
 export function AgreementAdminBar({ id, ref_, code, status, email, client, draftNote }: { id: string; ref_: string; code: string; status: DocStatus; email: string; client: string; draftNote: string }) {
+  const { base, div, name: divName, lower: divLower } = useDiv()
   const router = useRouter()
   const [sending, setSending] = useState(false)
   const [to, setTo] = useState(email)
@@ -51,7 +53,7 @@ export function AgreementAdminBar({ id, ref_, code, status, email, client, draft
           <button type="button" className="btn call dangerfill" disabled={busy} onClick={() => start(async () => {
             const r = await deleteAgreement(id)
             if (!r.ok) { setToast(r.error); setConfirming(false); return }
-            setFlash(r.toast); router.push('/hub/residential/documents'); router.refresh()
+            setFlash(r.toast); router.push(base + '/documents'); router.refresh()
           })}>{status === 'sent' ? 'Yes, withdraw' : 'Yes, delete'}</button>
           <button type="button" className="btn log" onClick={() => setConfirming(false)}>Keep it</button>
         </div>

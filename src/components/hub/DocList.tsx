@@ -7,7 +7,9 @@ import { useLiveRefresh } from '@/lib/hub/use-live'
 import { Search, Plus } from './icons'
 import { takeFlash, setFlash } from '@/lib/hub/flash'
 import { createAgreement, sendAgreement, resendAgreement, deleteAgreement } from '@/actions/hub-agreements'
-import { docMeta, docTag, AGR_TITLE, type HomeDoc } from '@/lib/hub/home-agreements'
+import { docMeta, docTag, type HomeDoc } from '@/lib/hub/home-agreements'
+import { AGRN } from '@/lib/hub/div'
+import { useDiv } from '@/lib/hub/use-div'
 
 type Show = 'all' | 'draft' | 'sent' | 'signed'
 const CHIPS: [Show, string][] = [['all', 'All'], ['draft', 'Drafts'], ['sent', 'Waiting to sign'], ['signed', 'Signed']]
@@ -23,6 +25,7 @@ export function copyLink(code: string, setToast: (m: string) => void) {
 }
 
 export function DocList({ docs, homes, initial }: { docs: HomeDoc[]; homes: { id: string; label: string }[]; initial: Show }) {
+  const { base, div, name: divName, lower: divLower } = useDiv()
   const router = useRouter()
   useLiveRefresh()
   const [show, setShow] = useState<Show>(initial)
@@ -48,7 +51,7 @@ export function DocList({ docs, homes, initial }: { docs: HomeDoc[]; homes: { id
 
   return (
     <>
-      <p className="sub rqsub"><span>Service agreements for your residential clients. One goes out to sign as soon as a client accepts a quote.</span></p>
+      <p className="sub rqsub"><span>Service agreements for your {divLower} clients. One goes out to sign as soon as a client accepts a quote.</span></p>
       <div className="toolbar">
         <label className="search">
           <Search />
@@ -65,7 +68,7 @@ export function DocList({ docs, homes, initial }: { docs: HomeDoc[]; homes: { id
               {homes.map(h => <option key={h.id} value={h.id}>{h.label}</option>)}
             </select>
           </label>
-          {!homes.length && <p className="nchint">No residential clients yet. They’re added when a client accepts a quote.</p>}
+          {!homes.length && <p className="nchint">No {divLower} clients yet. They’re added when a client accepts a quote.</p>}
           {err && !sending && <p className="ferr" role="alert">{err}</p>}
           <div className="sheetbtns">
             <button type="button" className="btn call" disabled={busy} onClick={() => start(async () => {
@@ -73,7 +76,7 @@ export function DocList({ docs, homes, initial }: { docs: HomeDoc[]; homes: { id
               const r = await createAgreement(pick)
               if (!r.ok) { setErr(r.error); return }
               setFlash(r.toast)
-              router.push(`/hub/residential/documents/${r.id}`)
+              router.push(`${base}/documents/${r.id}`)
             })}>Create draft</button>
             <button type="button" className="btn log" onClick={() => { setMaking(false); setErr('') }}>Cancel</button>
           </div>
@@ -93,12 +96,12 @@ export function DocList({ docs, homes, initial }: { docs: HomeDoc[]; homes: { id
           return (
             <div className="docrow" key={d.id} data-testid="doc-row">
               <div className="drtop">
-                <span className="drmain"><strong>{d.homeName}</strong><span>{d.ref} · {AGR_TITLE}</span></span>
+                <span className="drmain"><strong>{d.homeName}</strong><span>{d.ref} · {AGRN[d.division]}</span></span>
                 <span className={tagCls}>{tag}</span>
               </div>
               <div className="probmeta">{docMeta(d)}</div>
               <div className="sheetbtns">
-                <Link className="btn log" href={`/hub/residential/documents/${d.id}`}>View</Link>
+                <Link className="btn log" href={`${base}/documents/${d.id}`}>View</Link>
                 {d.status === 'draft' && <button type="button" className="btn call" onClick={() => { setSending(d.id); setSendTo(d.homeEmail); setErr(''); setConfirming(null) }}>Send for signature</button>}
                 {d.status === 'sent' && <>
                   <button type="button" className="btn log" disabled={busy} onClick={() => start(async () => done(await resendAgreement(d.id)))}>Resend</button>

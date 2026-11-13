@@ -8,6 +8,7 @@ import { Search, Plus } from './icons'
 import { takeFlash } from '@/lib/hub/flash'
 import { sendQuote, resendQuote, deleteQuote } from '@/actions/hub-quotes'
 import { Q_STATE, cash, qMeta, qMoney, qWhatLine, type Quote } from '@/lib/hub/home-quotes'
+import { useDiv } from '@/lib/hub/use-div'
 
 type Show = 'open' | 'sent' | 'closed' | 'all'
 const CHIPS: [Show, string][] = [['open', 'To do'], ['sent', 'Sent'], ['closed', 'Accepted or declined'], ['all', 'All']]
@@ -19,6 +20,7 @@ function inShow(q: Quote, f: Show) {
 }
 
 export function QuoteList({ quotes, initial }: { quotes: Quote[]; initial: Show }) {
+  const { base, div, name: divName, lower: divLower } = useDiv()
   const router = useRouter()
   useLiveRefresh()
   const [show, setShow] = useState<Show>(initial)
@@ -58,7 +60,7 @@ export function QuoteList({ quotes, initial }: { quotes: Quote[]; initial: Show 
           <span className="sr">Search quotes</span>
           <input type="search" placeholder="Search by name, ref or area" value={query} onChange={e => setQuery(e.target.value)} />
         </label>
-        <Link className="primary" href="/hub/residential/quotes/new"><Plus />New quote</Link>
+        <Link className="primary" href={base + '/quotes/new'}><Plus />New quote</Link>
       </div>
       <div className="chips" role="group" aria-label="Show quotes">
         {CHIPS.map(([v, label]) => (
@@ -80,10 +82,10 @@ export function QuoteList({ quotes, initial }: { quotes: Quote[]; initial: Show 
                 <span className={tagCls}>{tag}</span>
               </div>
               <div className="probmeta">{qMoney(x.price) > 0 ? cash(qMoney(x.price)) + (x.every === 'oneoff' ? '' : ' a clean') : 'No price'} · {qMeta(x)}</div>
-              {x.source === 'website' && <div className="probmeta">Website: {[x.req.frequency, x.req.hours, 'calculator price ' + (x.req.priceInc || 'none')].filter(Boolean).join(', ')}</div>}
+              {x.source === 'website' && <div className="probmeta">Website: {(x.type === 'eol' ? [x.req.hours, 'estimated total ' + (x.req.estimatedTotal || 'none')] : [x.req.frequency, x.req.hours, 'calculator price ' + (x.req.priceInc || 'none')]).filter(Boolean).join(', ')}</div>}
               <div className="sheetbtns">
-                {canEdit && <Link className="btn log" href={`/hub/residential/quotes/${x.id}/edit`}>{x.status === 'sent' ? 'Revise' : 'Edit'}</Link>}
-                <Link className="btn log" href={`/hub/residential/quotes/${x.id}`}>View quote</Link>
+                {canEdit && <Link className="btn log" href={`${base}/quotes/${x.id}/edit`}>{x.status === 'sent' ? 'Revise' : 'Edit'}</Link>}
+                <Link className="btn log" href={`${base}/quotes/${x.id}`}>View quote</Link>
                 {canSend && <button type="button" className="btn call" onClick={() => { setSending(x.id!); setSendTo(x.email || ''); setErr(''); setConfirming(null) }}>{x.status === 'changes' ? 'Send revised quote' : 'Send to client'}</button>}
                 {x.status === 'sent' && <>
                   <button type="button" className="btn log" disabled={busy} onClick={() => start(async () => done(await resendQuote(x.id!)))}>Resend</button>

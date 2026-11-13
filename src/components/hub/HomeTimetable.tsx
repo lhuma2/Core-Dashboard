@@ -6,6 +6,7 @@ import { Prev, Next, Close } from './icons'
 import { useLiveRefresh } from '@/lib/hub/use-live'
 import { isoAdd, isoDow, mondayOf, monthStart, monthGrid, longDate, weekTitle, monthTitle } from '@/lib/hub/timetable'
 import { homeEventsOn, schedText, addr, homeText, t12, type Home, type HomeEvent, type CalShow } from '@/lib/hub/homes'
+import { useDiv } from '@/lib/hub/use-div'
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DOW1 = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
@@ -13,6 +14,7 @@ const SHOW: [CalShow, string][] = [['all', 'All'], ['recurring', 'Recurring'], [
 const count = (n: number) => `${n} ${n === 1 ? 'clean' : 'cleans'}`
 
 export function HomeTimetable({ homes, cleaners, today }: { homes: Home[]; cleaners: { id: string; name: string }[]; today: string }) {
+  const { base, div, name: divName, lower: divLower } = useDiv()
   useLiveRefresh()
   const [view, setView] = useState<'week' | 'month'>('week')
   const [show, setShow] = useState<CalShow>('all')
@@ -49,11 +51,11 @@ export function HomeTimetable({ homes, cleaners, today }: { homes: Home[]; clean
           <button type="button" role="tab" className={view === 'month' ? 'on' : ''} aria-selected={view === 'month'} onClick={() => { setView('month'); setSelKey(null) }}>Month</button>
         </div>
       </div>
-      <div className="chips rcalchips" role="group" aria-label="Show cleans">
+      {div === 'res' && <div className="chips rcalchips" role="group" aria-label="Show cleans">
         {SHOW.map(([v, label]) => (
           <button key={v} type="button" className={show === v ? 'chip on' : 'chip'} aria-pressed={show === v} onClick={() => { setShow(v); setSelKey(null) }}>{label}</button>
         ))}
-      </div>
+      </div>}
 
       {view === 'week' ? (
         <>
@@ -114,7 +116,7 @@ export function HomeTimetable({ homes, cleaners, today }: { homes: Home[]; clean
           <p className="legend"><span>Tap a day to open that week.</span></p>
         </>
       )}
-      <p className="legend"><span className="rkey k1">Recurring</span><span className="rkey k6">One-off</span><span className="rkey unas">No cleaner yet</span></p>
+      <p className="legend">{div === 'res' && <span className="rkey k1">Recurring</span>}<span className="rkey k6">{div === 'eol' ? 'End of lease clean' : 'One-off'}</span><span className="rkey unas">No cleaner yet</span></p>
 
       {sel && (
         <div className="calsel" role="region" aria-label="Clean details">
@@ -129,7 +131,7 @@ export function HomeTimetable({ homes, cleaners, today }: { homes: Home[]; clean
             <li>Home: {homeText(sel.h)}</li>
             <li>Notes: {sel.h.notes || 'None'}</li>
           </ul>
-          <div className="sheetbtns"><Link className="btn log" href={`/hub/residential/clients/${sel.id}?from=timetable`}>Open client</Link></div>
+          <div className="sheetbtns"><Link className="btn log" href={`${base}/clients/${sel.id}?from=timetable`}>Open client</Link></div>
         </div>
       )}
     </>

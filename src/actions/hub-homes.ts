@@ -8,6 +8,7 @@ import { brisbaneToday } from '@/lib/hub/figures'
 import { isoAdd, isoDow, longDate, onCadence, CAL_DOW } from '@/lib/hub/timetable'
 import { homeOf, homeNext, schedText, rState, HOME_COLS, cash, dLong, dShort, t12, type Home } from '@/lib/hub/homes'
 import { EMAIL_RE } from '@/lib/hub/home-quotes'
+import { asDiv } from '@/lib/hub/div'
 
 type Done = { ok: true; id: string; toast: string } | { ok: false; error: string }
 const NO_DB = 'Couldn’t reach the hub. Check your connection and try again.'
@@ -15,10 +16,9 @@ const GONE = 'This client was removed.'
 const ISO = /^\d{4}-\d{2}-\d{2}$/
 const HM = /^\d{2}:\d{2}$/
 
-function refresh(id?: string) {
-  revalidatePath('/hub/residential/clients')
-  if (id) revalidatePath(`/hub/residential/clients/${id}`)
-  revalidatePath('/hub')
+function refresh(_id?: string) {
+  // Every hub page is rendered fresh; this clears any cached copy of the division screens and the dashboard.
+  revalidatePath('/hub', 'layout')
 }
 async function open(id: string): Promise<{ db: any; h: Home; cleaners: Map<string, string> } | { error: string }> {
   const denied = await requireStaff()
@@ -163,6 +163,8 @@ export interface HomeForm {
   id?: string; kind: 'recurring' | 'oneoff'; name: string; phone: string; email: string; street: string; suburb: string; postcode: string; state: string
   beds: string; baths: string; carpetRooms: string; hallways: string; every: 'weekly' | 'fortnightly' | 'monthly'; days: string[]; first: string
   start: string; finish: string; cleaner: string; price: string; cost: string; notes: string
+  /** Residential or End of Lease (new clients only; an existing client keeps its own). */
+  division?: 'res' | 'eol'
 }
 const STATES = ['QLD', 'NSW', 'ACT', 'VIC', 'TAS', 'SA', 'WA', 'NT']
 export async function parseMoney(v: string): Promise<number | null> {
@@ -190,7 +192,8 @@ export async function saveHome(x: HomeForm): Promise<Done> {
     if (!data) return { ok: false, error: GONE }
     old = homeOf(data)
   }
-  const kind = x.kind === 'oneoff' ? 'oneoff' : 'recurring'
+  const div = old ? old.division : asDiv(x.division)
+  const kind = x.kind === 'oneoff' || div === 'eol' ? 'oneoff' : 'recurring'
   if (old && old.kind === 'recurring' && kind === 'oneoff') return { ok: false, error: 'A regular client can’t become a one-off. End their service instead.' }
   const isR = kind === 'recurring'
   const every = (['weekly', 'fortnightly', 'monthly'] as const).includes(x.every) ? x.every : 'weekly'
@@ -229,7 +232,7 @@ export async function saveHome(x: HomeForm): Promise<Done> {
     if (!c) return fail('That cleaner can’t be picked. Choose again.')
   }
   // the same client twice (not finished)
-  const { data: same, error: se } = await db.from('homes').select(HOME_COLS).eq('division', 'res')
+  const { data: same, error: se } = await db.from('homes').select(HOME_COLS).eq('division', div)
   if (se) return fail(NO_DB)
   const dup = ((same as any[]) || []).map(homeOf).find(h => h.id !== x.id && h.name.trim().toLowerCase() === nm.toLowerCase() && !['ended', 'done', 'cancelled'].includes(rState(h, today)) && (h.street || '').trim().toLowerCase() === street.toLowerCase())
   if (dup) return fail(`${nm} at ${street} is already a client. Open them from Clients instead.`)
@@ -240,7 +243,7 @@ export async function saveHome(x: HomeForm): Promise<Done> {
     start_time: x.start, finish_time: x.finish, cleaner_id: cleaner, price: pr, cost: co, notes: String(x.notes || '').trim().slice(0, 3000) || null,
   }
   if (!old) {
-    const row = { ...base, division: 'res', kind, every: isR ? every : null, days: isR ? days : [], anchor: isR && every !== 'weekly' ? first : null, first_clean: first, status: 'active' }
+    const row = { ...base, division: div, kind, every: isR ? every : null, days: isR ? days : [], anchor: isR && every !== 'weekly' ? first : null, first_clean: first, status: 'active' }
     const { data, error } = await db.from('homes').insert(row).select('id').single()
     if (error || !data) return fail(NO_DB)
     await db.from('home_history').insert({ home_id: data.id, date: today, text: isR ? `Added. First clean ${dLong(first)}` : `Booked for ${dLong(first)}` })

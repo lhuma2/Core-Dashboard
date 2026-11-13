@@ -6,6 +6,7 @@ import { sendPushToRole } from '@/lib/push'
 import { QUOTE_REQUEST_KIND_LABELS, type QuoteRequest } from '@/lib/documents/quote-request'
 import { draftFromRequest } from '@/lib/documents/quote-request-draft'
 import { draftHomeQuote } from '@/lib/hub/home-quote-request'
+import { divBase } from '@/lib/hub/div'
 
 // A new quote request from the website's quote form. Makes a draft proposal from
 // the matching template, prefilled with everything but the prices, and lets the
@@ -54,17 +55,16 @@ async function handle(request: Request) {
 
   const db = createAdminClient() as any
 
-  // Residential requests: a draft quote in the new hub (Residential › Quotes), opened straight from the notification.
+  // Residential and End of Lease requests: a draft quote in the new hub (that division's Quotes tab), opened straight from the notification.
   const home = await draftHomeQuote(db, req)
   if (home && 'error' in home) return NextResponse.json({ error: home.error }, { status: 500 })
   if (home) {
     await sendPushToRole('admin', {
       title: `New quote request: ${req.name}`,
-      body: `Residential, ${home.kind}. Draft ${home.ref} is filled in from their form. Check it and send.`,
-      url: `/hub/residential/quotes/${home.id}/edit`,
+      body: `${home.kind}. Draft ${home.ref} is filled in from their form. Check it and send.`,
+      url: `${divBase(home.div)}/quotes/${home.id}/edit`,
     }).catch(() => {})
-    revalidatePath('/hub/residential/quotes')
-    revalidatePath('/hub')
+    revalidatePath('/hub', 'layout')
     return NextResponse.json({ success: true, id: home.id, ref: home.ref })
   }
 

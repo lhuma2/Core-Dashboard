@@ -581,3 +581,7 @@
 .hub .ctline{font-size:12px}
 .hub .ctcname{font-size:13px}
 }
+.hub .pcharges{margin-top:18px;border:1px solid #f0d9a8;background:#fdf6e6;border-radius:10px;padding:14px 16px}
+.hub .pchargesh{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9a6a00;margin-bottom:6px}
+.hub .pcharges p{margin:0;font-size:13px;line-height:1.55;color:#5d5340}
+@container (max-width:700px){.hub .pcharges{padding:10px 12px}.hub .pcharges p{font-size:12px}}

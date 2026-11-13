@@ -1,3 +1,4 @@
+import { asDiv, divBase, divFromSlug, DIVN } from '@/lib/hub/div'
 import Link from 'next/link'
 import { Back } from '@/components/hub/icons'
 import { HomeFormView } from '@/components/hub/HomeFormView'
@@ -7,9 +8,10 @@ import { homeNext } from '@/lib/hub/homes'
 
 export const dynamic = 'force-dynamic'
 
-export default async function EditHomePage({ params, searchParams }: { params: { id: string }; searchParams: { redate?: string } }) {
-  const [r, cleaners] = await Promise.all([loadHome(params.id), loadCleaners()])
-  const back = <Link className="back" href="/hub/residential/clients"><Back /> Residential</Link>
+export default async function EditHomePage({ params, searchParams }: { params: { id: string; div: string }; searchParams: { redate?: string } }) {
+  const div = asDiv(divFromSlug(params.div)), base = divBase(div)
+  const [r, cleaners] = await Promise.all([loadHome(params.id, div), loadCleaners()])
+  const back = <Link className="back" href={base + '/clients'}><Back /> {DIVN[div]}</Link>
   if (r === null) return <>{back}<p className="err" role="alert">This client couldn’t load just now. Refresh the page to try again.</p></>
   if (r === 'missing') return <>{back}<p className="err" role="alert">That client was deleted.</p></>
   const { h } = r, today = brisbaneToday()
@@ -18,7 +20,7 @@ export default async function EditHomePage({ params, searchParams }: { params: {
   const first = searchParams.redate ? '' : started ? (h.every === 'weekly' ? '' : nx) : h.first_clean || ''
   return (
     <HomeFormView started={started} wasKind={h.kind} today={today} cleaners={cleaners} signed={r.docs.some(d => d.status === 'signed')}
-      backHref={`/hub/residential/clients/${h.id}`} backLabel={h.name}
+      backHref={`${base}/clients/${h.id}`} backLabel={h.name}
       initial={{
         id: h.id, kind: h.kind, name: h.name, phone: h.phone || '', email: h.email || '', street: h.street || '', suburb: h.suburb || '', postcode: h.postcode || '', state: h.state || 'QLD',
         beds: String(h.beds ?? 0), baths: String(h.baths ?? 0), carpetRooms: String(h.carpet_rooms || 0), hallways: String(h.hallways || 0),

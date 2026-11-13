@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import type { Div } from './div'
 import { homeOf, HOME_COLS, type Home, type History } from './homes'
 import { docOf, DOC_COLS, type HomeDoc } from './home-agreements'
 
@@ -10,16 +11,16 @@ export async function loadCleaners(): Promise<Cleaner[]> {
   return ((data as any[]) || []).map(p => ({ id: p.id, name: p.full_name || 'Cleaner', phone: p.phone || null }))
 }
 
-/** All residential homes. Null if the hub can't be reached. */
-export async function loadHomes(): Promise<Home[] | null> {
+/** All homes for the division. Null if the hub can't be reached. */
+export async function loadHomes(div: Div): Promise<Home[] | null> {
   const db = createClient() as any
-  const { data, error } = await db.from('homes').select(HOME_COLS).eq('division', 'res')
+  const { data, error } = await db.from('homes').select(HOME_COLS).eq('division', div)
   if (error) return null
   return (data as any[]).map(homeOf)
 }
 
 /** One home with its history (newest first) and documents. */
-export async function loadHome(id: string): Promise<{ h: Home; history: History[]; docs: HomeDoc[] } | null | 'missing'> {
+export async function loadHome(id: string, div?: Div): Promise<{ h: Home; history: History[]; docs: HomeDoc[] } | null | 'missing'> {
   if (!/^[0-9a-f-]{36}$/.test(id)) return 'missing'
   const db = createClient() as any
   const [{ data, error }, hist, docs] = await Promise.all([
@@ -28,7 +29,7 @@ export async function loadHome(id: string): Promise<{ h: Home; history: History[
     db.from('home_docs').select(DOC_COLS).eq('home_id', id),
   ])
   if (error) return null
-  if (!data) return 'missing'
+  if (!data || (div && data.division !== div)) return 'missing'
   const history = ((hist.data as any[]) || [])
     .sort((a, b) => (a.date === b.date ? (a.created_at < b.created_at ? 1 : -1) : a.date < b.date ? 1 : -1))
     .map(r => ({ date: String(r.date).slice(0, 10), text: r.text }))

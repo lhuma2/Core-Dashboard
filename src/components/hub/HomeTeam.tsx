@@ -5,20 +5,23 @@ import Link from 'next/link'
 import { Search } from './icons'
 import { useLiveRefresh } from '@/lib/hub/use-live'
 import type { TeamHome, TeamRow } from '@/lib/hub/homes'
+import { useDiv } from '@/lib/hub/use-div'
 
 type F = 'all' | 'busy' | 'free'
 
 function Homes({ list }: { list: TeamHome[] }) {
+  const { base } = useDiv()
   return (
     <ul className="ctclients">
       {list.map(h => (
-        <li key={h.id}><Link className="ctcname" href={`/hub/residential/clients/${h.id}?from=team`}>{h.name}</Link><span className="ctline">{h.line}</span></li>
+        <li key={h.id}><Link className="ctcname" href={`${base}/clients/${h.id}?from=team`}>{h.name}</Link><span className="ctline">{h.line}</span></li>
       ))}
     </ul>
   )
 }
 
 export function HomeTeam({ rows, unassigned }: { rows: TeamRow[]; unassigned: TeamHome[] }) {
+  const { base, div, name: divName, lower: divLower } = useDiv()
   useLiveRefresh()
   const [query, setQuery] = useState('')
   const [f, setF] = useState<F>('all')

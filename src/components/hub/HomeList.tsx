@@ -6,10 +6,13 @@ import { Search, Plus } from './icons'
 import { takeFlash } from '@/lib/hub/flash'
 import { useLiveRefresh } from '@/lib/hub/use-live'
 import type { HomeRow, View } from '@/lib/hub/homes'
+import { useDiv } from '@/lib/hub/use-div'
 
 const VIEWS: [View, string][] = [['recurring', 'Recurring'], ['oneoff', 'One-offs'], ['past', 'Finished']]
+const EOL_VIEWS: [View, string][] = [['oneoff', 'Booked'], ['past', 'Finished']]
 
 export function HomeList({ rows, initial }: { rows: HomeRow[]; initial: View }) {
+  const { base, div, name: divName, lower: divLower } = useDiv()
   useLiveRefresh()
   const [view, setView] = useState<View>(initial)
   const [query, setQuery] = useState('')
@@ -19,21 +22,21 @@ export function HomeList({ rows, initial }: { rows: HomeRow[]; initial: View }) 
   const shown = rows.filter(r => r.views.includes(view) && (!q || r.search.includes(q))).sort((a, b) => (a.sort[view] < b.sort[view] ? -1 : a.sort[view] > b.sort[view] ? 1 : 0))
   const empty = q ? `No clients match “${query.trim()}”.`
     : view === 'recurring' ? 'No recurring clients yet. Tap New client to add one.'
-      : view === 'oneoff' ? 'No one-off cleans booked.'
-        : 'Nothing finished yet. Ended recurring clients and done or cancelled one-offs show here.'
+      : view === 'oneoff' ? (div === 'eol' ? 'No end of lease cleans booked.' : 'No one-off cleans booked.')
+        : div === 'eol' ? 'Nothing finished yet. Done or cancelled cleans show here.' : 'Nothing finished yet. Ended recurring clients and done or cancelled one-offs show here.'
 
   return (
     <>
       <div className="toolbar">
         <label className="search">
           <Search />
-          <span className="sr">Search residential clients</span>
+          <span className="sr">Search {divLower} clients</span>
           <input type="search" placeholder="Search by name, suburb or cleaner" value={query} onChange={e => setQuery(e.target.value)} />
         </label>
-        <Link className="primary" href="/hub/residential/clients/new"><Plus />New client</Link>
+        <Link className="primary" href={base + '/clients/new'}><Plus />New client</Link>
       </div>
       <div className="chips clchips" role="group" aria-label="Show clients">
-        {VIEWS.map(([v, label]) => (
+        {(div === 'eol' ? EOL_VIEWS : VIEWS).map(([v, label]) => (
           <button key={v} type="button" className={view === v ? 'chip on' : 'chip'} aria-pressed={view === v} onClick={() => setView(v)}>
             {label} <span className="n">{rows.filter(r => r.views.includes(v)).length}</span>
           </button>
@@ -44,7 +47,7 @@ export function HomeList({ rows, initial }: { rows: HomeRow[]; initial: View }) 
           <span>Client</span><span>{view === 'oneoff' ? 'Date' : 'How often'}</span><span>Status</span><span>Cleaner</span><span className="r">Per clean</span><span className="r">Margin</span>
         </div>
         {shown.map(r => (
-          <Link key={r.id} href={`/hub/residential/clients/${r.id}`} className="lrow rlrow" aria-label={`Open ${r.name}, ${r.sched}`} data-testid="home-row">
+          <Link key={r.id} href={`${base}/clients/${r.id}`} className="lrow rlrow" aria-label={`Open ${r.name}, ${r.sched}`} data-testid="home-row">
             <span className="cmain">
               <span className="cbiz">{r.name}</span>
               <span className="csub">{r.suburb}</span>
