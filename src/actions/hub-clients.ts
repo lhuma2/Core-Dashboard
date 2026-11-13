@@ -27,7 +27,7 @@ const formSchema = z.object({
 type Result = { ok: true; toast: string } | { ok: false; error: string }
 
 /** Save a new commercial client with its sites, services, cleaners and add-ons, all or nothing. */
-export async function createCommercialClient(input: NcForm): Promise<Result> {
+export async function createCommercialClient(input: NcForm, fromProp: string | null = null): Promise<Result> {
   const denied = await requireStaff()
   if (denied) return { ok: false, error: denied }
   const parsed = formSchema.safeParse(input)
@@ -50,7 +50,8 @@ export async function createCommercialClient(input: NcForm): Promise<Result> {
   if (!checked.ok) return checked
 
   // One database call, so a failure part-way leaves nothing half-saved.
-  const { error } = await supabase.rpc('hub_create_client', { p: checked.payload })
+  if (fromProp !== null && !z.string().uuid().safeParse(fromProp).success) return { ok: false, error: 'That proposal was deleted. Refresh the page and try again.' }
+  const { data: newId, error } = await supabase.rpc('hub_create_client', { p: checked.payload })
   if (error) {
     const m = String(error.message ?? '')
     if (m.includes('duplicate_client')) return { ok: false, error: `${checked.payload.business_name} is already one of your clients.` }
@@ -59,8 +60,13 @@ export async function createCommercialClient(input: NcForm): Promise<Result> {
     if (m.includes('not_allowed')) return { ok: false, error: 'Only admins and managers can add clients.' }
     return { ok: false, error: 'Couldn’t save the client. Nothing was saved, so you can try again.' }
   }
+  let extra = ''
+  if (fromProp && newId) {
+    const { setUpFromProposal } = await import('@/lib/hub/setup-from-proposal')
+    extra = await setUpFromProposal(supabase, fromProp, String(newId), today)
+  }
   revalidatePath('/hub')
   revalidatePath('/hub/commercial')
   revalidatePath('/hub/commercial/timetable')
-  return { ok: true, toast: checked.toast }
+  return { ok: true, toast: checked.toast + extra }
 }

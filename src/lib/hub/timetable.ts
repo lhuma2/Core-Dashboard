@@ -68,7 +68,7 @@ export interface TtService {
   resume_on: string | null
   ended_on: string | null
   /** Extra cleans booked from client requests */
-  extras?: { iso: string; start: string; finish: string }[]
+  extras?: { iso: string; start: string; finish: string; label?: string }[]
 }
 
 export interface TtEvent { key: string; iso: string; client: string; site: string; start: string; finish: string; cleaners: string; k: string }
@@ -79,7 +79,7 @@ export function eventsOn(services: TtService[], iso: string): TtEvent[] {
   for (const sc of services) {
     const ex = sc.extras?.find(e => e.iso === iso)
     if (ex) {
-      if (!offOn(sc, iso)) out.push({ key: `${sc.key}|${iso}`, iso, client: sc.client, site: [sc.site, 'extra clean'].filter(Boolean).join(', '), start: ex.start, finish: ex.finish, cleaners: sc.cleaners, k: 'k' + (sc.colour % 6) })
+      if (!offOn(sc, iso)) out.push({ key: `${sc.key}|${iso}`, iso, client: sc.client, site: [sc.site, ex.label || 'extra clean'].filter(Boolean).join(', '), start: ex.start, finish: ex.finish, cleaners: sc.cleaners, k: 'k' + (sc.colour % 6) })
       continue
     }
     if (!sc.days.includes(dw)) continue

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { replyRequest, markRequestDone, reopenRequest, bookExtraClean } from '@/actions/hub-requests'
-import { type HubRequest, rqTitle, rqState, rqNeedsYou, rqDay, rqAge } from '@/lib/hub/requests'
+import { type HubRequest, rqTitle, rqState, rqNeedsYou, rqDay, rqAge, rqPropLine } from '@/lib/hub/requests'
 import { dShort } from '@/lib/hub/home-quotes'
 import { t12 } from '@/lib/hub/timetable'
 
@@ -54,6 +54,7 @@ export function RequestCard({ r, today, from, busy, act, open, setOpen }: {
       <div className="probmeta">{bits.join(' · ')}</div>
       {r.detail && <p className="probtext">{r.detail}</p>}
       {r.reply && <p className="rqline">You replied {r.repliedAt === today ? 'today' : dShort(r.repliedAt).replace(/ \d{4}$/, '')}: “{r.reply}”</p>}
+      {r.prop && <p className="rqline">{rqPropLine(r.prop)}</p>}
       {bk && bk.start && (
         <p className="rqline">Booked {rqDay(bk.date)} at {t12(bk.start)}{sv && sv.cleaners.length ? ` with ${crew(sv.cleaners)}` : ', no cleaner assigned yet'}{r.wantDate && bk.date !== r.wantDate ? ` (they asked for ${rqDay(r.wantDate)})` : ''}. It’s on the calendar.</p>
       )}
@@ -90,6 +91,8 @@ export function RequestCard({ r, today, from, busy, act, open, setOpen }: {
       )}
       {!replying && !booking && (
         <div className="sheetbtns">
+          {isOpen && r.kind === 'quote' && !r.prop && <Link className="btn call" href={`/hub/commercial/documents/proposals/new?type=spec&request=${r.id}`}>Start quote</Link>}
+          {r.prop && <Link className="btn log" href={`/hub/commercial/documents/proposals/${r.prop.id}?from=requests`}>Open quote</Link>}
           {isOpen && r.kind === 'extra' && !bk && (
             <button type="button" className="btn call" disabled={busy} onClick={() => { setErr(''); setBd(r.wantDate && r.wantDate >= today ? r.wantDate : ''); setBt(sv?.start || '18:00'); setOpen({ id: r.id, mode: 'book' }) }}>Book it</button>
           )}

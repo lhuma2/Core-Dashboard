@@ -19,6 +19,8 @@ const PUBLIC_ROUTES = [
   '/pack',
   '/d',
   '/agree',
+  '/proposal',   // commercial proposal: the client's accept page
+  '/agreement',  // commercial agreement: the client's signing page
   '/welcome',
   '/onboard',
   '/compliance',

@@ -7,6 +7,7 @@ import { brisbaneToday } from '@/lib/hub/figures'
 const TABS = [
   { id: 'clients', label: 'Clients', href: '/hub/commercial' },
   { id: 'timetable', label: 'Timetable', href: '/hub/commercial/timetable' },
+  { id: 'documents', label: 'Documents', href: '/hub/commercial/documents' },
   { id: 'requests', label: 'Requests', href: '/hub/commercial/requests' },
   { id: 'surveys', label: 'Surveys', href: '/hub/commercial/surveys' },
   { id: 'prospecting', label: 'Prospecting', href: '/hub/commercial/prospecting' },

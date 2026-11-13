@@ -56,7 +56,7 @@
 .hub .empty{padding:24px;text-align:center;color:#5d6b65;font-size:14px}
 .hub .err{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#fdecea;color:#8a1c12;font-size:14px}
 .hub .phead{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.hub .tabs{display:flex;gap:4px;border-bottom:1px solid #dfe6e2;margin-bottom:20px;overflow-x:auto;scrollbar-width:none}
+.hub .tabs{display:flex;gap:4px;border-bottom:1px solid #dfe6e2;margin-bottom:20px;overflow-x:auto;scrollbar-width:none;position:relative}
 .hub .tab{all:unset;cursor:pointer;padding:12px 16px;font-size:15px;font-weight:600;color:#5d6b65;border-bottom:3px solid transparent;white-space:nowrap;min-height:44px;box-sizing:border-box}
 .hub .tab:hover,.hub .tab.on{color:#00250e}
 .hub .tab.on{border-bottom-color:#149e76}
@@ -353,6 +353,8 @@
 .hub .tab{padding:10px;font-size:13px;min-height:40px}
 .hub .toolbar{gap:8px;margin-bottom:10px}
 .hub .search{border-radius:8px;padding:0 10px;min-height:40px}
+.hub .toolbar.wrap{flex-wrap:wrap}
+.hub .toolbar.wrap .search{flex-basis:100%}
 .hub .list{border-radius:12px}
 .hub .lrow{grid-template-columns:minmax(0,1fr) auto auto;padding:10px 12px;gap:10px}
 .hub .lhead{display:none}
@@ -836,4 +838,110 @@
 .hub .opt{min-height:40px;padding:0 12px;font-size:13px;border-radius:8px}
 .hub .optnote,.hub .confirmq{font-size:12px;flex-basis:100%}
 .hub .capline{font-size:12px}
+}
+
+/* ── Commercial → Documents: proposals, agreements and files ── */
+.hub .docseg{display:inline-flex;margin-bottom:14px}
+.hub .docseg button{padding:0 14px}
+.hub .ptoc-h{margin-top:30px;border-top:1px solid #e6f0eb;padding-top:18px}
+.hub .ptoc{display:grid;grid-template-columns:1fr 1fr;column-gap:40px;grid-auto-flow:column;grid-template-rows:repeat(4,auto)}
+.hub .ptocrow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eef0f3}
+.hub .pgn{color:#1d9c74;font-weight:600}
+.hub .pstats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0}
+.hub .pstats div{display:flex;flex-direction:column;gap:2px}
+.hub .pstats b{font-size:30px;font-weight:500;color:#1d9c74}
+.hub .pstats span{font-size:12px;color:#7b8294}
+.hub .pquote{background:#eef6f1;border-radius:12px;padding:18px 22px;font-size:20px;display:flex;flex-direction:column;gap:4px}
+.hub .pquote span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#1d9c74}
+.hub .pgrid2{display:grid;grid-template-columns:1fr 1fr;gap:22px 36px}
+.hub .pitem h3,.hub .psteps h3,.hub .pnext h3,.hub .pbox h3{font-size:16px;font-weight:500;margin:4px 0 4px;color:#2b3040}
+.hub .pitem p,.hub .psteps p,.hub .pnext p,.hub .pbox p{margin:0;color:#5a6070;font-size:13px}
+.hub .plist{display:flex;flex-direction:column}
+.hub .prow{display:grid;grid-template-columns:36px 220px 1fr;gap:12px;padding:14px 0;border-top:1px solid #eef0f3;align-items:baseline}
+.hub .prow strong{font-weight:500;font-size:15px}
+.hub .prow span:last-child{color:#5a6070;font-size:13px}
+.hub .psteps,.hub .pnext{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center;margin:10px 0 20px}
+.hub .pnext{grid-template-columns:repeat(3,1fr)}
+.hub .pstepn{width:34px;height:34px;border-radius:50%;border:2px solid #34b98b;color:#1d9c74;display:grid;place-items:center;margin:0 auto 6px;font-weight:600}
+.hub .pbox{background:#eef6f1;border-radius:12px;padding:16px 20px;margin-top:16px}
+.hub .pbadges{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-top:22px;font-size:12px;color:#4a5060}
+.hub .pbadges span::before{content:"✓ ";color:#1d9c74;font-weight:700}
+.hub .psite{display:flex;justify-content:space-between;gap:16px;background:#f5f7f6;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px}
+.hub .psite .r{text-align:right}
+.hub .pscopegrid.one{grid-template-columns:1fr}
+.hub .presetgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hub .presetbox{border:1px solid #dfe6e2;border-radius:12px;padding:10px 12px;margin:0;background:#fff}
+.hub .presetbox>span{display:flex;flex-direction:column;gap:2px}
+.hub .psnote{font-size:12px;color:#5d6b65}
+.hub .upload{display:flex;align-items:center;gap:12px;cursor:pointer;border:1.5px dashed #a9b6b0;border-radius:12px;padding:16px;background:#fafcfb;color:#0f7a5a;font-weight:400}
+.hub .upload:focus-within{outline:3px solid #149e76;outline-offset:2px}
+.hub .upload>span{display:flex;flex-direction:column;gap:2px}
+.hub .upload strong{font-size:15px;color:#13201a}
+.hub .upload span span{font-size:13px;color:#5d6b65}
+.hub .sowstat{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:400;color:#3d4b45}
+.hub .rqlinkbox{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#eef4fc;border:1px solid #c9daf1;border-radius:10px;padding:10px 12px;margin:0 0 12px}
+.hub .rqlinkbox p{margin:0;font-size:14px;color:#1d3d66;flex:1 1 240px;line-height:1.4}
+.hub .rqlinkbox.on{background:#e3f3ec;border-color:#b7dfcd}
+.hub .rqlinkbox.on p{color:#0f4d39}
+.hub .pacc [role=radiogroup]{gap:2px}
+.hub .pacc [role=radiogroup] .check{margin:0;align-items:center;min-height:36px}
+.hub .pacc [role=radiogroup] .check input{margin:0}
+.hub .asform{display:flex;flex-direction:column;gap:14px;padding:0 !important;margin-top:8px}
+.hub .ash{font-size:16px;font-weight:500;margin:10px 0 0;color:#2b3040}
+.hub .asreqs{display:flex;flex-direction:column;gap:8px}
+.hub .asreqs .presetbox{align-items:center}
+.hub .aspart{display:flex;flex-direction:column}
+.hub .asprow{display:grid;grid-template-columns:210px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid #eef0f3;font-size:13px}
+.hub .asprow span{color:#7b8294}
+.hub .asprow strong{font-weight:500;color:#2b3040}
+.hub .asterms>div{margin-bottom:14px}
+.hub .asterms h3{display:flex;gap:10px;align-items:baseline;font-size:15px;font-weight:500;margin:0 0 4px;color:#2b3040}
+.hub .asterms p{margin:0 0 0 24px;color:#4a5060;font-size:13px}
+.hub .assign{margin-top:18px}
+.hub .assign .sig{font-size:22px}
+.hub .fhint{display:block;font-size:12px;color:#5d6b65;font-weight:400;margin-top:4px}
+.hub .detlist{margin-top:4px}
+.hub .fileopen{display:flex;flex-direction:column;gap:10px}
+.hub .fileopen iframe,.hub .fileopen img{width:100%;border:1px solid #dfe6e2;border-radius:10px;background:#fff}
+.hub .fileopen iframe{height:70vh}
+@media print{.hub .pdoc .pcover{-webkit-print-color-adjust:exact;print-color-adjust:exact}.hub .assign,.hub .asform .sheetbtns{display:none!important}}
+@container (max-width:700px){
+.hub .docseg{display:flex;width:100%}
+.hub .docseg button{flex:1;min-width:0;font-size:12px}
+.hub .presetgrid{grid-template-columns:1fr 1fr}
+.hub .presetbox{padding:8px 10px;border-radius:10px;font-size:13px}
+.hub .psnote{font-size:11px}
+.hub .pcmid{padding-top:56px}
+.hub .pch{font-size:28px;margin:8px 0 12px}
+.hub .pcsub{font-size:13px;margin-bottom:18px}
+.hub .pcfoot{grid-template-columns:1fr 1fr;font-size:12px}
+.hub .pcfoot .r{text-align:left;grid-column:1 / -1}
+.hub .ph2{font-size:21px;margin-bottom:12px}
+.hub .ptoc{grid-template-columns:1fr;grid-auto-flow:row;grid-template-rows:none}
+.hub .pstats{grid-template-columns:1fr 1fr}
+.hub .pstats b{font-size:24px}
+.hub .pquote{font-size:16px;padding:14px 16px}
+.hub .pgrid2,.hub .pbadges{grid-template-columns:1fr;gap:14px}
+.hub .prow{grid-template-columns:28px 1fr;gap:4px 8px}
+.hub .prow span:last-child{grid-column:2}
+.hub .psteps{grid-template-columns:1fr 1fr}
+.hub .pnext{grid-template-columns:1fr}
+.hub .psite{flex-direction:column;gap:6px}
+.hub .psite .r{text-align:left}
+.hub .pamt{align-items:flex-start;text-align:left}
+.hub .pamt b{font-size:30px}
+.hub .paddon .pamt b{font-size:24px}
+.hub .pfoot{flex-direction:column;gap:4px}
+.hub .upload{padding:12px;gap:10px}
+.hub .upload strong{font-size:13px}
+.hub .upload span span{font-size:11px}
+.hub .sowstat{font-size:12px;gap:10px}
+.hub .rqlinkbox p{font-size:13px}
+.hub .ash{font-size:14px}
+.hub .asprow{grid-template-columns:1fr;gap:2px;font-size:12px}
+.hub .asterms h3{font-size:14px}
+.hub .asterms p{margin-left:0;font-size:12px}
+.hub .assign .sig{font-size:18px}
+.hub .fhint{font-size:11px}
+.hub .fileopen iframe{height:60vh}
 }

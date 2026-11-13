@@ -90,7 +90,7 @@ const nextConfig = {
     // which Vercel's file tracer can't follow statically — without this they get
     // silently dropped from the serverless bundle and emails send with no attachment.
     outputFileTracingIncludes: {
-      '/**': ['./src/lib/documents/assets/**/*'],
+      '/**': ['./src/lib/documents/assets/**/*', './src/app/(hub)/hub/hub.css'],
     },
   },
   images: {

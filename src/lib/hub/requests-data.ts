@@ -17,12 +17,13 @@ export async function loadRequests(clientId?: string): Promise<HubRequest[] | nu
   const rows: any[] = rq.data || []
   if (!rows.length) return []
   const cids = Array.from(new Set(rows.map(r => r.client_id)))
-  const [cQ, sQ, svQ, oQ, jQ] = await Promise.all([
+  const [cQ, sQ, svQ, oQ, jQ, pQ] = await Promise.all([
     db.from('clients').select('id, business_name, is_multi_site').in('id', cids),
     db.from('client_sites').select('id, client_id, site_name').in('client_id', cids),
     db.from('client_services').select('id, client_id, site_id, sort_order, start_time, price').in('client_id', cids).order('sort_order'),
     db.from('one_offs').select('request_id, clean_date, start_time').in('request_id', rows.map(r => r.id)),
     db.from('jobs').select('id, clean_date').in('id', rows.map(r => r.job_id).filter(Boolean).concat(['00000000-0000-0000-0000-000000000000'])),
+    db.from('proposals').select('id, ref, status, sent_at, accepted_at, revision_note, decline_reason, works_date, request_id').in('request_id', rows.map(r => r.id)).is('deleted_at', null).order('created_at', { ascending: false }),
   ])
   if (cQ.error || sQ.error || svQ.error) return null
   const svIds = (svQ.data || []).map((s: any) => s.id)
@@ -40,6 +41,7 @@ export async function loadRequests(clientId?: string): Promise<HubRequest[] | nu
       cleanDate: d10(((jQ.data || []) as any[]).find(j => j.id === r.job_id)?.clean_date), wantDate: d10(r.want_date), created: bris(r.created_at), detail: r.details || '',
       reply: r.reply || '', repliedAt: r.replied_at ? bris(r.replied_at) : null, status: r.status,
       booked: one ? { date: d10(one.clean_date)!, start: String(one.start_time || '').slice(0, 5) } : null,
+      prop: (() => { const p = ((pQ.error ? [] : pQ.data || []) as any[]).find(x => x.request_id === r.id); return p ? { id: p.id, ref: p.ref, status: p.status, sentAt: d10(p.sent_at), acceptedAt: d10(p.accepted_at), revisionNote: p.revision_note || '', reason: p.decline_reason || '', worksDate: d10(p.works_date) } : null })(),
       svc: sv ? { id: sv.id, start: String(sv.start_time || '').slice(0, 5), price: Number(sv.price) || 0, cleaners: ((crewQ.data || []) as any[]).filter(x => x.service_id === sv.id && x.cleaner?.full_name).map(x => shortName(String(x.cleaner.full_name))) } : null,
     }
   })

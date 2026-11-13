@@ -9,7 +9,7 @@ Ops hub for Core Cleaning. Next.js 14 App Router + TypeScript + Tailwind + Supab
 ## Layout (all app code under `src/`)
 - `src/app/(app)` — admin/staff portal pages
 - `src/app/(manager)`, `(cleaner)`, `(client)` — role-specific portals, each with a matching `(*-auth)` login group
-- `src/app/api/` — route handlers. Claude API calls live ONLY in `parse-agreement/` and `upload-invoice/` (Haiku 4.5, structured outputs)
+- `src/app/api/` — route handlers. Claude API calls live ONLY in `parse-agreement/`, `upload-invoice/` and the server action `src/actions/hub-scope.ts` (proposal scope upload) (Haiku 4.5, structured outputs)
 - `src/app/onboard`, `sign`, `survey`, `compliance`, `print` — public/standalone flows
 - `src/components/<domain>/` — components grouped by domain (clients, leads, financial, inspections, portal, ui, ...)
 - `src/lib/supabase/` — Supabase clients; `src/lib/validations/` — zod schemas; `src/lib/emails/`, `documents/`, `inspections/` — domain helpers

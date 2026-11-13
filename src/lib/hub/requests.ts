@@ -8,6 +8,14 @@ export interface HubRequest {
   booked: { date: string; start: string } | null
   /** For Book it: the site's usual start time, price and cleaners */
   svc: { id: string; start: string; price: number; cleaners: string[] } | null
+  /** The specialist quote made from this request (Start quote), if any */
+  prop?: { id: string; ref: string; status: string; sentAt: string | null; acceptedAt: string | null; revisionNote: string; reason: string; worksDate: string | null } | null
+}
+/** "Proposal CC-2026-CCQ043, sent 12 Nov 2026" under the request (mock-up wording). */
+export function rqPropLine(p: NonNullable<HubRequest['prop']>): string {
+  return 'Proposal ' + p.ref + (p.status === 'draft' ? ', draft not sent yet' : p.status === 'sent' ? ', sent ' + dShort(p.sentAt || '')
+    : p.status === 'accepted' ? ', accepted ' + dShort(p.acceptedAt || '') + (p.worksDate ? ', works booked for ' + rqDay(p.worksDate) : '')
+      : p.status === 'revision' ? ', they asked for changes: “' + p.revisionNote + '”' : ', declined' + (p.reason ? ': ' + p.reason.toLowerCase() : ''))
 }
 export const RQ_LABEL: Record<string, string> = { photos: 'Photos of a clean', quote: 'Quote', extra: 'Extra clean', change: 'Change regular cleans', supplies: 'Supplies running low', access: 'New keys or access', problem: 'Something wasn’t right', other: 'Something else' }
 const DOW3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

@@ -145,6 +145,11 @@ export async function loadPortal(me: ClientMe): Promise<PortalData | null> {
     if (!d.sign_code) continue
     docs.push({ title: d.kind === 'specialist_agreement' ? 'Specialist works agreement' : 'Service agreement', sub: [d.ref_number, d.signed_at ? 'signed' + (d.signed_name ? ' by ' + d.signed_name : '') + ' on ' + pShort(d10(d.signed_at)!) + ' ' + String(d.signed_at).slice(0, 4) : ''].filter(Boolean).join(' · '), href: `/sign/${d.sign_code}/pdf` })
   }
+  // agreements signed in the new hub (staff-only table: read with the service key, only this client's)
+  const agQ = await (createAdminClient() as any).from('agreements').select('ref, atype, code, signed_at, signed_by').eq('client_id', me.clientId).eq('status', 'signed').order('signed_at', { ascending: false })
+  for (const a of [...((agQ.error ? [] : agQ.data) || []) as any[]].reverse()) {
+    docs.unshift({ title: a.atype === 'spec' ? 'Specialist works agreement' : 'Service agreement', sub: [a.ref, a.signed_at ? 'signed' + (a.signed_by ? ' by ' + a.signed_by : '') + ' on ' + pShort(d10(a.signed_at)!) + ' ' + String(a.signed_at).slice(0, 4) : ''].filter(Boolean).join(' · '), href: `/agreement/${a.code}` })
+  }
   const coc = ((insQ.error ? [] : insQ.data) || [])[0]
   if (coc?.file_url) docs.push({ title: 'Certificate of Currency', sub: 'Public liability' + (coc.expiry_date ? ' · current to ' + pShort(d10(coc.expiry_date)!) + ' ' + String(coc.expiry_date).slice(0, 4) : ''), href: `/api/file?url=${Buffer.from(coc.file_url).toString('base64url')}` })
   docs.push({ title: 'Compliance pack', sub: 'Safe Work Method Statements, policies and insurances', href: '/client/app/compliance' })

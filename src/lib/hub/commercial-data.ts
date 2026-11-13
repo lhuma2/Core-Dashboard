@@ -61,5 +61,28 @@ export async function loadCommercial(today: string): Promise<{ rows: ClientRow[]
       })
     }
   }
+  // Specialist works: booked straight from a client's request, or signed on a works agreement. Each shows on its day.
+  const [wpQ, waQ] = await Promise.all([
+    supabase.from('proposals').select('id, client_id, biz, body, works_date').eq('status', 'accepted').not('works_date', 'is', null).is('deleted_at', null),
+    supabase.from('agreements').select('id, proposal_id, client_id, client_name, snap, start_on').eq('atype', 'spec').eq('status', 'signed'),
+  ])
+  const WIN: Record<string, string> = { day: '08:00', after: '18:00', weekend: '08:00' }
+  const jobNames = (jobs: any) => (Array.isArray(jobs) ? jobs : []).map((j: any) => (j?.kind === 'Custom' ? j?.custom : j?.kind)).filter(Boolean).join(', ')
+  const withAgr = new Set(((waQ.error ? [] : waQ.data) || []).map((a: any) => a.proposal_id).filter(Boolean))
+  const works: { id: string; clientId: string | null; name: string; iso: string | null; start: string; label: string }[] = [
+    ...((wpQ.error ? [] : wpQ.data) || []).filter((p: any) => !withAgr.has(p.id)).map((p: any) => ({ id: p.id, clientId: p.client_id, name: p.biz, iso: day(p.works_date), start: WIN[p.body?.window] || '08:00', label: 'specialist: ' + (jobNames(p.body?.jobs) || 'works') })),
+    ...((waQ.error ? [] : waQ.data) || []).map((a: any) => ({ id: a.id, clientId: a.client_id, name: a.client_name, iso: day(a.start_on), start: WIN[a.snap?.prop?.window] || '08:00', label: 'specialist: ' + (jobNames(a.snap?.prop?.jobs) || 'works') })),
+  ]
+  const byId = new Map<string, any>(clientsQ.data.map((c: any) => [c.id, c]))
+  for (const w of works) {
+    if (!w.iso) continue
+    const c = w.clientId ? byId.get(w.clientId) : null
+    services.push({
+      key: 'spec-' + w.id, clientId: c?.id || '', client: c?.business_name || w.name || 'Specialist works', colour: c ? colour.get(c.id) ?? 0 : 5,
+      site: '', days: [], every: 'weekly', anchor: null, first: null, start: '', finish: '', cleaners: 'Unassigned',
+      status: c?.status ?? null, paused_from: c ? day(c.paused_from) : null, resume_on: c ? day(c.resume_on) : null, ended_on: c ? day(c.ended_on) : null,
+      extras: [{ iso: w.iso, start: w.start, finish: '', label: w.label }],
+    })
+  }
   return { rows, services }
 }
