@@ -70,6 +70,10 @@ if (isPreview) {
   }
 }
 
+// public/documents holds real PDFs (compliance pack, capability statement...). Old /documents/<id> pages redirect;
+// anything with a dot or under /documents/compliance is a file and is served as before.
+const SKIP_FILES = '/:id((?!compliance)[^./]+)/:rest*'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: previewEnv,
@@ -84,7 +88,7 @@ const nextConfig = {
         ['/prospecting', '/hub/commercial/prospecting'], ['/surveys', '/hub/commercial/surveys'], ['/team', '/hub/team'],
         ['/safety', '/hub/compliance'], ['/financial', '/hub'], ['/analytics', '/hub'], ['/leads', '/hub'], ['/tenders', '/hub'],
         ['/documents', '/hub'], ['/sops', '/hub'], ['/inspections', '/hub'], ['/settings', '/hub']]
-        .flatMap(([source, destination]) => [{ source, destination, permanent: false }, { source: source + '/:path*', destination, permanent: false }]),
+        .flatMap(([source, destination]) => [{ source, destination, permanent: false }, { source: source + (source === '/documents' ? SKIP_FILES : '/:path*'), destination, permanent: false }]),
       ...['dashboard', 'services', 'compliance', 'contact'].map(p => ({ source: '/client/' + p, destination: '/client/app', permanent: false })),
     ]
   },
