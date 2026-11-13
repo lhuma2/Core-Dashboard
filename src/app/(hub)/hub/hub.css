@@ -797,3 +797,43 @@
 .hub .svb{font-size:15px}
 .hub .svdoc .svhi{font-size:17px}
 }
+
+/* ── Commercial → Prospecting (mock-up leads list) ── */
+.hub .prosbar{justify-content:space-between}
+.hub .prosbar .chips{margin:0;flex:1;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.hub .capline{margin:0 0 10px;font-size:13px;color:#5d6b65}
+.hub .capline a{color:#0f6e50;font-weight:600}
+.hub .leads{display:flex;flex-direction:column;gap:10px}
+.hub .lead{background:#fff;border:1px solid #e1e7e4;border-radius:14px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.hub .lmain{flex:999 1 420px;min-width:0}
+.hub .lco{font-weight:600;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;overflow-wrap:anywhere}
+.hub .lname{font-size:14px;color:#3d4b45;margin-top:2px}
+.hub .linfo{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:#5d6b65;margin-top:6px;overflow-wrap:anywhere}
+.hub .lact{display:flex;align-items:center;gap:8px;flex:1 0 auto;justify-content:flex-end}
+.hub .calls{font-size:13px;color:#5d6b65;margin-right:6px;white-space:nowrap}
+.hub .calls strong{color:#13201a;font-size:15px}
+.hub .lact span.btn.call[aria-disabled]{background:#c7d4ce;cursor:default}
+.hub .logmenu{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid #edf1ef;padding-top:12px}
+.hub .opt{all:unset;cursor:pointer;box-sizing:border-box;min-height:44px;padding:0 16px;border-radius:10px;font-size:14px;font-weight:600;background:#f3f6f4;color:#13201a;display:inline-flex;align-items:center}
+.hub .opt:hover{background:#e6eeea}
+.hub .opt:focus-visible{outline:3px solid #149e76;outline-offset:2px}
+.hub .opt[disabled]{opacity:.6;cursor:default}
+.hub .opt.danger{color:#b42318}
+.hub .optnote,.hub .confirmq{margin:0;font-size:13px;color:#5d6b65;flex:1 1 220px}
+.hub .confirmq{color:#13201a;font-weight:600;flex:0 1 auto}
+@container (max-width:700px){
+.hub .prosbar{flex-wrap:wrap}
+.hub .prosbar .chips{flex-basis:100%;order:2}
+.hub .lead{padding:12px;gap:10px;border-radius:12px}
+.hub .lmain{flex-basis:100%}
+.hub .lco{font-size:14px}
+.hub .lname{font-size:12px}
+.hub .linfo{font-size:12px;flex-direction:column;gap:1px;margin-top:4px}
+.hub .lact{justify-content:flex-start;width:100%}
+.hub .calls{font-size:12px;margin-right:auto}
+.hub .calls strong{font-size:13px}
+.hub .logmenu{padding-top:10px;gap:6px}
+.hub .opt{min-height:40px;padding:0 12px;font-size:13px;border-radius:8px}
+.hub .optnote,.hub .confirmq{font-size:12px;flex-basis:100%}
+.hub .capline{font-size:12px}
+}

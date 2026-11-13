@@ -11,6 +11,7 @@ import { requireStaff } from '@/lib/require-staff'
 import { sendEmail } from '@/lib/email'
 import { COMPLIANCE_DOCS, docById, docFileName } from '@/lib/hub/compliance-docs'
 import { compliancePdf } from '@/lib/hub/compliance-pdf'
+import { emailSignature } from '@/lib/hub/email-signature'
 
 type R = { ok: true; toast: string } | { ok: false; error: string }
 const NO_DB = 'Couldn’t reach the hub. Check your connection and try again.'
@@ -90,14 +91,7 @@ export async function emailDocs(ids: string[], to: string): Promise<R> {
   <ul>${docs.map(d => `<li>${esc(d.code)} ${esc(d.title)}</li>`).join('')}</ul>
   <p>You can also read them online: <a href="${link.url}">${esc(link.url.replace(/^https?:\/\//, ''))}</a></p>
   <p>Kind regards,</p>
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:8px"><tr>
-    <td style="padding:0 18px 0 0;border-right:2px solid #20BD82;vertical-align:middle"><img src="${site}/logo-transparent.png" alt="Core Cleaning" width="110" style="display:block;width:110px;height:auto"></td>
-    <td style="padding:0 0 0 18px;vertical-align:middle">
-      <div style="font-size:17px;font-weight:700;color:#2D3142">Laith Humadi</div>
-      <div style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#20BD82;margin-top:2px">Core Cleaning</div>
-      <div style="font-size:12.5px;color:#5A5F6A;margin-top:8px">P 0407 026 360 · E admin@corecleaning.services · W www.corecleaning.services</div>
-      <div style="font-size:11px;color:#9095A0;margin-top:6px">Residential · Commercial · Bond Cleaning</div>
-    </td></tr></table>
+  ${emailSignature(site)}
 </div>`
   const r = await sendEmail(addr, docs.length === 1 ? `${docs[0].title} from Core Cleaning` : 'Compliance documents from Core Cleaning', html, attachments)
   if (!r.success) return fail('The email didn’t send. Check your connection and try again.')
