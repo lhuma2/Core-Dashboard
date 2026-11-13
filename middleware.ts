@@ -28,7 +28,7 @@ const PUBLIC_ROUTES = [
 
 /** Where each role lands after login */
 const ROLE_HOME: Record<string, string> = {
-  admin:   '/dashboard',
+  admin:   '/hub',
   manager: '/manager/dashboard',
   cleaner: '/cleaner/app',
   client:  '/client/app',
@@ -67,7 +67,7 @@ export async function middleware(request: NextRequest) {
 
   if (user) {
     const role: string = (user.user_metadata?.role as string) ?? 'admin'
-    const home = ROLE_HOME[role] ?? '/dashboard'
+    const home = ROLE_HOME[role] ?? '/hub'
 
     // On any login page → redirect to role-appropriate home
     const isAnyLoginPage = PUBLIC_ROUTES.slice(0, 4).some((r) => pathname === r)

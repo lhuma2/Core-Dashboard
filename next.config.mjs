@@ -77,6 +77,14 @@ const nextConfig = {
   async redirects() {
     return [
       { source: '/cleaner/dashboard', destination: '/cleaner/app', permanent: false },
+      // The old admin hub is switched off: every old page opens the new hub instead (Laith chose this, 13 Nov).
+      // Pages the new hub has go to their new place; the rest (financials, analytics, leads, tenders, old documents,
+      // SOPs, inspections, settings) go to the hub dashboard until they're rebuilt.
+      ...[['/dashboard', '/hub'], ['/clients', '/hub/commercial'], ['/calls', '/hub/commercial/prospecting'],
+        ['/prospecting', '/hub/commercial/prospecting'], ['/surveys', '/hub/commercial/surveys'], ['/team', '/hub/team'],
+        ['/safety', '/hub/compliance'], ['/financial', '/hub'], ['/analytics', '/hub'], ['/leads', '/hub'], ['/tenders', '/hub'],
+        ['/documents', '/hub'], ['/sops', '/hub'], ['/inspections', '/hub'], ['/settings', '/hub']]
+        .flatMap(([source, destination]) => [{ source, destination, permanent: false }, { source: source + '/:path*', destination, permanent: false }]),
       ...['dashboard', 'services', 'compliance', 'contact'].map(p => ({ source: '/client/' + p, destination: '/client/app', permanent: false })),
     ]
   },

@@ -38,7 +38,7 @@ export default function LoginPage() {
     const role = (user?.user_metadata?.role ?? 'admin') as 'admin' | 'manager' | 'cleaner' | 'client'
 
     const roleHome: Record<string, string> = {
-      admin:   '/dashboard',
+      admin:   '/hub',
       manager: '/manager/dashboard',
       cleaner: '/cleaner/app',
       client:  '/client/app',
@@ -61,7 +61,7 @@ export default function LoginPage() {
     }
 
     // Hard navigation ensures session cookies are sent fresh on the next request
-    window.location.href = roleHome[role] ?? '/dashboard'
+    window.location.href = roleHome[role] ?? '/hub'
   }
 
   return (
