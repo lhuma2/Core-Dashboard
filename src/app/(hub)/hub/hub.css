@@ -945,3 +945,15 @@
 .hub .fhint{font-size:11px}
 .hub .fileopen iframe{height:60vh}
 }
+/* loading.tsx: instant placeholder while a screen loads */
+.hub .hubload{position:relative;display:flex;flex-direction:column;gap:20px}
+.hub .hubload .hl-bar{position:fixed;top:0;left:0;height:3px;width:40%;background:#149e76;border-radius:0 3px 3px 0;animation:hlbar 1.1s ease-in-out infinite;z-index:50}
+.hub .hubload .hl-title{height:30px;width:min(260px,60%);border-radius:8px}
+.hub .hubload .hl-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.hub .hubload .hl-row div{height:96px;border-radius:16px}
+.hub .hubload .hl-block{height:220px;border-radius:16px}
+.hub .hubload .hl-block.short{height:120px}
+.hub .hubload .hl-title,.hub .hubload .hl-row div,.hub .hubload .hl-block{background:#e6ebe8;animation:hlpulse 1.2s ease-in-out infinite}
+@keyframes hlbar{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@keyframes hlpulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.hub .hubload *{animation:none!important}}
