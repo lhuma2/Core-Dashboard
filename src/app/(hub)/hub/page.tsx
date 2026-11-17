@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { loadDashboard } from '@/lib/hub/dashboard-data'
-import { greeting, money, noPriceNote, type Totals } from '@/lib/hub/figures'
+import { greeting, money, type Totals } from '@/lib/hub/figures'
 import { Chev, Building, House, Key, People, Shield, Warning, Star, Chat } from '@/components/hub/icons'
 
 export const dynamic = 'force-dynamic'
@@ -67,17 +67,12 @@ export default async function HubDashboard() {
       </>
     )
   }
-  const note = noPriceNote(d.commercial.noPrice, d.residential.noPrice)
   const sv = d.surveys
   const svCls = 'card comp prob svdc' + (sv.toFollow ? ' has' : sv.due ? ' due' : '')
 
   return (
     <>
-      <h1 className="greet">{greeting(d.hour)}, Laith</h1>
-      <p className="sub">
-        <span>Worked out from your clients, ex GST. {note}</span>
-        <span className="pill">Residential clients moved across from the old hub. End of Lease starts fresh.</span>
-      </p>
+      <h1 className="greet dashgreet">{greeting(d.hour)}, Laith</h1>
       <div className="cards">
         <DivisionCard name="Commercial" lower="commercial" href={LINKS.commercial} t={d.commercial} tint="#e3f3ec" ink="#0f6e50" Icon={Building} />
         <DivisionCard name="Residential" lower="residential" href={LINKS.residential} t={d.residential} tint="#e4eefb" ink="#1f5aa6" Icon={House} />
