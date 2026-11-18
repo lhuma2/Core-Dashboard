@@ -671,6 +671,7 @@
 .hub .tmain .tname{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .hub .tlinks{display:flex;gap:14px;margin-top:4px;flex-wrap:wrap}
 .hub .tlinks a.linkbtn{text-decoration:none}
+.hub .tconfirm{flex:1 1 100%}
 .hub .tact{display:flex;align-items:center;gap:8px;flex:1 0 auto;justify-content:flex-end}
 .hub .tsel select{font:inherit;font-size:16px;min-height:44px;border:1px solid #c7d4ce;border-radius:10px;padding:0 10px;background:#fff;color:#13201a}
 .hub .tsel select:focus-visible{outline:3px solid #149e76;outline-offset:2px}
@@ -707,6 +708,9 @@
 .hub .cgh{font-size:11px;margin-bottom:6px}
 .hub .fgrid{grid-template-columns:minmax(0,1fr);gap:8px}
 .hub .trow{padding:10px 12px;gap:8px}
+.hub .tconfirm{padding:8px 10px;gap:6px}
+.hub .tconfirm span{flex:1 1 100%}
+.hub .tconfirm .btn{min-height:36px;padding:0 12px;font-size:13px}
 .hub .tact{justify-content:flex-start;width:100%}
 .hub .tsel{flex:1}
 .hub .tsel select{width:100%;min-height:40px;border-radius:8px;font-size:14px}

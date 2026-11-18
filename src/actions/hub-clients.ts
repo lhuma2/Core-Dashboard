@@ -36,7 +36,7 @@ export async function createCommercialClient(input: NcForm, fromProp: string | n
   const supabase = createClient() as any
   const today = brisbaneToday()
   const [teamQ, clientsQ] = await Promise.all([
-    supabase.from('profiles').select('id, pack_signed_at').eq('role', 'cleaner'),
+    supabase.from('profiles').select('id, pack_signed_at').eq('role', 'cleaner').is('removed_at', null),
     supabase.from('clients').select('business_name, status, resume_on'),
   ])
   if (teamQ.error || clientsQ.error) return { ok: false, error: 'Couldn’t reach the hub. Check your connection and try again.' }

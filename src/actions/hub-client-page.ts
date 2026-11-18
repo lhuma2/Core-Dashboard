@@ -132,11 +132,11 @@ export async function toggleServiceCleaner(sid: string, cleanerId: string): Prom
   const o = await getService(g.db, sid); if ('error' in o) return fail(o.error!)
   if (!uuid(cleanerId)) return fail('That cleaner can’t be picked. Refresh and try again.')
   const [{ data: p, error: pe }, { data: on, error: oe }] = await Promise.all([
-    g.db.from('profiles').select('id, full_name, pack_signed_at').eq('id', cleanerId).eq('role', 'cleaner').maybeSingle(),
+    g.db.from('profiles').select('id, full_name, pack_signed_at, removed_at').eq('id', cleanerId).eq('role', 'cleaner').maybeSingle(),
     g.db.from('client_service_cleaners').select('cleaner_id').eq('service_id', sid),
   ])
   if (pe || oe) return fail(NO_DB)
-  if (!p) return fail('That cleaner can’t be picked. Refresh and try again.')
+  if (!p || p.removed_at) return fail('That cleaner can’t be picked. Refresh and try again.')
   const now: string[] = (on || []).map((x: any) => x.cleaner_id)
   const sel = now.includes(cleanerId)
   if (!sel && !p.pack_signed_at) return fail(`${String(p.full_name || 'They').split(/\s+/)[0]} can’t be assigned until they sign the compliance pack.`)

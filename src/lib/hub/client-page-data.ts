@@ -23,7 +23,7 @@ export async function loadClientPage(id: string): Promise<{ c: CpClient; cleaner
     db.from('clients').select('id, business_name, contact_name, contact_phone, contact_email, address, suburb, state, postcode, status, paused_from, resume_on, ended_on, status_reason, is_multi_site, scope, scope_of_work, access_details').eq('id', id).maybeSingle(),
     db.from('client_sites').select('id, site_name, address, suburb, postcode, scope, scope_of_work, access_details, sort_order').eq('client_id', id).order('sort_order'),
     db.from('client_services').select('id, site_id, sort_order, days, every, anchor, first_clean, start_time, finish_time, price, cost, access').eq('client_id', id).order('sort_order'),
-    db.from('profiles').select('id, full_name, region, is_team_leader, pack_signed_at').eq('role', 'cleaner').order('full_name'),
+    db.from('profiles').select('id, full_name, region, is_team_leader, pack_signed_at').eq('role', 'cleaner').is('removed_at', null).order('full_name'),
     issues(),
     db.from('client_history').select('date, text, created_at').eq('client_id', id).order('date', { ascending: false }).order('created_at', { ascending: false }),
   ])

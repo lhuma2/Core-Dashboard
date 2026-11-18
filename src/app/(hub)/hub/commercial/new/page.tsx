@@ -19,7 +19,7 @@ export default async function NewClientPage({ searchParams }: { searchParams: { 
     initial = ncFromProp(ready, a?.details || null, today)
   }
   const [teamQ, clientsQ] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, region, is_team_leader, pack_signed_at').eq('role', 'cleaner'),
+    supabase.from('profiles').select('id, full_name, region, is_team_leader, pack_signed_at').eq('role', 'cleaner').is('removed_at', null),
     supabase.from('clients').select('business_name, status, resume_on'),
   ])
   const failed = teamQ.error || clientsQ.error

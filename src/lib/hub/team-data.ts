@@ -16,13 +16,14 @@ export function packDetails(k: any): SignedDetails | null {
   }
 }
 
-/** Everyone on the team, sorted by name: cleaner logins, plus anyone sent the pack who hasn't signed. Null if the hub
- *  can't be reached. Before test-db update 069 there are no packs, so it's just the cleaner logins. */
+/** Everyone on the team, sorted by name: cleaner logins, plus anyone sent the pack who hasn't signed. Removed cleaners
+ *  aren't on it. Null if the hub can't be reached. Before test-db update 069 there are no packs, so it's just the
+ *  cleaner logins. */
 export async function loadTeam(): Promise<TeamMember[] | null> {
   const db = createClient() as any
   const [pQ, kQ] = await Promise.all([
-    db.from('profiles').select('id, full_name, email, phone, region, is_team_leader, pack_signed_at').eq('role', 'cleaner'),
-    db.from('cleaner_packs').select(PACK_COLS),
+    db.from('profiles').select('id, full_name, email, phone, region, is_team_leader, pack_signed_at').eq('role', 'cleaner').is('removed_at', null),
+    db.from('cleaner_packs').select(PACK_COLS).is('removed_at', null),
   ])
   if (pQ.error) return null
   const packs: any[] = kQ.error ? [] : kQ.data || []

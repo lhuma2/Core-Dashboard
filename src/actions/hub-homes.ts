@@ -20,18 +20,19 @@ function refresh(_id?: string) {
   // Every hub page is rendered fresh; this clears any cached copy of the division screens and the dashboard.
   revalidatePath('/hub', 'layout')
 }
-async function open(id: string): Promise<{ db: any; h: Home; cleaners: Map<string, string> } | { error: string }> {
+async function open(id: string): Promise<{ db: any; h: Home; cleaners: Map<string, string>; removed: Set<string> } | { error: string }> {
   const denied = await requireStaff()
   if (denied) return { error: denied }
   if (!z.string().uuid().safeParse(id).success) return { error: GONE }
   const db = createClient() as any
   const [{ data, error }, cl] = await Promise.all([
     db.from('homes').select(HOME_COLS).eq('id', id).maybeSingle(),
-    db.from('profiles').select('id, full_name').eq('role', 'cleaner'),
+    db.from('profiles').select('id, full_name, removed_at').eq('role', 'cleaner'),
   ])
   if (error) return { error: NO_DB }
   if (!data) return { error: GONE }
-  return { db, h: homeOf(data), cleaners: new Map(((cl.data as any[]) || []).map(p => [p.id, p.full_name || 'Cleaner'])) }
+  const all = (cl.data as any[]) || []
+  return { db, h: homeOf(data), cleaners: new Map(all.map(p => [p.id, p.full_name || 'Cleaner'])), removed: new Set(all.filter(p => p.removed_at).map(p => p.id)) }
 }
 const shortName = (n: string) => (n || '').trim().split(/\s+/)[0] || n
 const nameOf = (m: Map<string, string>, id: string | null) => (id && m.get(id) ? shortName(m.get(id)!) : 'Unassigned')
@@ -46,9 +47,9 @@ async function write(db: any, h: Home, patch: Record<string, any>, history: stri
 
 export async function setHomeCleaner(id: string, cleanerId: string): Promise<Done> {
   const o = await open(id); if ('error' in o) return { ok: false, error: o.error }
-  const { db, h, cleaners } = o
+  const { db, h, cleaners, removed } = o
   const v = cleanerId || null
-  if (v && !cleaners.has(v)) return { ok: false, error: 'That cleaner can’t be picked. Refresh and try again.' }
+  if (v && (!cleaners.has(v) || (removed.has(v) && v !== h.cleaner_id))) return { ok: false, error: 'That cleaner can’t be picked. Refresh and try again.' }
   if ((h.cleaner_id || null) === v) return { ok: true, id, toast: '' }
   if (['ended', 'done', 'cancelled'].includes(rState(h, brisbaneToday()))) return { ok: false, error: `${h.name} has finished, so the cleaner can’t change.` }
   const e = await write(db, h, { cleaner_id: v }, `Cleaner changed from ${nameOf(cleaners, h.cleaner_id)} to ${nameOf(cleaners, v)}`)
@@ -228,8 +229,8 @@ export async function saveHome(x: HomeForm): Promise<Done> {
   const num = (v: string, max: number) => Math.min(Math.max(parseInt(v, 10) || 0, 0), max)
   const cleaner = x.cleaner || null
   if (cleaner) {
-    const { data: c } = await db.from('profiles').select('id').eq('id', cleaner).eq('role', 'cleaner').maybeSingle()
-    if (!c) return fail('That cleaner can’t be picked. Choose again.')
+    const { data: c } = await db.from('profiles').select('id, removed_at').eq('id', cleaner).eq('role', 'cleaner').maybeSingle()
+    if (!c || (c.removed_at && cleaner !== (old?.cleaner_id || null))) return fail('That cleaner can’t be picked. Choose again.')
   }
   // the same client twice (not finished)
   const { data: same, error: se } = await db.from('homes').select(HOME_COLS).eq('division', div)

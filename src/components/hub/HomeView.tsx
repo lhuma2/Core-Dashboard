@@ -23,7 +23,7 @@ type R = { ok: true; id: string; toast: string } | { ok: false; error: string; n
 
 // The residential client's page: status, money, details, cleans, agreement, status actions and history. Mock-up words.
 
-export function HomeView({ h, history, docs, cleaners, today, from, photos }: { h: Home; history: History[]; docs: HomeDoc[]; cleaners: { id: string; name: string }[]; today: string; from?: string; photos?: React.ReactNode }) {
+export function HomeView({ h, history, docs, cleaners, today, from, photos }: { h: Home; history: History[]; docs: HomeDoc[]; cleaners: { id: string; name: string; removed?: boolean }[]; today: string; from?: string; photos?: React.ReactNode }) {
   const { div, base, name: divName } = useDiv()
   const [backHref, backLabel] = from === 'timetable' ? [base + '/timetable', 'Timetable'] : from === 'team' ? [base + '/team', 'Team'] : [base + '/clients', divName]
   const router = useRouter()
@@ -130,7 +130,7 @@ export function HomeView({ h, history, docs, cleaners, today, from, photos }: { 
           <label className="fld rcclean"><span>Cleaner</span>
             <select value={h.cleaner_id || ''} disabled={busy} onChange={e => { const v = e.target.value; run(() => setHomeCleaner(h.id, v)) }}>
               <option value="">Unassigned</option>
-              {cleaners.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {cleaners.filter(c => !c.removed || c.id === h.cleaner_id).map(c => <option key={c.id} value={c.id}>{c.name}{c.removed ? ' (removed)' : ''}</option>)}
             </select>
           </label>
         </>}

@@ -3,13 +3,16 @@ import type { Div } from './div'
 import { homeOf, HOME_COLS, type Home, type History } from './homes'
 import { docOf, DOC_COLS, type HomeDoc } from './home-agreements'
 
-export interface Cleaner { id: string; name: string; phone?: string | null }
+export interface Cleaner { id: string; name: string; phone?: string | null; removed?: boolean }
 
+/** Every cleaner, including removed ones so past cleans keep their name. Pickers leave removed ones out
+ *  (pickable), and the residential Team tab uses onTeam. */
 export async function loadCleaners(): Promise<Cleaner[]> {
   const db = createClient() as any
-  const { data } = await db.from('profiles').select('id, full_name, phone').eq('role', 'cleaner').order('full_name')
-  return ((data as any[]) || []).map(p => ({ id: p.id, name: p.full_name || 'Cleaner', phone: p.phone || null }))
+  const { data } = await db.from('profiles').select('id, full_name, phone, removed_at').eq('role', 'cleaner').order('full_name')
+  return ((data as any[]) || []).map(p => ({ id: p.id, name: p.full_name || 'Cleaner', phone: p.phone || null, removed: !!p.removed_at }))
 }
+export const onTeam = (cs: Cleaner[]) => cs.filter(c => !c.removed)
 
 /** All homes for the division. Null if the hub can't be reached. */
 export async function loadHomes(div: Div): Promise<Home[] | null> {

@@ -1,20 +1,24 @@
 'use server'
 
-// Team: add a cleaner (emails the compliance pack), resend it, and set a cleaner's region. Same checks and words as
-// the mock-up.
+// Team: add a cleaner (emails the compliance pack), resend it, set a cleaner's region, and remove a cleaner. Same
+// checks and words as the mock-up.
 
 import { randomBytes } from 'crypto'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireStaff } from '@/lib/require-staff'
 import { sendEmail } from '@/lib/email'
 import { REGION_NAME, isRegion, fixedName } from '@/lib/hub/team'
+import { joinAnd } from '@/lib/hub/client-page'
 
 type R = { ok: true; toast: string } | { ok: false; error: string }
 const NO_DB = 'Couldn’t reach the hub. Check your connection and try again.'
 const fail = (error: string): R => ({ ok: false, error })
+const GONE = 'That cleaner was removed. Refresh the page.'
+const NEEDS_072 = 'The hub needs update 072 before cleaners can be removed. Ask Claude for the file.'
 const uuid = (v: unknown) => z.string().uuid().safeParse(v).success
 const esc = (v: string) => v.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 
@@ -62,8 +66,8 @@ export async function addCleaner(f: AddForm): Promise<R & { id?: string }> {
   const db = createClient() as any
   const like = email.replace(/[\\%_]/g, c => '\\' + c)
   const [pQ, kQ] = await Promise.all([
-    db.from('profiles').select('id').ilike('email', like).limit(1),
-    db.from('cleaner_packs').select('id').ilike('email', like).limit(1),
+    db.from('profiles').select('id').ilike('email', like).is('removed_at', null).limit(1),
+    db.from('cleaner_packs').select('id').ilike('email', like).is('removed_at', null).limit(1),
   ])
   if (pQ.error) return fail(NO_DB)
   if (kQ.error) return fail('The hub needs test-db update 069 before cleaners can be added. Ask Claude for the file.')
@@ -101,7 +105,7 @@ export async function setRegion(kind: 'p' | 'k', id: string, region: string): Pr
   if (region && !isRegion(region)) return fail('Choose a region.')
   const db = createClient() as any
   const q = kind === 'p'
-    ? db.from('profiles').update({ region: region || null }).eq('id', id).eq('role', 'cleaner').select('full_name')
+    ? db.from('profiles').update({ region: region || null }).eq('id', id).eq('role', 'cleaner').is('removed_at', null).select('full_name')
     : db.from('cleaner_packs').update({ region: region || null }).eq('id', id).select('first_name')
   const { data, error } = await q
   if (error) return fail(NO_DB)
@@ -109,4 +113,66 @@ export async function setRegion(kind: 'p' | 'k', id: string, region: string): Pr
   const who = String(data[0].full_name || data[0].first_name || 'They').trim().split(/\s+/)[0]
   refresh()
   return { ok: true, toast: region ? `${who} is now in ${REGION_NAME[region]}.` : `${who} is back under To sort.` }
+}
+
+// ── Remove a cleaner ──
+// A cleaner with a login: their login is deleted (they can't sign in), they come off every regular commercial site
+// and every home still running, and they leave the team. Their profile stays, marked removed, so past cleans, photos,
+// problems and their signed pack keep their name. Someone sent the pack who hasn't signed: the pack is deleted, so
+// the link they were sent stops working.
+
+export type RemoveCheck = { ok: true; name: string; sites: string[]; homes: string[]; pack: boolean } | { ok: false; error: string }
+const firstOf = (n: string) => String(n || '').trim().split(/\s+/)[0] || 'They'
+const onWhat = (sites: string[], homes: string[]) => joinAnd([...sites, ...homes])
+
+/** What removing them would take them off, for the confirm line. Changes nothing. */
+export async function checkRemove(kind: 'p' | 'k', id: string): Promise<RemoveCheck> {
+  const denied = await requireStaff(); if (denied) return { ok: false, error: denied }
+  if (!uuid(id) || (kind !== 'p' && kind !== 'k')) return { ok: false, error: GONE }
+  const db = createClient() as any
+  if (kind === 'k') {
+    const { data, error } = await db.from('cleaner_packs').select('first_name, last_name').eq('id', id).is('profile_id', null).maybeSingle()
+    if (error) return { ok: false, error: NO_DB }
+    if (!data) return { ok: false, error: GONE }
+    return { ok: true, name: `${data.first_name} ${data.last_name}`.trim(), sites: [], homes: [], pack: true }
+  }
+  const { data, error } = await db.rpc('hub_remove_cleaner', { p: id, dry: true })
+  if (error) return { ok: false, error: /cleaner_gone/.test(error.message) ? GONE : /hub_remove_cleaner|function/i.test(error.message) ? NEEDS_072 : NO_DB }
+  return { ok: true, name: String(data?.name || 'Cleaner').trim(), sites: data?.sites || [], homes: data?.homes || [], pack: false }
+}
+
+export async function removeCleaner(kind: 'p' | 'k', id: string): Promise<R> {
+  const denied = await requireStaff(); if (denied) return fail(denied)
+  if (!uuid(id) || (kind !== 'p' && kind !== 'k')) return fail(GONE)
+  const db = createClient() as any
+
+  if (kind === 'k') {
+    const { data, error } = await db.from('cleaner_packs').delete().eq('id', id).is('profile_id', null).is('signed_at', null).select('first_name, last_name')
+    if (error) return fail(NO_DB)
+    if (!(data || []).length) return fail(GONE)
+    refresh()
+    return { ok: true, toast: `Removed ${`${data[0].first_name} ${data[0].last_name}`.trim()}. The pack link they were sent no longer works.` }
+  }
+
+  // Checks first that update 072 is in (before it, deleting a login also deleted the profile and their records).
+  const { data: pr, error: pe } = await db.from('profiles').select('id, user_id, full_name, role, removed_at').eq('id', id).maybeSingle()
+  if (pe) return fail(/removed_at/.test(pe.message) ? NEEDS_072 : NO_DB)
+  if (!pr || pr.role !== 'cleaner' || pr.removed_at) return fail(GONE)
+  const dry = await db.rpc('hub_remove_cleaner', { p: id, dry: true })
+  if (dry.error) return fail(/cleaner_gone/.test(dry.error.message) ? GONE : /hub_remove_cleaner|function/i.test(dry.error.message) ? NEEDS_072 : NO_DB)
+  const first = firstOf(pr.full_name)
+
+  // 1. their login, so they can't sign in (their notifications go with it)
+  if (pr.user_id) {
+    const admin = createAdminClient() as any
+    await admin.from('push_subscriptions').delete().eq('user_id', pr.user_id)
+    const { error } = await admin.auth.admin.deleteUser(pr.user_id)
+    if (error && !/not.?found/i.test(error.message || '')) return fail(`Couldn’t delete ${first}’s login, so nothing changed. Try again.`)
+  }
+  // 2. off the team, their sites and homes, all in one go
+  const { data, error } = await db.rpc('hub_remove_cleaner', { p: id })
+  if (error) return fail(/cleaner_gone/.test(error.message) ? GONE : `${first}’s login is deleted, but they’re still on the team. Press Remove again.`)
+  refresh()
+  const on = onWhat(data?.sites || [], data?.homes || [])
+  return { ok: true, toast: `Removed ${String(data?.name || first).trim()}. Their login is deleted.` + (on ? ` Pick a new cleaner for ${on}.` : '') }
 }

@@ -15,7 +15,7 @@ const money = (v: string) => { const t = String(v || '').replace(/[$,\s]/g, '');
 
 /** started: a recurring client whose first clean has passed (dates then set the pattern, or aren't asked for weekly). */
 export function HomeFormView({ initial, started, wasKind, today, cleaners, signed, backHref, backLabel }: {
-  initial: HomeForm; started: boolean; wasKind: '' | 'recurring' | 'oneoff'; today: string; cleaners: { id: string; name: string }[]; signed: boolean; backHref: string; backLabel: string
+  initial: HomeForm; started: boolean; wasKind: '' | 'recurring' | 'oneoff'; today: string; cleaners: { id: string; name: string; removed?: boolean }[]; signed: boolean; backHref: string; backLabel: string
 }) {
   const { base, div } = useDiv()
   const router = useRouter()
@@ -99,7 +99,7 @@ export function HomeFormView({ initial, started, wasKind, today, cleaners, signe
           <label className="fld span2"><span>Cleaner</span>
             <select value={f.cleaner} onChange={e => up({ cleaner: e.target.value })}>
               <option value="">Unassigned for now</option>
-              {cleaners.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {cleaners.filter(c => !c.removed || c.id === f.cleaner).map(c => <option key={c.id} value={c.id}>{c.name}{c.removed ? ' (removed)' : ''}</option>)}
             </select>
           </label>
         </div>

@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus } from './icons'
-import { addCleaner, resendPack, setRegion } from '@/actions/hub-team'
+import { addCleaner, resendPack, setRegion, checkRemove, removeCleaner } from '@/actions/hub-team'
+import { joinAnd } from '@/lib/hub/client-page'
 import { REGIONS } from '@/lib/hub/figures'
 import type { TeamMember } from '@/lib/hub/team'
 
@@ -24,6 +25,8 @@ export function TeamList({ team, tokens, initial }: { team: TeamMember[]; tokens
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [toast, setToast] = useState('')
+  // Remove: the row being confirmed, and what they'd come off (null while checking)
+  const [rm, setRm] = useState<{ key: string; text: string | null } | null>(null)
   const total = team.length
   const toSort = team.filter(c => !known(c.region)).length
   const sub = toSort ? `${total} registered cleaners · ${toSort} to sort into a region` : `${total} registered cleaners`
@@ -37,9 +40,29 @@ export function TeamList({ team, tokens, initial }: { team: TeamMember[]; tokens
       const r = await fn()
       if (!r.ok) { if (key === 'add') setErr(r.error); else setToast(r.error); return }
       after?.()
+      setRm(null)
       setToast(r.toast)
       start(() => router.refresh())
     } catch { if (key === 'add') setErr(NO_DB); else setToast(NO_DB) } finally { setBusy(null) }
+  }
+
+  async function askRemove(c: TeamMember) {
+    const key = c.kind + c.id
+    setRm({ key, text: null }); setToast('')
+    try {
+      const r = await checkRemove(c.kind, c.id)
+      if (!r.ok) { setRm(null); setToast(r.error); return }
+      const first = r.name.split(/\s+/)[0] || r.name
+      const on = [...r.sites, ...r.homes]
+      setRm(x => x && x.key === key ? {
+        key,
+        text: r.pack
+          ? `Remove ${r.name}? The pack link they were sent stops working.`
+          : `Remove ${r.name} from the team? Their login is deleted, so they can’t sign in.`
+            + (on.length ? ` ${first} comes off ${joinAnd(on)}, so pick a new cleaner there.` : '')
+            + ' Their past cleans, photos and signed pack stay.',
+      } : x)
+    } catch { setRm(null); setToast(NO_DB) }
   }
 
   return (
@@ -91,18 +114,15 @@ export function TeamList({ team, tokens, initial }: { team: TeamMember[]; tokens
                   {c.kind === 'k' ? <span className="tag warn">Pack not signed</span> : c.signed ? <span className="tag wt">Pack signed</span> : <span className="tag warn">Pack not signed</span>}
                 </div>
                 <div className="tcontact">{[c.phone, c.email].filter(Boolean).join(' · ')}</div>
-                {c.details && (
-                  <>
-                    <div className="tcontact">ABN {c.details.abn} · {c.details.insurer} policy {c.details.policy}, expires {c.details.expiry}</div>
-                    <div className="tlinks"><Link className="linkbtn" href={`/hub/team/${c.id}`}>View signed pack</Link></div>
-                  </>
-                )}
-                {c.kind === 'k' && (
-                  <div className="tlinks">
+                {c.details && <div className="tcontact">ABN {c.details.abn} · {c.details.insurer} policy {c.details.policy}, expires {c.details.expiry}</div>}
+                <div className="tlinks">
+                  {c.details && <Link className="linkbtn" href={`/hub/team/${c.id}`}>View signed pack</Link>}
+                  {c.kind === 'k' && <>
                     <button type="button" className="linkbtn" disabled={busy === key + 'r'} onClick={() => run(key + 'r', () => resendPack(c.id))}>{busy === key + 'r' ? 'Sending…' : 'Resend pack'}</button>
                     {tokens[c.id] && <a className="linkbtn" href={`/pack/${tokens[c.id]}?preview=1`}>See what they get</a>}
-                  </div>
-                )}
+                  </>}
+                  {rm?.key !== key && <button type="button" className="linkbtn danger" aria-label={'Remove ' + c.name} onClick={() => askRemove(c)}>Remove</button>}
+                </div>
               </div>
               <div className="tact">
                 <label className="tsel"><span className="sr">Region for {c.name}</span>
@@ -113,6 +133,13 @@ export function TeamList({ team, tokens, initial }: { team: TeamMember[]; tokens
                 </label>
                 {tel && <a className="btn call" href={'tel:' + tel} aria-label={'Call ' + c.name}><Phone />Call</a>}
               </div>
+              {rm?.key === key && (
+                <div className="inlineconfirm tconfirm" role="group" aria-label={'Remove ' + c.name}>
+                  <span>{rm.text ?? 'Checking what they’re on…'}</span>
+                  <button type="button" className="btn call dangerfill" disabled={rm.text === null || busy === key + 'x'} onClick={() => run(key + 'x', () => removeCleaner(c.kind, c.id))}>{busy === key + 'x' ? 'Removing…' : 'Yes, remove'}</button>
+                  <button type="button" className="btn log" disabled={busy === key + 'x'} onClick={() => setRm(null)}>Keep them</button>
+                </div>
+              )}
             </div>
           )
         })}

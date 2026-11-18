@@ -16,7 +16,7 @@ export async function loadDashboard(now: Date = new Date()) {
     supabase.from('client_services').select('id, client_id, days, every, price, cost, first_clean'),
     supabase.from('client_addons').select('service_id, freq, price, cost'),
     supabase.from('homes').select('division, kind, every, days, first_clean, price, cost, status, resume_on, cancelled'),
-    supabase.from('profiles').select('region').eq('role', 'cleaner'),
+    supabase.from('profiles').select('region').eq('role', 'cleaner').is('removed_at', null),
     supabase.from('issues').select('id', { count: 'exact', head: true }).is('resolved_at', null),
     supabase.from('client_surveys').select('client_id, sent_at, answered_at, followed_at, comm, qual, rel, value, rec'),
     // before test-db update 068 there's no requests table: shows 0
