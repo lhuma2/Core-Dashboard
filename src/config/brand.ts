@@ -8,9 +8,13 @@
 //   COMPANY      – Core Cleaning QLD Pty Ltd. Used from SWITCH_OVER_DATE onward.
 // So already-issued and signed documents never change when the details do.
 //
-// Going live with the company: fill in COMPANY (acn, abn, emails, website),
-// set SWITCH_OVER_DATE ('YYYY-MM-DD'), point BRAND's email/portal values at the
-// new domain, and verify that domain in Resend before deploying.
+// Going live with the company: fill in COMPANY (acn, abn) and set
+// SWITCH_OVER_DATE ('YYYY-MM-DD').
+//
+// The email and portal domain (DOMAIN below) is separate from the ABN switch:
+// hub emails and portal links use it straight away, whatever a document's date.
+// It must be verified in Resend, and the portal address added in Vercel and in
+// Supabase's auth redirect URLs, before deploying.
 //
 // Nothing secret lives here. Secrets go in .env (see .env.example).
 
@@ -41,18 +45,24 @@ export const SOLE_TRADER: Issuer = {
   website:      'corecleaning.services',
 }
 
-// Waiting on Laith: ACN and ABN (ASIC / ABR), and the new domain and mailbox.
-// Until SWITCH_OVER_DATE is set, nothing below is shown anywhere.
+/** The hub's email and portal domain. */
+export const DOMAIN = 'corecleaningqld.com'
+
+// Waiting on Laith: ACN and ABN (ASIC / ABR).
+// Until SWITCH_OVER_DATE is set, nothing below is shown on documents.
 export const COMPANY: Issuer = {
   tradingName:  'Core Cleaning',
   legalName:    'Core Cleaning QLD Pty Ltd',
   acn:          '',
   abn:          '',
-  email:        SOLE_TRADER.email,
-  contactEmail: SOLE_TRADER.contactEmail,
+  email:        `admin@${DOMAIN}`,
+  contactEmail: `admin@${DOMAIN}`,
   phone:        SOLE_TRADER.phone,
-  website:      SOLE_TRADER.website,
+  website:      SOLE_TRADER.website, // public website stays on corecleaning.services for now
 }
+
+/** The hub mailbox on the current domain: sends hub email, receives replies. */
+const HUB_EMAIL = `admin@${DOMAIN}`
 
 /** First day (Brisbane time, YYYY-MM-DD) documents show the company. Empty = not switched yet. */
 export const SWITCH_OVER_DATE: string = ''
@@ -98,25 +108,25 @@ export const BRAND = {
   location:   'Brisbane, QLD',
 
   // Contact
-  email:        CURRENT.email,
-  contactEmail: CURRENT.contactEmail,
+  email:        HUB_EMAIL,
+  contactEmail: HUB_EMAIL,
   phone:        CURRENT.phone,
   phoneIntl:    '+61 407 026 360',
   website:      CURRENT.website,
   websiteUrl:   `https://www.${CURRENT.website}`,
 
   // Portal (must match the deployed domain; NEXT_PUBLIC_APP_URL wins when set)
-  appUrl:     'https://portal.corecleaning.services',
-  portalHost: 'portal.corecleaning.services',
+  appUrl:     `https://portal.${DOMAIN}`,
+  portalHost: `portal.${DOMAIN}`,
 
   // Outbound email (the sending domain must be verified in Resend)
-  mailDomain:    'corecleaning.services',
+  mailDomain:    DOMAIN,
   emailFromName: 'Laith at Core Cleaning',
-  emailFrom:     `Laith at Core Cleaning <${CURRENT.email}>`,
-  emailFromBiz:  `Core Cleaning <${CURRENT.email}>`,
-  emailFromLaith: `Laith Humadi <${CURRENT.email}>`,
-  emailFromHub:  `Core Cleaning Hub <${CURRENT.email}>`,
-  replyTo:       CURRENT.email,
+  emailFrom:     `Laith at Core Cleaning <${HUB_EMAIL}>`,
+  emailFromBiz:  `Core Cleaning <${HUB_EMAIL}>`,
+  emailFromLaith: `Laith Humadi <${HUB_EMAIL}>`,
+  emailFromHub:  `Core Cleaning Hub <${HUB_EMAIL}>`,
+  replyTo:       HUB_EMAIL,
 
   // Compliance reference shown to clients (your own policy number)
   insurancePolicyNumber: '',
