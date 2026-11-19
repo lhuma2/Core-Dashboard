@@ -11,10 +11,8 @@
 // Going live with the company: fill in COMPANY (acn, abn) and set
 // SWITCH_OVER_DATE ('YYYY-MM-DD').
 //
-// The email and portal domain (DOMAIN below) is separate from the ABN switch:
-// hub emails and portal links use it straight away, whatever a document's date.
-// It must be verified in Resend, and the portal address added in Vercel and in
-// Supabase's auth redirect URLs, before deploying.
+// The domain (DOMAIN below) is separate from the ABN switch. To change it: verify
+// it in Resend, add portal.<domain> in Vercel and in Supabase's auth redirect URLs.
 //
 // Nothing secret lives here. Secrets go in .env (see .env.example).
 
@@ -34,19 +32,22 @@ export interface Issuer {
   website:     string
 }
 
+/** The business domain: website, email and portal. */
+export const DOMAIN = 'corecleaningqld.com'
+
+// Contact details (email, website) follow DOMAIN on every document, old or new,
+// because the old corecleaning.services addresses forward to the new ones.
+// Only the legal identity (name, ACN, ABN) is fixed by a document's date.
 export const SOLE_TRADER: Issuer = {
   tradingName:  'Core Cleaning',
   legalName:    'Core Cleaning',
   acn:          '',
   abn:          '45 344 135 153',
-  email:        'admin@corecleaning.services',
-  contactEmail: 'contact@corecleaning.services',
+  email:        `admin@${DOMAIN}`,
+  contactEmail: `admin@${DOMAIN}`,
   phone:        '0407 026 360',
-  website:      'corecleaning.services',
+  website:      DOMAIN,
 }
-
-/** The hub's email and portal domain. */
-export const DOMAIN = 'corecleaningqld.com'
 
 // Waiting on Laith: ACN and ABN (ASIC / ABR).
 // Until SWITCH_OVER_DATE is set, nothing below is shown on documents.
@@ -58,7 +59,7 @@ export const COMPANY: Issuer = {
   email:        `admin@${DOMAIN}`,
   contactEmail: `admin@${DOMAIN}`,
   phone:        SOLE_TRADER.phone,
-  website:      SOLE_TRADER.website, // public website stays on corecleaning.services for now
+  website:      DOMAIN,
 }
 
 /** The hub mailbox on the current domain: sends hub email, receives replies. */
@@ -112,8 +113,8 @@ export const BRAND = {
   contactEmail: HUB_EMAIL,
   phone:        CURRENT.phone,
   phoneIntl:    '+61 407 026 360',
-  website:      CURRENT.website,
-  websiteUrl:   `https://www.${CURRENT.website}`,
+  website:      DOMAIN,
+  websiteUrl:   `https://www.${DOMAIN}`,
 
   // Portal (must match the deployed domain; NEXT_PUBLIC_APP_URL wins when set)
   appUrl:     `https://portal.${DOMAIN}`,
