@@ -49,12 +49,12 @@ export const SOLE_TRADER: Issuer = {
   website:      DOMAIN,
 }
 
-// Waiting on Laith: ACN and ABN (ASIC / ABR).
+// Waiting on the ABN (ABR).
 // Until SWITCH_OVER_DATE is set, nothing below is shown on documents.
 export const COMPANY: Issuer = {
   tradingName:  'Core Cleaning',
   legalName:    'Core Cleaning QLD Pty Ltd',
-  acn:          '',
+  acn:          '704 290 737', // registered 19/11/2026
   abn:          '',
   email:        `admin@${DOMAIN}`,
   contactEmail: `admin@${DOMAIN}`,
