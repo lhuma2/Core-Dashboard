@@ -117,7 +117,7 @@ export function addonsOn(s: SvcSrc, iso: string, today: string, todayRun: JobRow
 }
 
 const RES_EXCL = 'carpet steam cleaning, pest control, rubbish removal, and any item outside the scope listed above. Table tops with excessive belongings are left untouched to avoid loss of items.'
-const EOL_EXCL = 'Extra-heavy mould, heavy grease or baked-on build-up, heavily soiled areas and anything outside this scope may cost extra. Call Laith before doing extra work.'
+const EOL_EXCL = 'Extra-heavy mould, heavy grease or baked-on build-up, shower glass calcification or mineral deposits, heavily soiled areas and anything outside this scope may cost extra. Call Laith before doing extra work.'
 const WINF: Record<string, string> = { each: 'Every visit', monthly: 'Once a month', quarterly: 'Every 3 months', once: 'First clean only' }
 
 function homeSow(h: HomeSrc, fallback: SowBox[]): SowBox[] {
