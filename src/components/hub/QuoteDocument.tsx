@@ -43,9 +43,8 @@ export function QuoteDocument({ d }: { d: QuoteDoc }) {
             </div>
           ))}
         </div>
-        {d.isEol
-          ? <div className="pcharges"><div className="pchargesh">✶ Subject to additional charges</div><p>{d.charges}</p></div>
-          : <p className="pexcl">{d.excl}</p>}
+        {d.charges && <div className="pcharges"><div className="pchargesh">✶ Subject to additional charges</div><p>{d.charges}</p></div>}
+        {!d.isEol && <p className="pexcl">{d.excl}</p>}
       </section>
 
       <section className="ppage">

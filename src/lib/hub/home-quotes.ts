@@ -35,6 +35,8 @@ export interface QuoteBody {
   carpet: { on: boolean; items: Task[]; price: string; rooms: string; halls: string; fromWeb: boolean; webPrice: string }
   /** End of Lease only: rooms from the form and the add-ons. */
   eol?: EolBody
+  /** Which wording of the additional-charges line the quote was saved or sent with (see QUOTE_TERMS_V). Missing on quotes from before 2. */
+  tv?: number
 }
 export type EolKey = 'carpet' | 'blinds' | 'walls' | 'furnished' | 'mattress' | 'sofa' | 'fridge'
 export interface EolAdd { k: EolKey; on: boolean; qty: string; price: string; fromWeb: boolean; webPrice: string; items: Task[] }
@@ -97,6 +99,9 @@ export function residentialTermsGlance(type: QType, every?: QEvery): string[] {
   t.push(one ? 'This quote covers a one-off ' + (type === 'deep' ? 'deep clean' : 'clean') + '. Ongoing or additional services will be quoted separately.' : 'Once accepted, the service continues on a recurring basis until terminated by either party on 14 days’ written notice.')
   return t
 }
+
+/** Residential (deep and regular) quotes: the additional-charges line, as on End of Lease quotes. Added 19 Nov 2026. */
+export const RES_CHARGES = 'Excessive or extra-heavy mould, heavy grease or baked-on build-up, shower glass calcification or mineral deposits, and heavily soiled areas may incur an additional charge. Any variation will be confirmed with you before further work proceeds.'
 
 export function residentialExcludes(): string {
   return 'Excludes carpet steam cleaning, pest control, rubbish removal, and any item outside the scope listed above. Table tops with excessive belongings are left untouched to avoid loss of items.'
@@ -318,7 +323,18 @@ export interface QuoteDoc {
   terms: string[]
   addons: { name: string; desc: string; items: string[]; price: string }[]
 }
+/**
+ * The wording version of a quote's additional-charges line. 2 adds shower glass calcification or mineral deposits
+ * (End of Lease) and the line itself (residential). A quote shows the wording it was sent with: drafts and anything
+ * saved or sent from now on show the current one; quotes sent before carry no number and keep the old wording.
+ */
+export const QUOTE_TERMS_V = 2
 export function quoteDoc(q: Quote, today: string): QuoteDoc {
+  const d = quoteDocBase(q, today)
+  if (q.status !== 'draft' && (q.tv || 1) < 2) return { ...d, charges: d.isEol ? EOL_CHARGES_V1 : '' }
+  return { ...d, charges: d.isEol ? EOL_CHARGES : RES_CHARGES }
+}
+function quoteDocBase(q: Quote, today: string): QuoteDoc {
   const price = qMoney(q.price)
   const eol = q.type === 'eol'
   let excl = eol ? '' : residentialExcludes()
@@ -352,7 +368,7 @@ export function quoteDoc(q: Quote, today: string): QuoteDoc {
 }
 
 // ── database row ⇄ quote ──────────────────────────────────────
-const BODY_KEYS: (keyof QuoteBody)[] = ['region', 'street', 'suburb', 'postcode', 'heading', 'intro', 'type', 'every', 'beds', 'baths', 'living', 'start', 'hours', 'price', 'priceFromWeb', 'notes', 'scope', 'windows', 'carpet', 'eol']
+const BODY_KEYS: (keyof QuoteBody)[] = ['region', 'street', 'suburb', 'postcode', 'heading', 'intro', 'type', 'every', 'beds', 'baths', 'living', 'start', 'hours', 'price', 'priceFromWeb', 'notes', 'scope', 'windows', 'carpet', 'eol', 'tv']
 export function bodyOf(q: QuoteBody): QuoteBody { const o: any = {}; for (const k of BODY_KEYS) if ((q as any)[k] !== undefined) o[k] = (q as any)[k]; return o }
 
 export interface QuoteRow {
@@ -383,7 +399,7 @@ export function quoteRef(n: number, div: 'res' | 'eol' = 'res'): string { return
 export function eolScope(garage = 0, balcony = 0): Box[] {
   const g = [
     { heading: 'Full kitchen', items: ['Oven — internal & external (heavy grease*)', 'Cooktop & range hood', 'Cabinets — inside & out', 'Benchtops & splashback', 'Sink & tapware'] },
-    { heading: 'Bathrooms', items: ['Wall & floor tiles', 'Toilet', 'Shower & screen', 'Bathtub (heavy mould*)', 'Vanity, mirrors & fixtures'] },
+    { heading: 'Bathrooms', items: ['Wall & floor tiles', 'Toilet', 'Shower & screen (glass calcification*)', 'Bathtub (heavy mould*)', 'Vanity, mirrors & fixtures'] },
     { heading: 'Bedrooms', items: ['Wardrobes — inside & out', 'Mirrors', 'Shelving & surfaces', 'Reachable surfaces dusted'] },
     { heading: 'Internal windows', items: ['Glass — internal', 'Window frames', 'Tracks'] },
     { heading: 'Laundry', items: ['One standard laundry', 'Sink, benchtops & cabinetry', 'Exterior of appliances'] },
@@ -393,7 +409,9 @@ export function eolScope(garage = 0, balcony = 0): Box[] {
   if (+balcony > 0) g.push({ heading: 'Balcony' + (+balcony > 1 ? ' (' + balcony + ')' : ''), items: ['Floor swept & mopped', 'Balustrade & glass wiped', 'Cobwebs removed'] })
   return g.map(x => ({ heading: x.heading, items: tasks(x.items) }))
 }
-export const EOL_CHARGES = 'Excessive or extra-heavy mould treatment (including the bathtub), heavy grease or baked-on build-up (including the oven), heavily soiled areas, items beyond the standard scope above, and anything not reasonably accessible may incur an additional charge. Any variation will be confirmed with you before further work proceeds. Final scope is subject to on-site inspection.'
+/** The additional-charges wording before shower glass calcification was added (19 Nov 2026). Quotes sent with it keep it. */
+export const EOL_CHARGES_V1 = 'Excessive or extra-heavy mould treatment (including the bathtub), heavy grease or baked-on build-up (including the oven), heavily soiled areas, items beyond the standard scope above, and anything not reasonably accessible may incur an additional charge. Any variation will be confirmed with you before further work proceeds. Final scope is subject to on-site inspection.'
+export const EOL_CHARGES = 'Excessive or extra-heavy mould treatment (including the bathtub), heavy grease or baked-on build-up (including the oven), shower glass calcification or mineral deposits, heavily soiled areas, items beyond the standard scope above, and anything not reasonably accessible may incur an additional charge. Any variation will be confirmed with you before further work proceeds. Final scope is subject to on-site inspection.'
 export const EOL_TERMS = [
   'This quote is valid for 30 days from the date of issue and applies to the scope and price set out above.',
   'Scope is limited strictly to the areas and items listed above; anything not listed is excluded. Excessive soiling or items beyond scope may attract an additional charge, confirmed with you first.',

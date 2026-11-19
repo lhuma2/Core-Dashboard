@@ -12,7 +12,7 @@ import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 import { brisbaneToday } from '@/lib/hub/figures'
 import {
-  bodyOf, cash2, eAddsOn, eTotal, eUnits, EOL_ADDK, qMoney, qCheck, qClean, qSaveCheck, quoteOf, quoteRef, quoteDoc, dLong, DECLINE_REASONS, QUOTE_COLS,
+  bodyOf, cash2, eAddsOn, eTotal, eUnits, EOL_ADDK, qMoney, qCheck, qClean, qSaveCheck, quoteOf, quoteRef, quoteDoc, QUOTE_TERMS_V, dLong, DECLINE_REASONS, QUOTE_COLS,
   type Quote, type QuoteRow,
 } from '@/lib/hub/home-quotes'
 import { snapFromQuote } from '@/lib/hub/home-agreements'
@@ -84,7 +84,7 @@ async function deliver(db: any, q: Quote, to: string, today: string): Promise<{ 
     const r = await sendEmail(to, `${revised ? 'Your updated quote' : 'Your quote'} from Core Cleaning (${q.ref})`, quoteEmail(q, link, revised, today))
     if (!r.success) return { ok: false, error: 'The email didn’t send, so the quote is still not sent. Check the address and try again.' }
   }
-  const { error } = await db.from('home_quotes').update({ status: 'sent', sent_to: to, sent_at: today, email: to }).eq('id', q.id)
+  const { error } = await db.from('home_quotes').update({ status: 'sent', sent_to: to, sent_at: today, email: to, body: { ...bodyOf(q), tv: QUOTE_TERMS_V } }).eq('id', q.id)
   if (error) return { ok: false, error: NO_DB }
   return { ok: true, tested }
 }
@@ -119,6 +119,7 @@ export async function saveQuote(input: Quote, mode: 'draft' | 'preview' | 'send'
     if (cur.status === 'accepted' || cur.status === 'declined') return { ok: false, error: `${cur.ref} was ${cur.status} by the client, so it can’t be changed.` }
     if ((cur.division === 'eol') !== (y.type === 'eol')) return { ok: false, error: 'Some of the details didn’t come through properly. Refresh the page and try again.' }
   }
+  y.tv = QUOTE_TERMS_V
   const row = { name: y.name, email: y.email || null, phone: (y.phone || '').trim() || null, body: bodyOf(y) }
   let id = y.id
   if (cur) {
