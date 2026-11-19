@@ -1,5 +1,6 @@
 ﻿'use server'
 
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { AppSettings } from '@/types/app'
@@ -7,9 +8,9 @@ import type { AppSettings } from '@/types/app'
 const DEFAULT_SETTINGS: AppSettings = {
   business: {
     name:    'Core Cleaning',
-    email:   'admin@corecleaning.services',
+    email:   BRAND.email,
     phone:   '0407 026 360',
-    website: 'https://www.corecleaning.services',
+    website: BRAND.websiteUrl,
     address: 'Brisbane, QLD',
   },
   margin_thresholds:      { red: 24, yellow: 40 },

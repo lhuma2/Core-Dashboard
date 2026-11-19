@@ -1,3 +1,4 @@
+import { BRAND, issuer, regNumbers } from '@/config/brand'
 import Link from 'next/link'
 import { PubShell, BadLink } from '@/components/hub/PubShell'
 import { sharedDocs } from '@/lib/hub/compliance-share'
@@ -38,7 +39,7 @@ export default async function SharedDocsPage({ params, searchParams }: { params:
           ))}
         </div>
         <a className="btn call dlall" href={`/d/${params.code}/pdf`} download="Core Cleaning compliance documents.pdf"><Dl />Download all as PDF</a>
-        <p className="dp small">Core Cleaning · ABN 45 344 135 153 · 0407 026 360 · contact@corecleaning.services</p>
+        <p className="dp small">{issuer().legalName} · {regNumbers(issuer())} · {BRAND.phone} · {BRAND.contactEmail}</p>
       </article>
     </PubShell>
   )

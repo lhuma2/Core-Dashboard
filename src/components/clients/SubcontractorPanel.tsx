@@ -1,5 +1,6 @@
 'use client'
 
+import { appUrl } from '@/config/brand'
 import { useState } from 'react'
 import { Check, Copy, Loader2, ShieldCheck, AlertTriangle, ExternalLink, Trash2, Plus } from 'lucide-react'
 import { createSubcontractorLinkAction, deleteSubcontractorLinkAction } from '@/actions/subcontractor'
@@ -31,7 +32,7 @@ function SubRow({ sub, onDelete }: { sub: Sub; onDelete: (id: string) => void })
   const [busy, setBusy] = useState(false)
   const signed = !!sub.signed_at
   const ins = expiryInfo(sub.insurance_expiry)
-  const link = `https://portal.corecleaning.services/onboard/${sub.sign_code}`
+  const link = `${appUrl()}/onboard/${sub.sign_code}`
 
   function copy() {
     navigator.clipboard?.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) }).catch(() => {})

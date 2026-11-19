@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/brand'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AgreementBody } from '@/components/hub/AgreementBody'
 import { AgreementClientPanel } from '@/components/hub/AgreementClientPanel'
@@ -19,7 +20,7 @@ export default async function SignAgreementPage({ params, searchParams }: { para
       <main className="wrap pubwrap">{body}</main>
     </div>
   )
-  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This agreement link isn’t valid</h1><p className="nchint">The link may be mistyped or the agreement was withdrawn. Please contact Core Cleaning on 0407 026 360 or admin@corecleaning.services for a fresh link.</p></div>)
+  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This agreement link isn’t valid</h1><p className="nchint">The link may be mistyped or the agreement was withdrawn. Please contact Core Cleaning on 0407 026 360 or {BRAND.email} for a fresh link.</p></div>)
   if (!/^[0-9a-f]{64}$/.test(params.code || '')) return bad
   const db = createAdminClient() as any
   const { data } = await db.from('home_docs').select(DOC_COLS).eq('code', params.code).maybeSingle()
@@ -31,7 +32,7 @@ export default async function SignAgreementPage({ params, searchParams }: { para
     <AgreementClientPanel code={params.code} open={d.status === 'sent'} client={d.homeName} parts={d.snap.parts}
       banner={searchParams.from === 'quote' ? 'Thank you, your quote is accepted. The last step is your service agreement: read it and sign at the bottom.' : ''}
       closedText={d.status === 'signed' ? `Signed by ${d.signedBy} on ${signedOn}. Thank you.` : ''}>
-      <AgreementBody ref_={d.ref} snap={d.snap} signedBy={d.signedBy} signedOn={signedOn} />
+      <AgreementBody ref_={d.ref} snap={d.snap} signedBy={d.signedBy} signedOn={signedOn} issued={d.sentAt || d.created} />
     </AgreementClientPanel>
   )
 }

@@ -1,5 +1,6 @@
 ﻿'use server'
 
+import { BRAND, appUrl } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
@@ -31,7 +32,7 @@ export async function sendSurveyEmailAction(clientId: string): Promise<{ success
   if (tokenError) return { error: `Failed to create survey token: ${tokenError.message}` }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://portal.corecleaning.services')
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : BRAND.appUrl)
   const surveyUrl = `${baseUrl}/survey/${tokenRow.token}`
   const contactName = (client.contact_name || '').split(' ')[0] || 'there'
 
@@ -46,16 +47,16 @@ export async function sendSurveyEmailAction(clientId: string): Promise<{ success
 <p style="margin-top:24px;">Laith Humadi<br>
 <span style="color:#555;font-size:14px;">Founder &amp; Director, Core Cleaning</span><br>
 <span style="color:#555;font-size:14px;">0407 026 360</span><br>
-<a href="https://www.corecleaning.services" style="color:#555;font-size:14px;text-decoration:none;">corecleaning.services</a></p>
+<a href="${BRAND.websiteUrl}" style="color:#555;font-size:14px;text-decoration:none;">${BRAND.website}</a></p>
 </div>
 </body></html>`
 
   const resend = new Resend(apiKey)
   const { error: sendError } = await resend.emails.send({
-    from: 'Laith Humadi <admin@corecleaning.services>',
+    from: BRAND.emailFromLaith,
     to: client.contact_email,
-    reply_to: 'admin@corecleaning.services',
-    bcc: 'admin@corecleaning.services',
+    reply_to: BRAND.email,
+    bcc: BRAND.email,
     subject: `How are we going at ${client.business_name}?`,
     html: htmlBody,
   })
@@ -127,8 +128,8 @@ export async function submitSurveyAction(data: {
       const { Resend } = await import('resend')
       const resend = new Resend(apiKey)
       await resend.emails.send({
-        from: 'Core Cleaning Hub <admin@corecleaning.services>',
-        to: 'admin@corecleaning.services',
+        from: BRAND.emailFromHub,
+        to: BRAND.email,
         subject: `New survey from ${businessName} — ${avg}/10 avg`,
         text: [
           `Survey submitted by ${contactName || businessName}`,
@@ -144,7 +145,7 @@ export async function submitSurveyAction(data: {
           ``,
           data.comments ? `Comments:\n${data.comments}` : 'No comments left.',
           ``,
-          `View in Core Cleaning Hub: https://portal.corecleaning.services/surveys`,
+          `View in Core Cleaning Hub: ${appUrl()}/surveys`,
         ].join('\n'),
       })
     }
@@ -174,7 +175,7 @@ export async function sendSurveyReminderAction(tokenId: string): Promise<{ succe
   const client = tokenRow.clients
   if (!client?.contact_email) return { error: 'Client has no email address' }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services'
+  const baseUrl = appUrl()
   const surveyUrl = `${baseUrl}/survey/${tokenRow.token}`
   const contactName = (client.contact_name || '').split(' ')[0] || 'there'
 
@@ -189,16 +190,16 @@ export async function sendSurveyReminderAction(tokenId: string): Promise<{ succe
 <p style="margin-top:24px;">Laith Humadi<br>
 <span style="color:#555;font-size:14px;">Founder &amp; Director, Core Cleaning</span><br>
 <span style="color:#555;font-size:14px;">0407 026 360</span><br>
-<a href="https://www.corecleaning.services" style="color:#555;font-size:14px;text-decoration:none;">corecleaning.services</a></p>
+<a href="${BRAND.websiteUrl}" style="color:#555;font-size:14px;text-decoration:none;">${BRAND.website}</a></p>
 </div>
 </body></html>`
 
   const resend = new Resend(apiKey)
   const { error: sendError } = await resend.emails.send({
-    from: 'Laith Humadi <admin@corecleaning.services>',
+    from: BRAND.emailFromLaith,
     to: client.contact_email,
-    reply_to: 'admin@corecleaning.services',
-    bcc: 'admin@corecleaning.services',
+    reply_to: BRAND.email,
+    bcc: BRAND.email,
     subject: `Following up — survey for ${client.business_name}`,
     html: htmlBody,
   })

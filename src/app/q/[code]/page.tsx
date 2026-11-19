@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/brand'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { QuoteDocument } from '@/components/hub/QuoteDocument'
 import { QuoteClientPanel } from '@/components/hub/QuoteClientPanel'
@@ -19,7 +20,7 @@ export default async function ClientQuotePage({ params }: { params: { code: stri
       <main className="wrap pubwrap">{body}</main>
     </div>
   )
-  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This quote link isn’t valid</h1><p className="nchint">The link may be mistyped or the quote was withdrawn. Please contact Core Cleaning on 0407 026 360 or admin@corecleaning.services for a fresh link.</p></div>)
+  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This quote link isn’t valid</h1><p className="nchint">The link may be mistyped or the quote was withdrawn. Please contact Core Cleaning on 0407 026 360 or {BRAND.email} for a fresh link.</p></div>)
   if (!/^[0-9a-f]{64}$/.test(params.code || '')) return bad
   const db = createAdminClient() as any
   const { data } = await db.from('home_quotes').select(QUOTE_COLS).eq('code', params.code).maybeSingle()

@@ -2,8 +2,9 @@
 
 // The client-facing links MUST use the branded public domain — never a bare
 // *.vercel.app alias (which may 404 or sit behind Vercel auth).
-export const APP_URL = 'https://portal.corecleaning.services'
-export const OWNER_EMAIL = 'admin@corecleaning.services'
+import { BRAND } from '@/config/brand'
+export const APP_URL = BRAND.appUrl
+export const OWNER_EMAIL = BRAND.email
 export const WORDMARK = `${APP_URL}/proposal-assets/wordmark-white.png`
 export const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 

@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import { BRAND } from '@/config/brand'
 import Image from 'next/image'
 import type { Document, DocumentContent } from '@/types/app'
 
@@ -219,7 +220,7 @@ function ProposalV2Preview({ c, doc }: { c: ProposalV2; doc: Document }) {
             <p style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 2 }}>Laith Humadi</p>
             <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>Director, Core Cleaning</p>
             <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 2 }}>+61 407 026 360</p>
-            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 28 }}>admin@corecleaning.services</p>
+            <p style={{ fontSize: 12, color: INK_SOFT, marginBottom: 28 }}>{BRAND.email}</p>
 
             <div style={{ borderTop: `1px solid ${RULE_LIGHT}`, paddingTop: 16, marginBottom: 20 }}>
               <SectionLabel>About this proposal</SectionLabel>

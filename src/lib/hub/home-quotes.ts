@@ -312,7 +312,7 @@ export function webRows(q: Quote): { k: string; v: string }[] {
 // ── the quote document (admin preview and the client's page) ──
 export interface QuoteDoc {
   isEol: boolean; charges: string
-  ref: string; heading: string; intro: string; name: string; date: string; validTo: string; address: string; typeLabel: string; freqLine: string; homeLine: string
+  ref: string; heading: string; intro: string; name: string; date: string; issued: string; validTo: string; address: string; typeLabel: string; freqLine: string; homeLine: string
   scopeSub: string; excl: string; price: string; per: string; priceKick: string; hoursLine: string; totalLine: string; addonsLead: string
   scope: { num: string; heading: string; items: { text: string; tag: string }[] }[]
   terms: string[]
@@ -333,7 +333,7 @@ export function quoteDoc(q: Quote, today: string): QuoteDoc {
   const from = q.sentAt || q.created || today
   return {
     isEol: eol, charges: eol ? EOL_CHARGES : '',
-    ref: q.ref, heading: q.heading || 'Your cleaning quote', intro: q.intro || '', name: q.name, date: dLong(from), validTo: dLong(isoAdd(from, 30)),
+    ref: q.ref, heading: q.heading || 'Your cleaning quote', intro: q.intro || '', name: q.name, date: dLong(from), issued: from, validTo: dLong(isoAdd(from, 30)),
     address: [q.street, [q.suburb, q.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ') || q.region || 'Address to be confirmed',
     typeLabel: Q_TYPE[q.type],
     freqLine: eol ? 'End of lease clean' + (q.start ? ', ' + dLong(q.start) : '') : (q.every === 'oneoff' ? 'One-off ' + (q.type === 'deep' ? 'deep clean' : 'clean') : Q_EVERY[q.every]) + (q.start ? ', from ' + dLong(q.start) : ''),

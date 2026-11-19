@@ -1,12 +1,13 @@
 ﻿'use server'
 
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { scoreInspection, type InspArea } from '@/lib/inspections/template'
 
-const OWNER_EMAIL = 'admin@corecleaning.services'
+const OWNER_EMAIL = BRAND.email
 
 interface SavePayload {
   clientId: string

@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import { BRAND } from '@/config/brand'
 import { useState } from 'react'
 import Image from 'next/image'
 import { Eye, EyeOff } from 'lucide-react'
@@ -100,7 +101,7 @@ export default function LoginPage() {
               value={login}
               onChange={(e) => setLogin(e.target.value.trim())}
               className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-[16px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00250e]/25 focus:border-[#00250e] transition"
-              placeholder="john.smith or you@corecleaning.services"
+              placeholder={`john.smith or you@${BRAND.mailDomain}`}
             />
           </div>
 

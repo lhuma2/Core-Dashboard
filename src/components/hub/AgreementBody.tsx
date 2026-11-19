@@ -1,7 +1,8 @@
+import { issuer, partyParen } from '@/config/brand'
 import type { AgrSnap } from '@/lib/hub/home-agreements'
 
 // The agreement itself: particulars, Schedule 1 scope, the 19 clauses and both signatures. Mock-up wording.
-export function AgreementBody({ ref_, snap, signedBy, signedOn }: { ref_: string; snap: AgrSnap; signedBy?: string | null; signedOn?: string }) {
+export function AgreementBody({ ref_, snap, signedBy, signedOn, issued }: { ref_: string; snap: AgrSnap; signedBy?: string | null; signedOn?: string; issued?: string | null }) {
   return (
     <>
       <h2 className="dh">Schedule of particulars</h2>
@@ -30,7 +31,7 @@ export function AgreementBody({ ref_, snap, signedBy, signedOn }: { ref_: string
           ? <><div className="sigline">{signedBy}</div><div className="sigmeta">Signed electronically on {signedOn}</div></>
           : <div className="sigmeta">Client signature: not signed yet</div>}
       </div>
-      <div className="sigblock"><div className="sigline">Laith Humadi</div><div className="sigmeta">For Core Cleaning (ABN 45 344 135 153), Director</div></div>
+      <div className="sigblock"><div className="sigline">Laith Humadi</div><div className="sigmeta">For {partyParen(issuer(issued))}, Director</div></div>
     </>
   )
 }

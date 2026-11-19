@@ -1,3 +1,4 @@
+import { issuer, regNumbers } from '@/config/brand'
 import type { PropDocView } from '@/lib/hub/proposals'
 
 // The commercial / specialist proposal, page by page like Laith's template: cover, welcome, who we are, why Core, what we
@@ -35,10 +36,11 @@ export function PCover({ kicker, ref_, biz, h, sub, cols }: { kicker: string; re
 }
 
 export function ProposalDoc({ d }: { d: PropDocView }) {
+  const iss = issuer(d.issued)
   return (
     <div className="pdoc">
       <PCover kicker={d.kicker} ref_={d.ref} biz={d.biz} h={d.coverH} sub={d.coverSub}
-        cols={[['Prepared for', d.contact, d.biz], ['Prepared by', 'Laith Humadi', 'Core Cleaning'], ['Date', d.date, 'ABN 45 344 135 153']]} />
+        cols={[['Prepared for', d.contact, d.biz], ['Prepared by', 'Laith Humadi', iss.legalName], ['Date', d.date, regNumbers(iss)]]} />
 
       <section className="ppage">
         <PHead n="02" label="Welcome" />
@@ -125,7 +127,7 @@ export function ProposalDoc({ d }: { d: PropDocView }) {
         </div>
         <div className="pbadges">
           <span>$10,000,000 public liability insurance</span><span>Full compliance pack sent on quote approval</span>
-          <span>Certificate of Currency on request</span><span>Registered business, ABN 45 344 135 153</span>
+          <span>Certificate of Currency on request</span><span>Registered business, {regNumbers(iss, ', ')}</span>
         </div>
       </section>
 
@@ -168,10 +170,10 @@ export function ProposalDoc({ d }: { d: PropDocView }) {
         <div className="pkick g ptoc-h">Next steps</div>
         <div className="pnext">{d.steps.map(s => <div key={s.n}><div className="pstepn">{s.n}</div><h3>{s.t}</h3><p>{s.b}</p></div>)}</div>
         <div className="pfootsig">
-          <div><div className="pkick g">For Core Cleaning</div><div className="psig line">Laith Humadi</div><div className="psmall split"><span>Laith Humadi</span><span>{d.date}</span></div></div>
-          <div className="r"><strong>Questions? Get in touch.</strong><div>admin@corecleaning.services</div><div>0407 026 360</div><div>www.corecleaning.services</div></div>
+          <div><div className="pkick g">For {iss.legalName}</div><div className="psig line">Laith Humadi</div><div className="psmall split"><span>Laith Humadi</span><span>{d.date}</span></div></div>
+          <div className="r"><strong>Questions? Get in touch.</strong><div>{iss.email}</div><div>{iss.phone}</div><div>www.{iss.website}</div></div>
         </div>
-        <div className="pfoot"><span>Core Cleaning · Ref {d.ref}</span><span>ABN 45 344 135 153</span></div>
+        <div className="pfoot"><span>{iss.legalName} · Ref {d.ref}</span><span>{regNumbers(iss)}</span></div>
       </section>
     </div>
   )

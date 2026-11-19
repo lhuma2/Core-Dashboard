@@ -1,6 +1,7 @@
 'use server'
 // The cleaner app's buttons (mock-up Cleaner.dc.html). Every write is done here with the service key, after checking
 // the signed-in cleaner is on that home or site that day, so cleaners need no write rights on the tables themselves.
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { crewServer } from '@/lib/crew/server-client'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -120,7 +121,7 @@ export async function finishClean(key: string, photos: number): Promise<R<{ toas
     const what = missed.join(' and ')
     const body = `${me.name} finished ${job.name} on ${dateLabel(job.iso)} without ${what}. It moves to the next clean.`
     await sendPushToRole('admin', { title: `${cap(what)} not done`, body, url: '/hub/commercial' }).catch(() => {})
-    await sendEmail('admin@corecleaning.services', `${cap(what)} not done at ${job.name}`, `<p>${esc(body)}</p>`).catch(() => {})
+    await sendEmail(BRAND.email, `${cap(what)} not done at ${job.name}`, `<p>${esc(body)}</p>`).catch(() => {})
   }
   if (ackd && n < job.minPh) {
     await sendPushToRole('admin', { title: `${me.first}’s exit photos are on their phone`, body: `${job.name}: ${me.first} ticked that all ${job.minPh}+ exit photos are in their phone’s library because some wouldn’t upload.`, url: divBase('eol') + '/clients/' + k.id }).catch(() => {})
@@ -152,7 +153,7 @@ export async function reportProblem(key: string, text: string): Promise<R> {
   if (error) return { ok: false, error: OFFLINE }
   const when = dateLabel(job.iso) + (job.start ? ', ' + t12(job.start) : '')
   await sendPushToRole('admin', { title: `Problem at ${job.name}`, body: `${me.first}: “${body.slice(0, 140)}”`, url: '/hub/problems' }).catch(() => {})
-  await sendEmail('admin@corecleaning.services', `Problem reported at ${job.name}`,
+  await sendEmail(BRAND.email, `Problem reported at ${job.name}`,
     `<p><strong>${esc(me.name)}</strong> reported a problem at <strong>${esc(job.name)}</strong> (${esc(when)}):</p><p style="white-space:pre-line">${esc(body)}</p><p>It’s in Problems reported in the hub.</p>`).catch(() => {})
   revalidatePath('/hub', 'layout')
   return { ok: true }

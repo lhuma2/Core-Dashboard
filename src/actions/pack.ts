@@ -3,6 +3,7 @@
 // The public signing page for the subcontractor pack (/pack/<link>). The cleaner isn't logged in: the private link
 // is the key. Signing makes their cleaner login and emails it to them, and tells Laith. Words from the mock-up.
 
+import { BRAND } from '@/config/brand'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -54,7 +55,7 @@ function loginEmail(first: string, email: string, pw: string, site: string): str
     <p style="margin:0 0 12px">Thanks for signing the Core Cleaning subcontractor pack. You can now log in to the cleaner portal to see your jobs, checklists and site access details.</p>
     <p style="margin:0 0 12px;background:#f3f5f4;border-radius:8px;padding:10px 12px;font-family:Menlo,monospace;font-size:14px">Website: ${esc(site.replace(/^https?:\/\//, ''))}/cleaner/login<br>Username: ${esc(email)}<br>Password: ${esc(pw)}</p>
     <p style="margin:0 0 12px">The first time you log in it will ask you to choose your own password. On iPhone, open the portal in Safari, tap Share, then Add to Home Screen so it works like an app.</p>
-    <p style="margin:0">Kind regards,<br><strong>Laith Humadi</strong><br>Core Cleaning · 0407 026 360 · admin@corecleaning.services</p>
+    <p style="margin:0">Kind regards,<br><strong>Laith Humadi</strong><br>Core Cleaning · 0407 026 360 · ${BRAND.email}</p>
   </div></div>`
 }
 
@@ -114,11 +115,11 @@ export async function signPack(token: string, f: PackForm): Promise<{ ok: true; 
   }
 
   const h = headers(), host = h.get('x-forwarded-host') || h.get('host')
-  const site = host ? `${h.get('x-forwarded-proto') || 'https'}://${host}` : 'https://portal.corecleaning.services'
+  const site = host ? `${h.get('x-forwarded-proto') || 'https'}://${host}` : BRAND.appUrl
   const tested = !process.env.RESEND_API_KEY
   if (!tested) {
     await sendEmail(k.email, 'Your Core Cleaning portal login', loginEmail(k.first_name, k.email, pw, site)).catch(() => {})
-    await sendEmail('admin@corecleaning.services', `${name} signed the subcontractor pack`,
+    await sendEmail(BRAND.email, `${name} signed the subcontractor pack`,
       `<p><strong>${esc(name)}</strong> signed the subcontractor pack for <strong>${esc(company)}</strong> (ABN ${esc(abnFmt(abn))}).</p><p>Public liability: ${covered ? 'covered under Core Cleaning’s policy (they pay the excess on claims from their work)' : `${esc(insurer)}, policy ${esc(policy)}, expires ${esc(expiry.split('-').reverse().join('/'))}`}.</p><p>Their cleaner login was emailed to them. See the signed pack under Team in the hub.</p>`).catch(() => {})
   }
   await sendPushToRole('admin', { title: `${name} signed the pack`, body: `${company} · their login was emailed to them`, url: '/hub/team' }).catch(() => {})

@@ -3,13 +3,14 @@
 // pipeline lead profile so the copy and sending behaviour stay identical.
 // Plain module (not a server action file) so it can export helpers + constants.
 
+import { BRAND } from '@/config/brand'
 import 'server-only'
 
 const SIGNATURE = `
   <p style="margin-top: 24px;">
     Laith<br/>
     Core Cleaning · Brisbane<br/>
-    <a href="mailto:admin@corecleaning.services" style="color: #00250e;">admin@corecleaning.services</a>
+    <a href="mailto:${BRAND.email}" style="color: #00250e;">${BRAND.email}</a>
   </p>`
 
 export const EMAIL_WRAP = (inner: string) =>
@@ -48,8 +49,8 @@ export async function sendThreadedEmail(opts: {
     const { Resend } = await import('resend')
     const resend = new Resend(apiKey)
     const res = await resend.emails.send({
-      from: 'Laith at Core Cleaning <admin@corecleaning.services>',
-      reply_to: 'admin@corecleaning.services',
+      from: BRAND.emailFrom,
+      reply_to: BRAND.email,
       to: opts.to,
       subject: opts.subject,
       html: opts.html,

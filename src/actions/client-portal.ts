@@ -1,6 +1,7 @@
 'use server'
 // The client portal's buttons (mock-up Client.dc.html). Every write is done here with the service key, only ever for
 // the signed-in client's own business, so clients need no rights on the tables themselves.
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { clientServer } from '@/lib/clientapp/server-client'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -103,7 +104,7 @@ export async function sendClientRequest(f: RequestForm): Promise<R> {
   const where = label || (allSites ? 'All sites' : site?.name || '')
   const bits = [t.service ? f.service : '', where, f.date ? 'for ' + pShort(f.date) : ''].filter(Boolean).join(' · ')
   await sendPushToRole('admin', { title: `${me.biz}: ${t.label}`, body: (bits ? bits + (txt ? ': ' : '') : '') + txt.slice(0, 140), url: '/hub/commercial/requests' }).catch(() => {})
-  await sendEmail('admin@corecleaning.services', `${t.label} from ${me.biz}`,
+  await sendEmail(BRAND.email, `${t.label} from ${me.biz}`,
     `<p><strong>${esc(me.name)}</strong> from <strong>${esc(me.biz)}</strong> sent a request from their portal: <strong>${esc(t.label)}</strong>.</p>` +
     (bits ? `<p>${esc(bits)}</p>` : '') + (txt ? `<p style="white-space:pre-line">${esc(txt)}</p>` : '') +
     `<p>Reply to them from Commercial → Requests in the hub.</p>`).catch(() => {})

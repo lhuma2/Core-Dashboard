@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/config/brand'
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -64,7 +65,7 @@ export function RequestCard({ r, today, from, busy, act, open, setOpen }: {
             <textarea rows={3} value={text} autoFocus maxLength={2000} onChange={e => { setText(e.target.value); setErr('') }}
               placeholder={r.kind === 'photos' ? 'e.g. Here are 6 photos from Saturday’s clean.' : r.kind === 'quote' ? 'e.g. Thanks, I’ll have a quote to you by Thursday.' : 'e.g. Thanks, all sorted for the next clean.'} />
           </label>
-          <p className="cpnote">Emailed to them from admin@corecleaning.services and shown under this request in their portal.</p>
+          <p className="cpnote">Emailed to them from {BRAND.email} and shown under this request in their portal.</p>
           {err && <p className="ferr" role="alert">{err}</p>}
           <div className="sheetbtns">
             <button type="button" className="btn call" disabled={busy} onClick={() => run(() => replyRequest(r.id, text))}>{busy ? 'Sending…' : 'Send reply'}</button>

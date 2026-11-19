@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/brand'
 import Link from 'next/link'
 import { Back, Chev } from '@/components/hub/icons'
 import { createClient } from '@/lib/supabase/server'
@@ -58,16 +59,16 @@ export default async function SignedPackPage({ params }: { params: { id: string 
         </ul>
         <h2 className="dh">Login email sent to them</h2>
         <div className="mailprev">
-          <div className="mailhead"><span>From: admin@corecleaning.services</span><span>To: {p.email || k.email}</span><span>Subject: Your Core Cleaning portal login</span></div>
+          <div className="mailhead"><span>From: {BRAND.email}</span><span>To: {p.email || k.email}</span><span>Subject: Your Core Cleaning portal login</span></div>
           <p>Hi {first},</p>
           <p>Thanks for signing the Core Cleaning subcontractor pack. You can now log in to the cleaner portal to see your jobs, checklists and site access details.</p>
-          <p className="mailcreds">Website: portal.corecleaning.services<br />Username: {p.email || k.email}<br />Password: {starterPw(first, +String(k.signed_at).slice(0, 4))}</p>
+          <p className="mailcreds">Website: {BRAND.portalHost}<br />Username: {p.email || k.email}<br />Password: {starterPw(first, +String(k.signed_at).slice(0, 4))}</p>
           <p>The first time you log in it will ask you to choose your own password. On iPhone, open the portal in Safari, tap Share, then Add to Home Screen so it works like an app.</p>
           <p>Kind regards,</p>
           <div className="esig">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-transparent.png" alt="Core Cleaning" />
-            <div><strong>Laith Humadi</strong><span className="esigco">Core Cleaning</span><span>P 0407 026 360 · E admin@corecleaning.services · W www.corecleaning.services</span><span className="esigsub">Residential · Commercial · Bond Cleaning</span></div>
+            <div><strong>Laith Humadi</strong><span className="esigco">Core Cleaning</span><span>P 0407 026 360 · E {BRAND.email} · W www.{BRAND.website}</span><span className="esigsub">Residential · Commercial · Bond Cleaning</span></div>
           </div>
         </div>
         <h2 className="dh">Documents covered by this signature</h2>

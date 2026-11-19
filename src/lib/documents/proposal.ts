@@ -3,6 +3,7 @@
 // editor: client details, dates, frequency, pricing rows, scope groups, and the
 // "available on request" additional services.
 
+import { BRAND } from '@/config/brand'
 export interface ScopeGroup {
   title: string
   items: string[]
@@ -51,7 +52,7 @@ export const DEFAULT_PROPOSAL: ProposalData = {
   contactName: 'Laith Humadi',
   contactRole: 'Director',
   contactPhone: '+61 407 026 360',
-  contactEmail: 'admin@corecleaning.services',
+  contactEmail: BRAND.email,
   scopeGroups: [
     {
       title: 'General Offices & Workspaces',

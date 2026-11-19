@@ -4,6 +4,7 @@
 // statement), Delete lead (with Undo), Upload CSV. Words from the mock-up. cold_leads has no RLS policies, so every
 // action checks the person is staff and then uses the server key.
 
+import { appUrl } from '@/config/brand'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -27,7 +28,7 @@ function siteUrl(): string {
   const h = headers()
   const host = h.get('x-forwarded-host') || h.get('host')
   if (host) return `${h.get('x-forwarded-proto') || 'https'}://${host}`
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services').replace(/\/$/, '')
+  return appUrl()
 }
 
 async function lead(id: string) {

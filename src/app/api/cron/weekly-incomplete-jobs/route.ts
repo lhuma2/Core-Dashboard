@@ -1,3 +1,4 @@
+import { BRAND, appUrl as portalUrl } from '@/config/brand'
 import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
@@ -7,7 +8,7 @@ import { allCrewJobs } from '@/lib/crew/all-jobs'
 // Sends a weekly summary of the cleans in the past 7 days that weren't finished in the new cleaner app
 // (commercial sites, homes and End of Lease, from the same schedule the app shows).
 
-const REPORT_EMAIL = 'admin@corecleaning.services'
+const REPORT_EMAIL = BRAND.email
 
 function brisbaneDate(offsetDays = 0): string {
   const d = new Date(Date.now() + offsetDays * 86_400_000)
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
     new Date(new Date(today + 'T00:00:00').getTime() - 86_400_000).toISOString().split('T')[0]
   )}`
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.corecleaning.services'
+  const appUrl = portalUrl()
 
   const jobCards = items.map(j => `
       <div style="border:1px solid #eef2f6;border-radius:10px;padding:12px 14px;margin-bottom:10px;">

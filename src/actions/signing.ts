@@ -1,5 +1,6 @@
 ﻿'use server'
 
+import { BRAND, issuer, regNumbers } from '@/config/brand'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -163,7 +164,7 @@ function companyDocInviteEmail(title: string, link: string, message?: string): s
       <a href="${link}" style="display:block;text-align:center;background:#00250e;color:#fff;text-decoration:none;font-size:16px;font-weight:700;border-radius:12px;padding:16px 24px;margin:6px 0 18px">Review &amp; sign &rarr;</a>
       <p style="font-size:12px;color:#94a3b8;margin:0">If the button doesn't work, copy this link: ${link}</p>
     </div>
-    <p style="text-align:center;font-size:12px;color:#94a3b8;margin:16px 0">Core Cleaning · Brisbane, QLD · admin@corecleaning.services</p>
+    <p style="text-align:center;font-size:12px;color:#94a3b8;margin:16px 0">Core Cleaning · Brisbane, QLD · ${BRAND.email}</p>
   </div>`
 }
 
@@ -365,7 +366,7 @@ function inviteEmail(a: AgreementData, link: string, message?: string): string {
       </div>
     </div>
     <p style="font-size:11px;color:#94a3b8;margin:18px auto 0;text-align:center;max-width:560px;line-height:1.7;">
-      Core Cleaning &middot; ABN 45 344 135 153 &middot; Brisbane QLD<br/>
+      ${issuer().legalName} &middot; ${regNumbers(issuer(), ' &middot; ')} &middot; Brisbane QLD<br/>
       This signing link is unique to you &mdash; please don&rsquo;t forward it.
     </p>
   </div>`

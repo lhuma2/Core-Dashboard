@@ -1,4 +1,5 @@
 'use client'
+import { BRAND } from '@/config/brand'
 import { useState } from 'react'
 import { clientSavePassword, clientSkipWelcome } from '@/actions/client-portal'
 import { setFlash } from '@/lib/hub/flash'
@@ -37,7 +38,7 @@ export function ClientWelcome({ first, biz, email }: { first: string; biz: strin
         <p className="hint">Thanks for choosing us for {biz}. This is your client portal. Here are your login details, so you have them in one place.</p>
       </div>
       <div className="card creds">
-        <div><span>Website</span><span className="cv">portal.corecleaning.services</span></div>
+        <div><span>Website</span><span className="cv">{BRAND.portalHost}</span></div>
         <div><span>Username</span><span className="cv">{email}</span></div>
         <div><span>Password</span><span className="cv">Your first name, starting with a capital</span></div>
       </div>

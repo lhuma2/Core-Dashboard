@@ -1,5 +1,6 @@
 'use server'
 
+import { issuer, regNumbers } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
@@ -132,7 +133,7 @@ function shell(body: string): string {
       <div style="padding:34px 34px 30px;">${body}</div>
     </div>
     <p style="font-size:11px;color:#94a3b8;margin:18px auto 0;text-align:center;max-width:560px;line-height:1.7;">
-      Core Cleaning &middot; ABN 45 344 135 153 &middot; Brisbane QLD
+      ${issuer().legalName} &middot; ${regNumbers(issuer(), ' &middot; ')} &middot; Brisbane QLD
     </p>
   </div>`
 }

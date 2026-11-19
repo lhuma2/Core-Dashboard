@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import { BRAND } from '@/config/brand'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -15,7 +16,7 @@ import { ChangePasswordCard } from '@/components/settings/ChangePasswordCard'
 import { Settings, Building2, Percent, MessageSquare, Bell, Plus, Trash2, ShieldCheck } from 'lucide-react'
 
 const DEFAULT: AppSettings = {
-  business: { name: 'Core Cleaning', email: 'admin@corecleaning.services', phone: '0407 026 360', website: 'https://www.corecleaning.services', address: 'Brisbane, QLD' },
+  business: { name: 'Core Cleaning', email: BRAND.email, phone: '0407 026 360', website: BRAND.websiteUrl, address: 'Brisbane, QLD' },
   margin_thresholds: { red: 24, yellow: 40 },
   valuation_multiple: 2.5,
   survey_frequency_days: 90,

@@ -1,5 +1,6 @@
 ﻿'use server'
 
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
@@ -35,7 +36,7 @@ export async function sendLeadIntroEmailAction(id: string, scheduleFollowUp = fa
   if (!lead.contact_email) return { error: 'This lead has no email address. Add one first.' }
 
   const { subject, html } = introEmailContent(prospectOf(lead))
-  const messageId = `<lead-intro-${id}-${Date.now()}@corecleaning.services>`
+  const messageId = `<lead-intro-${id}-${Date.now()}@${BRAND.mailDomain}>`
   const attachments = await buildCapabilityAttachment()
 
   const result = await sendThreadedEmail({ to: lead.contact_email, subject, html, messageId, attachments })

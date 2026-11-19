@@ -1,4 +1,5 @@
-﻿import type { ScopeGroup } from '@/lib/documents/proposal'
+﻿import { BRAND } from '@/config/brand'
+import type { ScopeGroup } from '@/lib/documents/proposal'
 import type { ProposalData } from '@/lib/documents/proposal'
 
 // ─── Service Agreement — data model + defaults ───────────────────────────────
@@ -39,8 +40,8 @@ const AGREEMENT_SCOPE: ScopeGroup[] = [
 ]
 
 export const DEFAULT_AGREEMENT: AgreementData = {
-  providerName: 'Core Cleaning',
-  providerABN: '45 344 135 153',
+  providerName: BRAND.legalName,
+  providerABN: BRAND.abn,
   clientName: 'Northpoint Commercial',
   clientABN: '00 000 000 000',
   premises: '6–12 Bunya Park Drive, Eatons Hill QLD 4037',
@@ -56,7 +57,7 @@ export const DEFAULT_AGREEMENT: AgreementData = {
   contactName: 'Laith Humadi',
   contactRole: 'Director',
   contactPhone: '+61 407 026 360',
-  contactEmail: 'admin@corecleaning.services',
+  contactEmail: BRAND.email,
   scopeGroups: AGREEMENT_SCOPE,
   additionalServices: ['Carpet steam cleaning', 'Hard-floor strip & seal', 'Pressure washing', 'Window cleaning', 'High dusting'],
 }

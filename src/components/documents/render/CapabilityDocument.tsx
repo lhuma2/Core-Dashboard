@@ -1,4 +1,5 @@
-﻿import type { CSSProperties } from 'react'
+﻿import { BRAND } from '@/config/brand'
+import type { CSSProperties } from 'react'
 import type { CapabilityData } from '@/lib/documents/capability'
 
 // Faithful recreation of the Capability Statement (3 × A4 pages).
@@ -179,7 +180,7 @@ export function CapabilityDocument({ data }: { data: CapabilityData }) {
             <div style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.6 }}>Brisbane · Gold Coast · Ipswich<br />Logan · Redlands · Moreton Bay</div>
           </div>
         </div>
-        <Foot left="Core Cleaning · Brisbane QLD · corecleaning.services" n="03" />
+        <Foot left={`Core Cleaning · Brisbane QLD · ${BRAND.website}`} n="03" />
       </section>
 
     </div>

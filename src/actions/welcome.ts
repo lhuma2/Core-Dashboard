@@ -1,5 +1,6 @@
 'use server'
 
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -140,6 +141,6 @@ function welcomeEmail(name: string, link: string, loginEmail: string, password: 
         <p style="text-align:center;font-size:11.5px;color:#cbd5e1;margin:12px 0 0;">Button not working? Paste this: <span style="color:#94a3b8;word-break:break-all;">${link}</span></p>
       </div>
     </div>
-    <p style="font-size:11px;color:#94a3b8;margin:18px auto 0;text-align:center;max-width:560px;line-height:1.7;">Core Cleaning &middot; Brisbane QLD &middot; admin@corecleaning.services</p>
+    <p style="font-size:11px;color:#94a3b8;margin:18px auto 0;text-align:center;max-width:560px;line-height:1.7;">Core Cleaning &middot; Brisbane QLD &middot; ${BRAND.email}</p>
   </div>`
 }

@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/brand'
 import 'server-only'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
@@ -19,7 +20,7 @@ function welcomeMail(first: string, email: string, pw: string, site: string): st
     <p style="margin:0 0 12px">Welcome to Core Cleaning. Your client portal is ready. You can see your upcoming cleans, ask for photos or an extra clean, send us a request and find your documents, all in one place.</p>
     <p style="margin:0 0 12px;background:#f3f5f4;border-radius:8px;padding:10px 12px;font-family:Menlo,monospace;font-size:14px">Website: ${esc(site.replace(/^https?:\/\//, ''))}/client/login<br>Username: ${esc(email)}<br>Password: ${esc(pw)}</p>
     <p style="margin:0 0 12px">The first time you log in it will ask you to choose your own password. On iPhone, open the portal in Safari, tap Share, then Add to Home Screen so it works like an app.</p>
-    <p style="margin:0">Kind regards,<br><strong>Laith Humadi</strong><br>Core Cleaning · 0407 026 360 · admin@corecleaning.services</p>
+    <p style="margin:0">Kind regards,<br><strong>Laith Humadi</strong><br>Core Cleaning · 0407 026 360 · ${BRAND.email}</p>
   </div></div>`
 }
 

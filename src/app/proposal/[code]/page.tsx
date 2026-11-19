@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/brand'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ProposalDoc } from '@/components/hub/ProposalDoc'
@@ -22,7 +23,7 @@ export default async function ClientProposalPage({ params }: { params: { code: s
       <main className="wrap pubwrap">{body}</main>
     </div>
   )
-  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This proposal link isn’t valid</h1><p className="nchint">The link may be mistyped, or a newer copy of the proposal was sent. Please contact Core Cleaning on 0407 026 360 or admin@corecleaning.services for a fresh link.</p></div>)
+  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This proposal link isn’t valid</h1><p className="nchint">The link may be mistyped, or a newer copy of the proposal was sent. Please contact Core Cleaning on 0407 026 360 or {BRAND.email} for a fresh link.</p></div>)
   if (!/^[0-9a-f]{64}$/.test(params.code || '')) return bad
   const db = createAdminClient() as any
   const { data } = await db.from('proposals').select('id').eq('code', params.code).is('deleted_at', null).maybeSingle()

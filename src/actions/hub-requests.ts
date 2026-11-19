@@ -2,6 +2,7 @@
 
 // Commercial → Requests: reply, mark done, reopen and book an extra clean. Same checks and words as the mock-up.
 
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
@@ -22,7 +23,7 @@ const fail = (error: string): R => ({ ok: false, error })
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
 const d10 = (v: any) => (v ? String(v).slice(0, 10) : null)
 const t5 = (v: any) => (v ? String(v).slice(0, 5) : '')
-const PORTAL = 'https://portal.corecleaning.services/client/app?tab=requests'
+const PORTAL = BRAND.appUrl + '/client/app?tab=requests'
 
 function refresh() { revalidatePath('/hub', 'layout'); revalidatePath('/client/app', 'layout') }
 

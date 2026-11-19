@@ -1,5 +1,6 @@
 'use server'
 
+import { BRAND, appUrl } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { z } from 'zod'
@@ -22,7 +23,7 @@ function siteUrl(): string {
   const h = headers()
   const host = h.get('x-forwarded-host') || h.get('host')
   if (host) return `${h.get('x-forwarded-proto') || 'https'}://${host}`
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services').replace(/\/$/, '')
+  return appUrl()
 }
 const esc = (v: string) => v.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 const first = (n: string) => (n || '').trim().split(/\s+/)[0] || 'there'
@@ -155,7 +156,7 @@ export async function clientSign(code: string, name: string, agree: boolean): Pr
   if (process.env.RESEND_API_KEY) {
     const copy = (hi: string) => mail(hi, [`${esc(nm)} signed ${AGRN[refDiv(ref)].toLowerCase()} ${esc(ref)} on ${esc(dLong(brisbaneToday()))}.`, 'You can open the signed copy, and save it as a PDF, here:'], 'Open the signed agreement', link)
     if (data?.sent_to) await sendEmail(data.sent_to, `Your signed service agreement (${ref})`, copy(first(nm))).catch(() => {})
-    await sendEmail('admin@corecleaning.services', `${nm} signed ${ref}`, copy('Laith')).catch(() => {})
+    await sendEmail(BRAND.email, `${nm} signed ${ref}`, copy('Laith')).catch(() => {})
   }
   await sendPushToRole('admin', { title: `${nm} signed ${ref}`, body: `Their ${AGRN[refDiv(ref)].toLowerCase()} is signed.`, url: divBase(refDiv(ref)) + '/documents?show=signed' }).catch(() => {})
   refresh()

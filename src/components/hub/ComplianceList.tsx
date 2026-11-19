@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/config/brand'
 import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -69,7 +70,7 @@ export function ShareSheet({ ids, onClose, onToast }: { ids: string[]; onClose: 
           try { const r = await emailDocs(ids, to); if (!r.ok) { onToast(r.error); return } onClose(); onToast(r.toast) } catch { onToast(NO_DB) } finally { setBusy(false) }
         }} style={{ display: 'contents' }}>
           <label className="search"><span className="sr">Send to email</span><input type="email" placeholder="client@business.com.au" value={to} onChange={e => setTo(e.target.value)} autoFocus /></label>
-          <p className="sheetsub">Sent from admin@corecleaning.services with the documents attached as PDFs, ending with your signature.</p>
+          <p className="sheetsub">Sent from {BRAND.email} with the documents attached as PDFs, ending with your signature.</p>
           <div className="sheetbtns">
             <button type="submit" className="btn call" disabled={busy}>{busy ? 'Sending…' : 'Send email'}</button>
             <button type="button" className="btn log" onClick={() => setMode('link')}>Back</button>

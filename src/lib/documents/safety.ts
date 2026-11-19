@@ -3,6 +3,7 @@
 // These are templates: review and tailor to actual site conditions, chemicals
 // and equipment before relying on them (see the note rendered on each document).
 
+import { BRAND, issuer, regNumbers } from '@/config/brand'
 export interface SwmsRow {
   hazard: string
   risk: string
@@ -28,12 +29,13 @@ export const DOC_CONTROL = {
 }
 
 export const COMPANY = {
-  name: 'Core Cleaning',
-  abn: '45 344 135 153',
+  name: BRAND.legalName,
+  abn: BRAND.abn,
+  reg: regNumbers(issuer()),
   location: 'Brisbane, QLD',
-  email: 'contact@corecleaning.services',
-  web: 'www.corecleaning.services',
-  phone: '0407 026 360',
+  email: BRAND.contactEmail,
+  web: 'www.' + BRAND.website,
+  phone: BRAND.phone,
 }
 
 export const LEGISLATION =

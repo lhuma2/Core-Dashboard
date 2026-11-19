@@ -3,6 +3,7 @@
 // The public survey page (/survey/<link>). The client isn't logged in: the private link is the key, and it works once.
 // A score of 6 or under tells Laith straight away (email and push).
 
+import { BRAND } from '@/config/brand'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
@@ -35,7 +36,7 @@ export async function answerSurvey(token: string, answers: Record<string, number
   if (svLow(rec)) {
     const lows = SV_Q.filter(q => scores[q.k] <= 6).map(q => `${q.label} ${scores[q.k]}`)
     const body = `<p><strong>${esc(name)}</strong> answered their survey, average ${svFmt(svAvg(rec))} out of 10.</p><p>Scored 6 or under: ${esc(lows.join(', '))}.</p>${n ? `<p>Their notes: “${esc(n)}”</p>` : ''}<p>It’s on your follow up list under Commercial → Surveys in the hub.</p>`
-    if (process.env.RESEND_API_KEY) await sendEmail('admin@corecleaning.services', `${name} scored 6 or under on their survey`, body).catch(() => {})
+    if (process.env.RESEND_API_KEY) await sendEmail(BRAND.email, `${name} scored 6 or under on their survey`, body).catch(() => {})
     await sendPushToRole('admin', { title: `${name}: survey needs a follow up`, body: `Scored 6 or under for ${lows.map(l => l.replace(/ \d+$/, '').toLowerCase()).join(' and ')}`, url: '/hub/commercial/surveys?f=answers' }).catch(() => {})
   }
   // no revalidatePath here: it would re-render this page as "already received" over the thank you (hub pages are dynamic anyway)

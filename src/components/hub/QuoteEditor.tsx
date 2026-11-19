@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/config/brand'
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -213,7 +214,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
         {total && <p className="money">{total}</p>}
 
         <h2 className="nch"><span className="qstep">5</span> Contact</h2>
-        <p className="nchint">Your details close the quote: Laith Humadi, admin@corecleaning.services, 0407 026 360, www.corecleaning.services.</p>
+        <p className="nchint">Your details close the quote: Laith Humadi, {BRAND.email}, 0407 026 360, www.{BRAND.website}.</p>
 
         {err && <p className="ferr" role="alert">{err}</p>}
         <div className="cpbtns">

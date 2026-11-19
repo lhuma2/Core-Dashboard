@@ -1,5 +1,6 @@
 ﻿'use server'
 
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
@@ -48,7 +49,7 @@ export async function sendEmailAction(data: {
       <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#1a1a1a;font-family:Arial,sans-serif;">Laith Humadi</p>
       <p style="margin:0 0 1px;font-size:13px;color:#555555;font-family:Arial,sans-serif;">Founder &amp; Director, Core Cleaning</p>
       <p style="margin:0 0 1px;font-size:13px;color:#555555;font-family:Arial,sans-serif;">0407 026 360</p>
-      <a href="https://www.corecleaning.services" style="font-size:13px;color:#1a56db;text-decoration:none;font-family:Arial,sans-serif;">corecleaning.services</a>
+      <a href="${BRAND.websiteUrl}" style="font-size:13px;color:#1a56db;text-decoration:none;font-family:Arial,sans-serif;">${BRAND.website}</a>
     </div>
 
   </div>
@@ -83,10 +84,10 @@ export async function sendEmailAction(data: {
   }
 
   const sendParams: any = {
-    from: 'Laith Humadi <admin@corecleaning.services>',
+    from: BRAND.emailFromLaith,
     to: data.to_email,
-    reply_to: 'admin@corecleaning.services',
-    bcc: 'admin@corecleaning.services',
+    reply_to: BRAND.email,
+    bcc: BRAND.email,
     subject: data.subject,
     html: htmlBody,
   }

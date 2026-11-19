@@ -3,6 +3,7 @@
 // Team: add a cleaner (emails the compliance pack), resend it, set a cleaner's region, and remove a cleaner. Same
 // checks and words as the mock-up.
 
+import { appUrl } from '@/config/brand'
 import { randomBytes } from 'crypto'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -26,7 +27,7 @@ function siteUrl(): string {
   const h = headers()
   const host = h.get('x-forwarded-host') || h.get('host')
   if (host) return `${h.get('x-forwarded-proto') || 'https'}://${host}`
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services').replace(/\/$/, '')
+  return appUrl()
 }
 function refresh() { revalidatePath('/hub', 'layout') }
 

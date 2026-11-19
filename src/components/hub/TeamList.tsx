@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/config/brand'
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -89,7 +90,7 @@ export function TeamList({ team, tokens, initial }: { team: TeamMember[]; tokens
           </div>
           <label className="check"><input type="checkbox" checked={form.leader} onChange={e => setForm(x => ({ ...x, leader: e.target.checked }))} /><span>Team leader</span></label>
           <label className="check"><input type="checkbox" checked={form.covered} onChange={e => setForm(x => ({ ...x, covered: e.target.checked }))} /><span>Covered by my insurance (they don’t have their own public liability)</span></label>
-          <p className="sheetsub">Adding them emails the subcontractor compliance pack from admin@corecleaning.services. They fill in their ABN{form.covered ? '' : ' and insurance details'} and sign once.{form.covered ? ' Their agreement says they’re covered under Core Cleaning’s policy and pay the excess on claims from their work.' : ''}</p>
+          <p className="sheetsub">Adding them emails the subcontractor compliance pack from {BRAND.email}. They fill in their ABN{form.covered ? '' : ' and insurance details'} and sign once.{form.covered ? ' Their agreement says they’re covered under Core Cleaning’s policy and pay the excess on claims from their work.' : ''}</p>
           {err && <p className="ferr" role="alert">{err}</p>}
           <div className="sheetbtns">
             <button type="submit" className="btn call" disabled={busy === 'add'}>{busy === 'add' ? 'Adding…' : 'Add and send pack'}</button>

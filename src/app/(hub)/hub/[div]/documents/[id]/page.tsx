@@ -27,7 +27,7 @@ export default async function AgreementPage({ params }: { params: { id: string; 
         <AgreementAdminBar id={d.id} ref_={d.ref} code={d.code} status={d.status} email={email} client={d.homeName}
           draftNote={`This draft reads from ${d.homeName}’s page, so any change there shows here. It’s locked in when you send it.`} />
         {d.snap
-          ? <AgreementBody ref_={d.ref} snap={d.snap} signedBy={d.signedBy} signedOn={d.signedAt ? dLong(d.signedAt) : ''} />
+          ? <AgreementBody ref_={d.ref} snap={d.snap} signedBy={d.signedBy} signedOn={d.signedAt ? dLong(d.signedAt) : ''} issued={d.sentAt || d.created} />
           : <p className="dp">This client was removed.</p>}
       </article>
     </>

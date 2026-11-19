@@ -3,6 +3,7 @@
 // Commercial → Surveys: send (one or all due), remind, snooze 2 weeks, turn off/on, mark followed up. Nothing is sent
 // on its own: Laith presses Send. Checks and words from the mock-up (v76, v78).
 
+import { BRAND, appUrl } from '@/config/brand'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -27,7 +28,7 @@ function siteUrl(): string {
   const h = headers()
   const host = h.get('x-forwarded-host') || h.get('host')
   if (host) return `${h.get('x-forwarded-proto') || 'https'}://${host}`
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services').replace(/\/$/, '')
+  return appUrl()
 }
 function refresh() { revalidatePath('/hub', 'layout') }
 
@@ -41,7 +42,7 @@ function surveyEmail(c: SvClient, link: string, reminder: boolean): { subject: s
     <p style="margin:0 0 12px">${reminder ? 'Just a quick reminder about our survey. ' : ''}We’d love to know how we’re going at ${esc(c.name)}. It takes about 2 minutes: five quick ratings from 1 to 10, and a box for anything else you’d like us to know.</p>
     <p style="margin:18px 0"><a href="${link}" style="display:inline-block;background:#0f6e50;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px">Start the survey</a></p>
     <p style="margin:0 0 12px;font-size:13px;color:#5d6b65">Or open this link: ${esc(link)}</p>
-    <p style="margin:0">Thank you,<br><strong>Laith Humadi</strong><br>Core Cleaning · 0407 026 360 · admin@corecleaning.services</p>
+    <p style="margin:0">Thank you,<br><strong>Laith Humadi</strong><br>Core Cleaning · 0407 026 360 · ${BRAND.email}</p>
   </div></div>`
   return { subject, html }
 }

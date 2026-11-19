@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/brand'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PackForm } from '@/components/hub/PackForm'
 import { brisbaneToday } from '@/lib/hub/figures'
@@ -17,7 +18,7 @@ export default async function PackPage({ params, searchParams }: { params: { tok
       <main className="wrap pubwrap">{body}</main>
     </div>
   )
-  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This link isn’t valid</h1><p className="nchint">The link may be mistyped, or it was replaced by a newer one. Please call Laith on 0407 026 360 or email admin@corecleaning.services for a fresh link.</p></div>)
+  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This link isn’t valid</h1><p className="nchint">The link may be mistyped, or it was replaced by a newer one. Please call Laith on 0407 026 360 or email {BRAND.email} for a fresh link.</p></div>)
   if (!/^[0-9a-f]{64}$/.test(params.token || '')) return bad
   const db = createAdminClient() as any
   const { data: k } = await db.from('cleaner_packs').select('first_name, last_name, phone, signed_at, signed_name, company, covered_by_core').eq('token', params.token).maybeSingle()

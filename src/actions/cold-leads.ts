@@ -1,5 +1,6 @@
 ﻿'use server'
 
+import { BRAND } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -331,14 +332,14 @@ export async function deleteColdLeadAction(id: string) {
 
 // Single source of truth for the sign-off on every cold-lead email (intro,
 // follow-up, capability statement) — plain-text and HTML versions kept in sync.
-const SIGNATURE_TEXT = 'Laith Humadi\nCore Cleaning\n0407 026 360\nadmin@corecleaning.services'
+const SIGNATURE_TEXT = `Laith Humadi\nCore Cleaning\n${BRAND.phone}\n${BRAND.email}`
 
 const SIGNATURE = `
   <p style="margin-top: 24px;">
     Laith Humadi<br/>
     Core Cleaning · Brisbane<br/>
     0407 026 360<br/>
-    <a href="mailto:admin@corecleaning.services" style="color: #00250e;">admin@corecleaning.services</a>
+    <a href="mailto:${BRAND.email}" style="color: #00250e;">${BRAND.email}</a>
   </p>`
 
 const EMAIL_WRAP = (inner: string) =>
@@ -377,8 +378,8 @@ async function sendThreadedEmail(opts: {
     const { Resend } = await import('resend')
     const resend = new Resend(apiKey)
     const res = await resend.emails.send({
-      from: 'Laith at Core Cleaning <admin@corecleaning.services>',
-      reply_to: 'admin@corecleaning.services',
+      from: BRAND.emailFrom,
+      reply_to: BRAND.email,
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
@@ -438,7 +439,7 @@ export async function sendIntroEmailAction(id: string, scheduleFollowUp = false)
   const locality = localityPhrase(lead.suburb)
 
   // A Message-ID we own, so the follow-up can thread under this email
-  const messageId = `<intro-${id}-${Date.now()}@corecleaning.services>`
+  const messageId = `<intro-${id}-${Date.now()}@${BRAND.mailDomain}>`
   const subject = `Core Cleaning — capability statement for ${lead.business_name}`
 
   const bodyText =

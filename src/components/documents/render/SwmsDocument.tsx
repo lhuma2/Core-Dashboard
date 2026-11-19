@@ -119,7 +119,7 @@ function AuthorisedBy() {
 function Footer() {
   return (
     <div style={{ marginTop: 26, paddingTop: 14, borderTop: '1px solid #EEF2F6', textAlign: 'center', fontSize: 10.5, color: '#94A3B8', lineHeight: 1.7 }}>
-      <div style={{ fontWeight: 600, color: '#64748B' }}>{COMPANY.name} · ABN {COMPANY.abn}</div>
+      <div style={{ fontWeight: 600, color: '#64748B' }}>{COMPANY.name} · {COMPANY.reg}</div>
       <div>{COMPANY.location} · {COMPANY.email} · {COMPANY.web}</div>
     </div>
   )

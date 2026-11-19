@@ -1,13 +1,14 @@
 ﻿'use server'
 
+import { BRAND } from '@/config/brand'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { sendPushToRole } from '@/lib/push'
 
-const APP_URL = 'https://portal.corecleaning.services'
-const OWNER_EMAIL = 'admin@corecleaning.services'
+const APP_URL = BRAND.appUrl
+const OWNER_EMAIL = BRAND.email
 const CODE_ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
 export interface SubbieDetails {

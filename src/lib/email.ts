@@ -1,4 +1,5 @@
-﻿import { Resend } from 'resend'
+﻿import { BRAND } from '@/config/brand'
+import { Resend } from 'resend'
 
 // ─── Generic email utility ────────────────────────────────────────────────────
 
@@ -16,8 +17,8 @@ export async function sendEmail(
   try {
     const resend = new Resend(apiKey)
     const result = await resend.emails.send({
-      from: 'Core Cleaning <admin@corecleaning.services>',
-      reply_to: 'admin@corecleaning.services',
+      from: BRAND.emailFromBiz,
+      reply_to: BRAND.email,
       to,
       subject,
       html,
@@ -53,8 +54,8 @@ export async function sendDocumentEmail(
 
   try {
     await resend.emails.send({
-      from: 'Core Cleaning <admin@corecleaning.services>',
-      reply_to: 'admin@corecleaning.services',
+      from: BRAND.emailFromBiz,
+      reply_to: BRAND.email,
       to,
       subject: `Document Ready: ${documentTitle}`,
       html: `

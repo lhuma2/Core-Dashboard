@@ -1,3 +1,4 @@
+import { issuer, partyParen } from '@/config/brand'
 import Link from 'next/link'
 import { Back } from '@/components/hub/icons'
 import { AgreementHead } from '@/components/hub/AgreementBody'
@@ -58,7 +59,7 @@ export default async function CommAgreementPage({ params }: { params: { id: stri
             ? <><div className="sigline">{d.signedBy}</div><div className="sigmeta">Signed electronically for {d.client} on {dLong(d.signedAt)}{d.signedIp ? ` (IP ${d.signedIp})` : ''}</div></>
             : <div className="sigmeta">Client signature: not signed yet</div>}
         </div>
-        <div className="sigblock"><div className="sigline">Laith Humadi</div><div className="sigmeta">For Core Cleaning (ABN 45 344 135 153), Director</div></div>
+        <div className="sigblock"><div className="sigline">Laith Humadi</div><div className="sigmeta">For {partyParen(issuer(v.issued))}, Director</div></div>
       </article>
     </>
   )

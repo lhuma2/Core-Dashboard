@@ -4,6 +4,7 @@
 // resend, delete a draft, renew, send the Certificate of Currency / compliance pack the client asked for, and other
 // files uploaded against a client. Words from the mock-up.
 
+import { BRAND, appUrl } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { z } from 'zod'
@@ -34,7 +35,7 @@ function siteUrl(): string {
   const h = headers()
   const host = h.get('x-forwarded-host') || h.get('host')
   if (host) return `${h.get('x-forwarded-proto') || 'https'}://${host}`
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services').replace(/\/$/, '')
+  return appUrl()
 }
 function refresh() { revalidatePath('/hub', 'layout') }
 async function staff(): Promise<{ db: any } | { error: string }> {
@@ -127,7 +128,7 @@ export async function sendCommAgreement(id: string, to: string): Promise<Done> {
   return {
     ok: true, id, toast: r.tested
       ? `${d.ref} marked as sent to ${email}. This is the test site, so no email went out. Use Copy signing link to open the client’s page.`
-      : `Signing link emailed to ${email} from admin@corecleaning.services.`,
+      : `Signing link emailed to ${email} from ${BRAND.email}.`,
   }
 }
 
@@ -213,7 +214,7 @@ export async function sendRequestedDocs(id: string): Promise<Done> {
   if (error) return { ok: false, error: NO_DB }
   refresh()
   const cap = what.charAt(0).toUpperCase() + what.slice(1)
-  return { ok: true, id, toast: tested ? `${cap} marked as sent. This is the test site, so no email went out. The share link is ${link.url}` : `${cap} emailed to ${to} from admin@corecleaning.services as a share link.` }
+  return { ok: true, id, toast: tested ? `${cap} marked as sent. This is the test site, so no email went out. The share link is ${link.url}` : `${cap} emailed to ${to} from ${BRAND.email} as a share link.` }
 }
 
 // ── other files, filed under a client ──
@@ -304,7 +305,7 @@ export async function clientSignAgreement(code: string, f: SignForm): Promise<{ 
   <p>You can view or download your signed copy any time here:</p>
   <p><a href="${view}" style="background:#0f7a5a;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:8px;display:inline-block">View your signed agreement</a></p>
   <p>Kind regards,</p>${emailSignature(site)}</div>`).catch(() => {})
-    await sendEmail('admin@corecleaning.services', `${d.client} signed ${d.ref}`, `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5">
+    await sendEmail(BRAND.email, `${d.client} signed ${d.ref}`, `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5">
   <p><strong>${esc(det.name)}</strong> (${esc(det.position)}) signed the ${esc(d.client)} ${what} ${esc(d.ref)}.</p>
   <p>${spec ? `${esc(works)} booked for ${esc(dLong(det.start))}. Assign a cleaner in the timetable.` : `Preferred first clean ${esc(dLong(det.start))}.`}${esc(asked)}</p>
   ${!spec && !d.clientId ? '<p>Next: press Set up as client on the proposal in Documents.</p>' : ''}

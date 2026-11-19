@@ -2,6 +2,7 @@
 // ported from the finished mock-up (Main.dc.html: blankPf, checkProp, cleanProp, propDoc, partsFromProp, agParticulars,
 // the signing checks). Pure functions: the screens use them for instant messages and the server repeats them.
 
+import { BRAND, type Issuer, issuer, partyLine } from '@/config/brand'
 import { COMM_CLAUSES, SPEC_CLAUSES, SPEC_METHODS, type Clause, type PresetScope } from './comm-text'
 import { normPhone } from './new-client'
 
@@ -277,7 +278,7 @@ export function propMeta(p: Prop): string {
 
 // ── the document (preview, the client's page, the PDF) ──────
 export interface PropDocView {
-  isComm: boolean; kicker: string; ref: string; biz: string; contact: string; address: string; date: string
+  isComm: boolean; kicker: string; ref: string; biz: string; contact: string; address: string; date: string; issued: string
   coverH: string; coverSub: string; w1: string; w2: string; toc: { name: string; num: string }[]; howH: string
   how: { n: string; t: string; b: string }[]; scopeNav: string; scopeKick: string; freqLines: string[]
   groups: { num: string; heading: string; items: string[] }[]; jobs: { num: string; name: string; area: string; items: string[] }[]
@@ -294,7 +295,7 @@ export function propDoc(p: Pf & { sentAt?: string | null }, today: string, reqCl
   return {
     isComm: comm,
     kicker: comm ? 'Commercial cleaning proposal' : 'Specialist works proposal',
-    ref: p.ref, biz: biz || 'Business name', contact: tidy(p.contact) || 'Contact name', address: tidy(p.address) || 'Site address', date: dLong(issue),
+    ref: p.ref, biz: biz || 'Business name', contact: tidy(p.contact) || 'Contact name', address: tidy(p.address) || 'Site address', date: dLong(issue), issued: issue,
     coverH: comm ? 'A cleaner workplace, handled properly.' : 'Specialist cleaning, done properly.',
     coverSub: comm ? 'A proposal for the ongoing commercial cleaning of your premises, from a local team that takes pride in the detail.' : 'A proposal for specialist cleaning works at your premises, from a local team that takes pride in the detail.',
     w1: comm ? 'Thank you for the opportunity to put this proposal together for ' + (biz || 'your business') + '. A clean workplace shapes how your staff feel each morning and how your clients see your business the moment they walk in. We take that seriously.'
@@ -478,17 +479,17 @@ export function signCheck(f: SignForm, today: string, spec: boolean): { error: s
 }
 
 export interface Part { k: string; v: string }
-const CONTACT: Part = { k: 'Core Cleaning contact', v: 'Laith Humadi, Director, +61 407 026 360, admin@corecleaning.services' }
-const PROVIDER: Part = { k: 'Provider', v: 'Core Cleaning, ABN 45 344 135 153' }
+const CONTACT = (i: Issuer): Part => ({ k: i.tradingName + ' contact', v: `Laith Humadi, Director, ${BRAND.phoneIntl}, ${i.email}` })
+const PROVIDER = (i: Issuer): Part => ({ k: 'Provider', v: partyLine(i) })
 
 /** Particulars for an agreement made from an accepted commercial proposal (updates live as they fill in the details). */
-export function partsFromProp(d: Pick<Agr, 'start' | 'termMonths'>, p: PropSnap, det: Partial<SignDetails> = {}): Part[] {
+export function partsFromProp(d: Pick<Agr, 'start' | 'termMonths'>, p: PropSnap, det: Partial<SignDetails> = {}, iss: Issuer = issuer()): Part[] {
   const F = P_FREQ[p.freq] || P_FREQ.w1, start = det.start || d.start || ''
   const end = start ? termEnd(start, d.termMonths || 12) : ''
   const dayList = det.days && det.days.length ? det.days.map(dayLabel).join(', ') : ''
   const price = money(p.price) || 0
   const out: Part[] = [
-    PROVIDER,
+    PROVIDER(iss),
     { k: 'Client', v: (tidy(det.legal) || p.biz) + (det.abn ? ' (ABN ' + fmtAbn(det.abn) + ')' : '') },
     { k: 'Premises', v: tidy(det.address) || p.address },
     { k: 'Services', v: 'Commercial cleaning, ' + F.word + ', ' + (P_WHEN[p.when] || P_WHEN.after) + ', as set out in Schedule 1' },
@@ -501,16 +502,16 @@ export function partsFromProp(d: Pick<Agr, 'start' | 'termMonths'>, p: PropSnap,
   out.push({ k: 'Payment terms', v: 'Invoiced monthly, due within 14 days' + (det.po ? '. Purchase order ' + det.po : '') })
   if (det.accounts) out.push({ k: 'Invoices sent to', v: det.accounts })
   out.push({ k: 'Accepted proposal', v: p.ref + (p.acceptedAt ? ', accepted ' + dLong(p.acceptedAt) : '') })
-  out.push(CONTACT)
+  out.push(CONTACT(iss))
   return out
 }
 /** Particulars for a specialist works agreement. */
-export function specParts(d: Pick<Agr, 'start' | 'client'>, p: PropSnap | null, acceptedBy = ''): Part[] {
+export function specParts(d: Pick<Agr, 'start' | 'client'>, p: PropSnap | null, acceptedBy = '', iss: Issuer = issuer()): Part[] {
   const tot = p ? propTotal(p) : 0
   const names = p ? (p.jobs || []).map(jobName).join(', ') : 'As per the accepted proposal'
   const win: Record<string, string> = { day: 'during the day', after: 'after hours', weekend: 'weekend' }
   return [
-    PROVIDER,
+    PROVIDER(iss),
     { k: 'Client', v: d.client },
     { k: 'Premises', v: p ? p.address : 'To be confirmed' },
     { k: 'Works', v: names },
@@ -518,16 +519,16 @@ export function specParts(d: Pick<Agr, 'start' | 'client'>, p: PropSnap | null, 
     { k: 'Works price', v: tot ? fmt$(tot) + ' inc GST (' + fmt$(Math.round(tot / 1.1 * 100) / 100) + ' ex GST)' : 'As per the accepted proposal' },
     { k: 'Payment terms', v: 'Invoiced on completion, due within 14 days' },
     { k: 'Accepted proposal', v: p ? p.ref + ', accepted' + (acceptedBy ? ' by ' + acceptedBy : '') + ' on ' + dLong(p.acceptedAt) : '' },
-    CONTACT,
+    CONTACT(iss),
   ]
 }
 /** Particulars for an agreement made from a client record. */
-export function clientParts(d: Pick<Agr, 'start' | 'termMonths' | 'client'>, c: ClientSnap | null, det: Partial<SignDetails> = {}): Part[] {
+export function clientParts(d: Pick<Agr, 'start' | 'termMonths' | 'client'>, c: ClientSnap | null, det: Partial<SignDetails> = {}, iss: Issuer = issuer()): Part[] {
   const end = (det.start || d.start) ? termEnd((det.start || d.start)!, d.termMonths || 12) : ''
   const ex = c ? c.monthlyEx : 0
   const start = det.start || d.start || ''
   return [
-    PROVIDER,
+    PROVIDER(iss),
     { k: 'Client', v: (tidy(det.legal) || d.client) + (det.abn ? ' (ABN ' + fmtAbn(det.abn) + ')' : '') },
     { k: 'Premises', v: tidy(det.address) || (c && c.premises) || 'To be confirmed' },
     { k: 'Cleaning days', v: (c && c.sched) || 'To be confirmed' },
@@ -536,14 +537,14 @@ export function clientParts(d: Pick<Agr, 'start' | 'termMonths' | 'client'>, c: 
     { k: 'Service fee', v: ex ? fmt$(Math.round(ex * 100) / 100) + ' a month ex GST (' + fmt$(Math.round(ex * 1.1)) + ' inc GST)' : 'As per the accepted proposal' },
     { k: 'Payment terms', v: 'Invoiced monthly, due within 14 days' + (det.po ? '. Purchase order ' + det.po : '') },
     ...(det.accounts ? [{ k: 'Invoices sent to', v: det.accounts }] : []),
-    CONTACT,
+    CONTACT(iss),
   ]
 }
 export function agrParts(d: Agr, det: Partial<SignDetails> | null, clientSnap: ClientSnap | null): Part[] {
-  const p = d.snap?.prop || null
-  if (d.atype === 'spec') return specParts({ start: det?.start || d.start, client: d.client }, p, d.signedBy)
-  if (p) return partsFromProp(d, p, det || {})
-  return clientParts(d, d.snap?.client || clientSnap, det || {})
+  const p = d.snap?.prop || null, iss = issuer(d.sentAt || d.created)
+  if (d.atype === 'spec') return specParts({ start: det?.start || d.start, client: d.client }, p, d.signedBy, iss)
+  if (p) return partsFromProp(d, p, det || {}, iss)
+  return clientParts(d, d.snap?.client || clientSnap, det || {}, iss)
 }
 export function agrScope(d: Agr, clientSnap: ClientSnap | null): { heading: string; items: string[] }[] {
   const p = d.snap?.prop
@@ -581,8 +582,8 @@ export function agView(d: Agr, today: string, det: Partial<SignDetails> | null, 
     kicker: agrTitle(d), ref: d.ref, biz: d.client,
     address: tidy(det?.address) || p?.address || c?.address || '',
     coverH: spec ? 'Specialist works agreement.' : 'Service agreement.',
-    coverSub: p ? `The agreement for the ${spec ? 'works' : 'cleaning services'} in proposal ${p.ref}. Add your details, read the terms and sign at the end.` : 'Your agreement for cleaning services with Core Cleaning. Add your details, read the terms and sign at the end.',
-    date: dLong(d.sentAt || d.created || today),
+    coverSub: p ? `The agreement for the ${spec ? 'works' : 'cleaning services'} in proposal ${p.ref}. Add your details, read the terms and sign at the end.` : 'Your agreement for cleaning services with ' + issuer(d.sentAt || d.created || today).tradingName + '. Add your details, read the terms and sign at the end.',
+    date: dLong(d.sentAt || d.created || today), issued: d.sentAt || d.created || today,
     parts: agrParts(d, det, clientSnap), fromProp: !!p, scopeH: spec ? 'The works.' : 'Scope of works.', scope: agrScope(d, clientSnap), clauses: agrClauses(d),
   }
 }

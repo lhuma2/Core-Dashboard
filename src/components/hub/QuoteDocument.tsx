@@ -1,7 +1,9 @@
+import { issuer, regNumbers } from '@/config/brand'
 import type { QuoteDoc } from '@/lib/hub/home-quotes'
 
 // The quote as the client sees it: cover, scope of works, terms, price, contact. Same sections and words as the mock-up.
 export function QuoteDocument({ d }: { d: QuoteDoc }) {
+  const iss = issuer(d.issued)
   const Head = ({ n, label }: { n: string; label: string }) => (
     <div className="pdhead">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -80,10 +82,10 @@ export function QuoteDocument({ d }: { d: QuoteDoc }) {
         <Head n="04" label="Contact" />
         <h2 className="ph2">Questions? Get in touch.</h2>
         <div className="pfootsig">
-          <div><div className="pkick g">For Core Cleaning</div><div className="psig line">Laith Humadi</div><div className="psmall split"><span>Laith Humadi, Owner</span><span>{d.date}</span></div></div>
-          <div className="r"><div>admin@corecleaning.services</div><div>0407 026 360</div><div>www.corecleaning.services</div><div>ABN 45 344 135 153</div></div>
+          <div><div className="pkick g">For {iss.legalName}</div><div className="psig line">Laith Humadi</div><div className="psmall split"><span>Laith Humadi, Owner</span><span>{d.date}</span></div></div>
+          <div className="r"><div>{iss.email}</div><div>{iss.phone}</div><div>www.{iss.website}</div><div>{regNumbers(iss)}</div></div>
         </div>
-        <div className="pfoot"><span>Core Cleaning · Ref {d.ref}</span><span>ABN 45 344 135 153</span></div>
+        <div className="pfoot"><span>{iss.legalName} · Ref {d.ref}</span><span>{regNumbers(iss)}</span></div>
       </section>
     </div>
   )

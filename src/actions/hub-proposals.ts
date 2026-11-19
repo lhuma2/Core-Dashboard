@@ -3,6 +3,7 @@
 // Commercial → Documents → Proposals: save, send (PDF + accept link from admin@), resend (new link, fresh 30 days),
 // delete, and the client's own page (accept, ask for a revised quote, decline). Words from the mock-up.
 
+import { BRAND, appUrl } from '@/config/brand'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { z } from 'zod'
@@ -31,7 +32,7 @@ function siteUrl(): string {
   const h = headers()
   const host = h.get('x-forwarded-host') || h.get('host')
   if (host) return `${h.get('x-forwarded-proto') || 'https'}://${host}`
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://portal.corecleaning.services').replace(/\/$/, '')
+  return appUrl()
 }
 function refresh() { revalidatePath('/hub', 'layout') }
 
@@ -138,7 +139,7 @@ export async function sendProposal(id: string, to: string): Promise<Done> {
   return {
     ok: true, id, toast: r.tested
       ? `${p.ref} marked as sent to ${email}. This is the test site, so no email went out. Use Copy link to open the client’s page.${linked}`
-      : `Proposal emailed to ${email} from admin@corecleaning.services, with the PDF attached and a link to accept online.${linked}`,
+      : `Proposal emailed to ${email} from ${BRAND.email}, with the PDF attached and a link to accept online.${linked}`,
   }
 }
 
@@ -192,7 +193,7 @@ async function byCode(code: string): Promise<{ db: any; p: Prop } | null> {
 }
 
 async function tellLaith(subject: string, lines: string[], push: { title: string; body: string; url: string }) {
-  if (process.env.RESEND_API_KEY) await sendEmail('admin@corecleaning.services', subject, `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5">${lines.map(l => `<p>${l}</p>`).join('')}</div>`).catch(() => {})
+  if (process.env.RESEND_API_KEY) await sendEmail(BRAND.email, subject, `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5">${lines.map(l => `<p>${l}</p>`).join('')}</div>`).catch(() => {})
   await sendPushToRole('admin', push).catch(() => {})
 }
 

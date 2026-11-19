@@ -1,3 +1,4 @@
+import { BRAND, issuer, regNumbers } from '@/config/brand'
 import 'server-only'
 import React from 'react'
 import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer } from '@react-pdf/renderer'
@@ -43,7 +44,7 @@ function DocPages({ d, logo }: { d: ComplianceDoc; logo: Buffer | null }) {
           return <Text key={i} style={s.p}>{'text' in b ? b.text : ''}</Text>
         })}
       </View>
-      <Text style={s.footL} fixed>Core Cleaning · ABN 45 344 135 153 · 0407 026 360 · contact@corecleaning.services</Text>
+      <Text style={s.footL} fixed>{issuer().legalName} · {regNumbers(issuer())} · {BRAND.phone} · {BRAND.contactEmail}</Text>
     </Page>
   )
 }

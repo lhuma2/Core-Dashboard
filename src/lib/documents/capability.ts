@@ -2,6 +2,7 @@
 // A leave-behind that always travels with a proposal. Mostly fixed template;
 // these are the few editable fields.
 
+import { BRAND } from '@/config/brand'
 export interface CapabilityData {
   year: string
   tagline: string
@@ -28,8 +29,8 @@ export const DEFAULT_CAPABILITY: CapabilityData = {
   contactName: 'Laith Humadi',
   contactRole: 'Director',
   contactPhone: '+61 407 026 360',
-  contactEmail: 'admin@corecleaning.services',
-  website: 'corecleaning.services',
+  contactEmail: BRAND.email,
+  website: BRAND.website,
 }
 
 export function withCapabilityDefaults(data: Partial<CapabilityData> | null | undefined): CapabilityData {

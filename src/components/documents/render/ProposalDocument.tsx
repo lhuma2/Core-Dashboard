@@ -1,4 +1,5 @@
-﻿import type { CSSProperties } from 'react'
+﻿import { BRAND } from '@/config/brand'
+import type { CSSProperties } from 'react'
 import type { ProposalData } from '@/lib/documents/proposal'
 
 // ─── Faithful recreation of the Premium Proposal design (10 × A4 pages) ───────
@@ -351,7 +352,7 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
             <div><div style={{ ...eyebrow, fontSize: 10, color: '#64748B', marginBottom: 8 }}>Phone</div><div style={{ fontSize: 15, color: '#fff' }}>{data.contactPhone}</div></div>
             <div><div style={{ ...eyebrow, fontSize: 10, color: '#64748B', marginBottom: 8 }}>Email</div><div style={{ fontSize: 15, color: '#fff' }}>{data.contactEmail}</div></div>
           </div>
-          <div style={{ marginTop: 26, fontFamily: SANS, fontSize: 10, fontWeight: 500, letterSpacing: '.1em', textTransform: 'uppercase', color: '#475569' }}>Core Cleaning · Brisbane QLD · Owner-led &amp; fully insured · corecleaning.services</div>
+          <div style={{ marginTop: 26, fontFamily: SANS, fontSize: 10, fontWeight: 500, letterSpacing: '.1em', textTransform: 'uppercase', color: '#475569' }}>Core Cleaning · Brisbane QLD · Owner-led &amp; fully insured · {BRAND.website}</div>
         </div>
       </section>
 

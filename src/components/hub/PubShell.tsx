@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/brand'
 import '../../app/(hub)/hub/hub.css'
 
 /** The plain page around something we share with people outside the business (no hub menu). */
@@ -13,5 +14,5 @@ export function PubShell({ children }: { children: React.ReactNode }) {
   )
 }
 export const BadLink = ({ what }: { what: string }) => (
-  <div className="addcard pubdone"><h1 className="nch">This link isn’t valid</h1><p className="nchint">The {what} link may be mistyped or no longer shared. Please contact Core Cleaning on 0407 026 360 or admin@corecleaning.services.</p></div>
+  <div className="addcard pubdone"><h1 className="nch">This link isn’t valid</h1><p className="nchint">The {what} link may be mistyped or no longer shared. Please contact Core Cleaning on 0407 026 360 or {BRAND.email}.</p></div>
 )

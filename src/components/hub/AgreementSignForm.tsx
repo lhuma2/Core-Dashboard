@@ -1,5 +1,6 @@
 'use client'
 
+import { issuer } from '@/config/brand'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { AgreementDoc } from './AgreementDoc'
@@ -103,7 +104,7 @@ export function AgreementSignForm({ d, today, initial, justAccepted }: { d: Agr;
       <div className="pkick g">Signatures</div>
       <h2 className="ph2">Sign to get started.</h2>
       <div className="pfootsig">
-        <div><div className="pkick g">For Core Cleaning</div><div className="psig line">Laith Humadi</div><div className="psmall split"><span>Laith Humadi, Director</span><span>{v.date}</span></div></div>
+        <div><div className="pkick g">For {issuer(v.issued).legalName}</div><div className="psig line">Laith Humadi</div><div className="psmall split"><span>Laith Humadi, Director</span><span>{v.date}</span></div></div>
         <div><div className="pkick g">For {d.client}</div><div className="psig line">{tidy(f.sig) || ' '}</div><div className="psmall split"><span>{[tidy(f.name), tidy(f.position)].filter(Boolean).join(', ') || 'Name and position'}</span><span>{dLong(today)}</span></div></div>
       </div>
       <div className="stackform assign">

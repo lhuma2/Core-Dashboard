@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/brand'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AgreementDoc, DetailsBlock, SignedBlock } from '@/components/hub/AgreementDoc'
 import { AgreementSignForm } from '@/components/hub/AgreementSignForm'
@@ -21,7 +22,7 @@ export default async function ClientAgreementPage({ params, searchParams }: { pa
       <main className="wrap pubwrap">{body}</main>
     </div>
   )
-  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This agreement link isn’t valid</h1><p className="nchint">The link may be mistyped, or a newer link was sent. Please contact Core Cleaning on 0407 026 360 or admin@corecleaning.services for a fresh one.</p></div>)
+  const bad = shell(<div className="addcard pubdone"><h1 className="nch">This agreement link isn’t valid</h1><p className="nchint">The link may be mistyped, or a newer link was sent. Please contact Core Cleaning on 0407 026 360 or {BRAND.email} for a fresh one.</p></div>)
   if (!/^[0-9a-f]{64}$/.test(params.code || '')) return bad
   const { data } = await (createAdminClient() as any).from('agreements').select(AGR_COLS).eq('code', params.code).maybeSingle()
   if (!data) return bad
@@ -36,7 +37,7 @@ export default async function ClientAgreementPage({ params, searchParams }: { pa
       <div className="pdbar"><p className="agstatus ok">Signed by {d.signedBy} on {dLong(d.signedAt)}.</p><div className="sheetbtns"><PrintButton auto={searchParams.print === '1'} /></div></div>
       <AgreementDoc v={{ ...v, coverSub: v.coverSub.replace(' Add your details, read the terms and sign at the end.', '') }} detailsTitle="Client details"
         details={<DetailsBlock list={detailsList(det)} />}
-        signatures={<SignedBlock biz={d.client} date={v.date} signedBy={d.signedBy} role={[det?.name, det?.position].filter(Boolean).join(', ')} signedOn={dLong(d.signedAt)} />} />
+        signatures={<SignedBlock biz={d.client} date={v.date} issued={v.issued} signedBy={d.signedBy} role={[det?.name, det?.position].filter(Boolean).join(', ')} signedOn={dLong(d.signedAt)} />} />
     </>
   )
 }

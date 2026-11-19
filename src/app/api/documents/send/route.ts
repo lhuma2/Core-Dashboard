@@ -1,4 +1,5 @@
-﻿import { NextResponse } from 'next/server'
+﻿import { BRAND } from '@/config/brand'
+import { NextResponse } from 'next/server'
 import React from 'react'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
   }
 
   const contactName = (data as any).contactName || 'Laith'
-  const contactEmail = (data as any).contactEmail || 'admin@corecleaning.services'
+  const contactEmail = (data as any).contactEmail || BRAND.email
   const greeting = 'Hi,'
   const intro = (message && String(message).trim())
     || (isAgreement
@@ -85,8 +86,8 @@ export async function POST(req: Request) {
     const { Resend } = await import('resend')
     const resend = new Resend(apiKey)
     const res = await resend.emails.send({
-      from: 'Core Cleaning <admin@corecleaning.services>',
-      reply_to: 'admin@corecleaning.services',
+      from: BRAND.emailFromBiz,
+      reply_to: BRAND.email,
       to: toEmail,
       subject: isAgreement ? `Service agreement for ${clientName}` : `Cleaning proposal for ${clientName}`,
       html,
