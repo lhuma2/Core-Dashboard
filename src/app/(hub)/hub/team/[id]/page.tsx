@@ -49,8 +49,12 @@ export default async function SignedPackPage({ params }: { params: { id: string 
           <li>Contact: {d.contact}</li>
           <li>Email: {p.email || k.email}</li>
           <li>Mobile: {p.phone || d.phone || 'Not given'}</li>
-          <li>Public liability: {d.insurer}, policy {d.policy}, expires {d.expiry}</li>
-          <li>Certificate of currency: {d.cert ? <>Attached{certUrl && <> · <a href={certUrl} target="_blank" rel="noreferrer">Open it</a></>}</> : 'Not attached'}</li>
+          {d.covered
+            ? <li>Public liability: Covered under Core Cleaning’s policy. They pay the excess on claims from their work (clause 4).</li>
+            : <>
+              <li>Public liability: {d.insurer}, policy {d.policy}, expires {d.expiry}</li>
+              <li>Certificate of currency: {d.cert ? <>Attached{certUrl && <> · <a href={certUrl} target="_blank" rel="noreferrer">Open it</a></>}</> : 'Not attached'}</li>
+            </>}
         </ul>
         <h2 className="dh">Login email sent to them</h2>
         <div className="mailprev">

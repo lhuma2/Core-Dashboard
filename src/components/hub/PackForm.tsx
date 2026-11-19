@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import { packCertUpload, signPack } from '@/actions/pack'
 import { PACK_DOCS } from '@/lib/hub/team'
-import { SUBCONTRACTOR_AGREEMENT, CONTRACTOR_INDUCTION } from '@/lib/documents/subcontractor'
+import { SUBCONTRACTOR_AGREEMENT, CONTRACTOR_INDUCTION, agreementClauses } from '@/lib/documents/subcontractor'
 
 const Chev = () => <svg className="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
 const OFFLINE = 'That didn’t go through. Check your connection and try again.'
@@ -18,14 +18,14 @@ function DocRows({ open, toggle }: { open: Record<string, boolean>; toggle: (cod
   )
 }
 
-function PackText({ code, signed }: { code: string; signed: { by: string; on: string } | null }) {
+function PackText({ code, signed, covered }: { code: string; signed: { by: string; on: string } | null; covered: boolean }) {
   if (code === 'DCA-SUB') {
     const a = SUBCONTRACTOR_AGREEMENT
     return (
       <section className="packdoc" id="dca-sub" aria-label={a.title}>
         <h2 className="dh">{a.title}</h2>
         <p className="dp">{a.intro}</p>
-        {a.clauses.map(c => <div key={c.n}><h3>{c.n}. {c.title}</h3><p className="dp">{c.body}</p></div>)}
+        {agreementClauses(covered).map(c => <div key={c.n}><h3>{c.n}. {c.title}</h3><p className="dp">{c.body}</p></div>)}
         {signed && <p className="dp"><strong>Signed by {signed.by} on {signed.on}.</strong></p>}
       </section>
     )
@@ -41,8 +41,8 @@ function PackText({ code, signed }: { code: string; signed: { by: string; on: st
   )
 }
 
-export function PackForm({ token, first, name, phone, today, preview, signed }: {
-  token: string; first: string; name: string; phone: string; today: string; preview: boolean
+export function PackForm({ token, first, name, phone, today, preview, signed, covered }: {
+  token: string; first: string; name: string; phone: string; today: string; preview: boolean; covered: boolean
   signed: { by: string; on: string; company: string } | null
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({})
@@ -74,7 +74,7 @@ export function PackForm({ token, first, name, phone, today, preview, signed }: 
     if (busy || upBusy) return
     setBusy(true); setErr('')
     try {
-      const r = await signPack(token, { ...f, cert: cert?.path || '', agree })
+      const r = await signPack(token, { ...f, cert: cert?.path || '', agree, covered })
       if (!r.ok) { setErr(r.error); return }
       setDone({ email: r.email, pw: r.pw, tested: r.tested })
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -112,8 +112,8 @@ export function PackForm({ token, first, name, phone, today, preview, signed }: 
           </div>
           <h2 className="dh">Documents covered by this signature</h2>
           <DocRows open={open} toggle={toggle} />
-          {open['DCA-SUB'] && <PackText code="DCA-SUB" signed={{ by, on }} />}
-          {open['IND-001'] && <PackText code="IND-001" signed={{ by, on }} />}
+          {open['DCA-SUB'] && <PackText code="DCA-SUB" signed={{ by, on }} covered={covered} />}
+          {open['IND-001'] && <PackText code="IND-001" signed={{ by, on }} covered={covered} />}
         </article>
       </>
     )
@@ -124,11 +124,11 @@ export function PackForm({ token, first, name, phone, today, preview, signed }: 
       {note}
       <article className="doc">
         {head('Contractor onboarding', `Welcome, ${first}`)}
-        <p className="dp">Please read the pack below, add your business and insurance details, and sign once. One signature covers every document.</p>
+        <p className="dp">Please read the pack below, add your business{covered ? '' : ' and insurance'} details, and sign once. One signature covers every document.</p>
         <h2 className="dh">Your pack ({PACK_DOCS.length} documents)</h2>
         <DocRows open={open} toggle={toggle} />
-        {open['DCA-SUB'] && <PackText code="DCA-SUB" signed={null} />}
-        {open['IND-001'] && <PackText code="IND-001" signed={null} />}
+        {open['DCA-SUB'] && <PackText code="DCA-SUB" signed={null} covered={covered} />}
+        {open['IND-001'] && <PackText code="IND-001" signed={null} covered={covered} />}
         <form onSubmit={submit} noValidate aria-label="Your details and signature">
           <h2 className="dh">Your business</h2>
           <div className="fgrid">
@@ -138,18 +138,22 @@ export function PackForm({ token, first, name, phone, today, preview, signed }: 
             <label className="fld"><span>Mobile</span><input type="tel" autoComplete="tel" value={f.phone} onChange={set('phone')} maxLength={20} /></label>
           </div>
           <h2 className="dh">Public liability insurance</h2>
-          <div className="fgrid">
-            <label className="fld"><span>Insurer</span><input type="text" value={f.insurer} onChange={set('insurer')} maxLength={200} /></label>
-            <label className="fld"><span>Policy number</span><input type="text" value={f.policy} onChange={set('policy')} maxLength={200} /></label>
-            <label className="fld"><span>Expiry date</span><input type="date" min={today} value={f.expiry} onChange={set('expiry')} /></label>
-            <div className="fld"><span>Certificate of currency</span>
-              <div className="certpick">
-                <button type="button" className="btn log" disabled={upBusy} onClick={() => fileRef.current?.click()}>{upBusy ? 'Uploading…' : cert ? 'Certificate attached' : 'Attach file'}</button>
-                {cert && <span className="cpnote">{cert.name}</span>}
+          {covered ? (
+            <p className="dp">You’re covered under Core Cleaning’s public liability insurance while doing Core Cleaning jobs, so you don’t need your own policy. If a claim comes from your work, you pay the policy excess (clause 4 of the agreement).</p>
+          ) : (
+            <div className="fgrid">
+              <label className="fld"><span>Insurer</span><input type="text" value={f.insurer} onChange={set('insurer')} maxLength={200} /></label>
+              <label className="fld"><span>Policy number</span><input type="text" value={f.policy} onChange={set('policy')} maxLength={200} /></label>
+              <label className="fld"><span>Expiry date</span><input type="date" min={today} value={f.expiry} onChange={set('expiry')} /></label>
+              <div className="fld"><span>Certificate of currency</span>
+                <div className="certpick">
+                  <button type="button" className="btn log" disabled={upBusy} onClick={() => fileRef.current?.click()}>{upBusy ? 'Uploading…' : cert ? 'Certificate attached' : 'Attach file'}</button>
+                  {cert && <span className="cpnote">{cert.name}</span>}
+                </div>
+                <input ref={fileRef} type="file" accept="application/pdf,image/*" hidden aria-label="Certificate of currency file" onChange={e => pickCert(e.target.files?.[0])} />
               </div>
-              <input ref={fileRef} type="file" accept="application/pdf,image/*" hidden aria-label="Certificate of currency file" onChange={e => pickCert(e.target.files?.[0])} />
             </div>
-          </div>
+          )}
           <h2 className="dh">Sign</h2>
           <label className="fld"><span>Type your full name to sign</span><input className="sig" type="text" autoComplete="off" value={f.sig} onChange={set('sig')} maxLength={200} /></label>
           <label className="check"><input type="checkbox" checked={agree} onChange={e => { setAgree(e.target.checked); setErr('') }} /><span>I agree to the Subcontractor Services Agreement, and I confirm I have read and understood the Contractor Induction, SWMS and policies in this pack.</span></label>

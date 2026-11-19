@@ -20,11 +20,11 @@ export default async function PackPage({ params, searchParams }: { params: { tok
   const bad = shell(<div className="addcard pubdone"><h1 className="nch">This link isn’t valid</h1><p className="nchint">The link may be mistyped, or it was replaced by a newer one. Please call Laith on 0407 026 360 or email admin@corecleaning.services for a fresh link.</p></div>)
   if (!/^[0-9a-f]{64}$/.test(params.token || '')) return bad
   const db = createAdminClient() as any
-  const { data: k } = await db.from('cleaner_packs').select('first_name, last_name, phone, signed_at, signed_name, company').eq('token', params.token).maybeSingle()
+  const { data: k } = await db.from('cleaner_packs').select('first_name, last_name, phone, signed_at, signed_name, company, covered_by_core').eq('token', params.token).maybeSingle()
   if (!k) return bad
   const signedOn = k.signed_at ? new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(k.signed_at)) : ''
   return shell(
-    <PackForm token={params.token} first={k.first_name} name={`${k.first_name} ${k.last_name}`.trim()} phone={k.phone || ''} today={brisbaneToday()} preview={searchParams.preview === '1'}
+    <PackForm token={params.token} first={k.first_name} name={`${k.first_name} ${k.last_name}`.trim()} phone={k.phone || ''} today={brisbaneToday()} preview={searchParams.preview === '1'} covered={!!k.covered_by_core}
       signed={k.signed_at ? { by: k.signed_name || '', on: signedOn, company: k.company || '' } : null} />
   )
 }

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus } from './icons'
-import { addCleaner, resendPack, setRegion, checkRemove, removeCleaner } from '@/actions/hub-team'
+import { addCleaner, resendPack, setRegion, setCover, checkRemove, removeCleaner } from '@/actions/hub-team'
 import { joinAnd } from '@/lib/hub/client-page'
 import { REGIONS } from '@/lib/hub/figures'
 import type { TeamMember } from '@/lib/hub/team'
@@ -12,7 +12,7 @@ import type { TeamMember } from '@/lib/hub/team'
 type R = { ok: true; toast: string } | { ok: false; error: string }
 type F = 'all' | 'none' | (typeof REGIONS)[number]['id']
 const NO_DB = 'Couldn’t reach the hub. Check your connection and try again.'
-const blank = { first: '', last: '', email: '', phone: '', region: '', leader: false }
+const blank = { first: '', last: '', email: '', phone: '', region: '', leader: false, covered: false }
 const known = (r: string | null) => !!r && REGIONS.some(x => x.id === r)
 const Phone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg>
 
@@ -88,7 +88,8 @@ export function TeamList({ team, tokens, initial }: { team: TeamMember[]; tokens
             </label>
           </div>
           <label className="check"><input type="checkbox" checked={form.leader} onChange={e => setForm(x => ({ ...x, leader: e.target.checked }))} /><span>Team leader</span></label>
-          <p className="sheetsub">Adding them emails the subcontractor compliance pack from admin@corecleaning.services. They fill in their ABN and insurance details and sign once.</p>
+          <label className="check"><input type="checkbox" checked={form.covered} onChange={e => setForm(x => ({ ...x, covered: e.target.checked }))} /><span>Covered by my insurance (they don’t have their own public liability)</span></label>
+          <p className="sheetsub">Adding them emails the subcontractor compliance pack from admin@corecleaning.services. They fill in their ABN{form.covered ? '' : ' and insurance details'} and sign once.{form.covered ? ' Their agreement says they’re covered under Core Cleaning’s policy and pay the excess on claims from their work.' : ''}</p>
           {err && <p className="ferr" role="alert">{err}</p>}
           <div className="sheetbtns">
             <button type="submit" className="btn call" disabled={busy === 'add'}>{busy === 'add' ? 'Adding…' : 'Add and send pack'}</button>
@@ -111,15 +112,17 @@ export function TeamList({ team, tokens, initial }: { team: TeamMember[]; tokens
                 <div className="tname">{c.name}
                   {c.leader && <span className="tag wt">Team leader</span>}
                   {c.region === 'brisbane' && <span className="tag fu">Was Brisbane</span>}
+                  {c.covered && <span className="tag fu">Covered by Core</span>}
                   {c.kind === 'k' ? <span className="tag warn">Pack not signed</span> : c.signed ? <span className="tag wt">Pack signed</span> : <span className="tag warn">Pack not signed</span>}
                 </div>
                 <div className="tcontact">{[c.phone, c.email].filter(Boolean).join(' · ')}</div>
-                {c.details && <div className="tcontact">ABN {c.details.abn} · {c.details.insurer} policy {c.details.policy}, expires {c.details.expiry}</div>}
+                {c.details && <div className="tcontact">ABN {c.details.abn} · {c.details.covered ? 'Covered under Core Cleaning’s insurance' : `${c.details.insurer} policy ${c.details.policy}, expires ${c.details.expiry}`}</div>}
                 <div className="tlinks">
                   {c.details && <Link className="linkbtn" href={`/hub/team/${c.id}`}>View signed pack</Link>}
                   {c.kind === 'k' && <>
                     <button type="button" className="linkbtn" disabled={busy === key + 'r'} onClick={() => run(key + 'r', () => resendPack(c.id))}>{busy === key + 'r' ? 'Sending…' : 'Resend pack'}</button>
                     {tokens[c.id] && <a className="linkbtn" href={`/pack/${tokens[c.id]}?preview=1`}>See what they get</a>}
+                    <button type="button" className="linkbtn" aria-pressed={c.covered} disabled={busy === key + 'c'} onClick={() => run(key + 'c', () => setCover(c.id, !c.covered))}>{busy === key + 'c' ? 'Saving…' : c.covered ? 'Needs own insurance' : 'Cover with my insurance'}</button>
                   </>}
                   {rm?.key !== key && <button type="button" className="linkbtn danger" aria-label={'Remove ' + c.name} onClick={() => askRemove(c)}>Remove</button>}
                 </div>

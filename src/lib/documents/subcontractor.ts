@@ -27,6 +27,14 @@ export const SUBCONTRACTOR_AGREEMENT = {
   ],
 }
 
+/** Clause 4 for a cleaner Laith covers under Core Cleaning's own public liability policy (set on Team before they sign). */
+export const COVERED_INSURANCE_BODY = 'The Subcontractor is covered under Core Cleaning’s Public Liability insurance while performing services allocated by Core Cleaning. If a claim arises from the Subcontractor’s work, the Subcontractor must reimburse Core Cleaning for the policy excess, which may be deducted from amounts owed to the Subcontractor. The Subcontractor must hold Workers’ Compensation insurance where they engage workers.'
+
+/** The agreement's clauses as this cleaner signs them: clause 4 changes when they're covered by Core Cleaning. */
+export function agreementClauses(covered: boolean) {
+  return SUBCONTRACTOR_AGREEMENT.clauses.map(c => (covered && c.n === 4 ? { ...c, body: COVERED_INSURANCE_BODY } : c))
+}
+
 export const CONTRACTOR_INDUCTION = {
   code: 'IND-001',
   slug: 'contractor-induction',

@@ -22,7 +22,7 @@ const CERT_EXT: Record<string, string> = { 'application/pdf': 'pdf', 'image/jpeg
 async function packFor(token: string) {
   if (!TOKEN.test(token || '')) return { error: GONE }
   const db = createAdminClient() as any
-  const { data: k, error } = await db.from('cleaner_packs').select('id, first_name, last_name, email, phone, region, is_team_leader, signed_at, profile_id').eq('token', token).maybeSingle()
+  const { data: k, error } = await db.from('cleaner_packs').select('id, first_name, last_name, email, phone, region, is_team_leader, signed_at, profile_id, covered_by_core').eq('token', token).maybeSingle()
   if (error) return { error: OFFLINE }
   if (!k) return { error: GONE }
   return { db, k: k as any }
@@ -32,6 +32,7 @@ async function packFor(token: string) {
 export async function packCertUpload(token: string, type: string, size: number): Promise<{ ok: true; url: string; path: string } | { ok: false; error: string }> {
   const o = await packFor(token); if ('error' in o) return { ok: false, error: o.error! }
   if (o.k.signed_at) return { ok: false, error: 'You’ve already signed. Thank you.' }
+  if (o.k.covered_by_core) return { ok: false, error: 'You’re covered by Core Cleaning’s insurance, so no certificate is needed. Refresh the page.' }
   const ext = CERT_EXT[String(type || '').toLowerCase()]
   if (!ext) return { ok: false, error: 'Choose a PDF or a photo of your certificate.' }
   if (!(size > 0) || size > 10 * 1024 * 1024) return { ok: false, error: 'That file is too big. Choose one under 10 MB.' }
@@ -41,7 +42,9 @@ export async function packCertUpload(token: string, type: string, size: number):
   return { ok: true, url: s.data.signedUrl, path }
 }
 
-export interface PackForm { company: string; abn: string; contact: string; phone: string; insurer: string; policy: string; expiry: string; cert: string; sig: string; agree: boolean }
+export interface PackForm { company: string; abn: string; contact: string; phone: string; insurer: string; policy: string; expiry: string; cert: string; sig: string; agree: boolean
+  /** what the page showed: covered by Core Cleaning's insurance. Checked against the pack, which wins. */
+  covered?: boolean }
 
 function loginEmail(first: string, email: string, pw: string, site: string): string {
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px 16px;color:#13201a">
@@ -63,19 +66,24 @@ export async function signPack(token: string, f: PackForm): Promise<{ ok: true; 
   const abn = String(f.abn || '').replace(/[^0-9]/g, '')
   const company = tidy(f.company), insurer = tidy(f.insurer), policy = tidy(f.policy), sig = tidy(f.sig), contact = tidy(f.contact), phone = tidy(f.phone)
   const expiry = String(f.expiry || '')
+  // Laith covers some cleaners under Core Cleaning's own policy: they give no insurance, and clause 4 says so.
+  const covered = !!k.covered_by_core
+  if (covered !== !!f.covered) return { ok: false, error: 'Your pack was just updated. Refresh the page, then sign again.' }
   const miss: string[] = []
   if (!company) miss.push('company or trading name')
   if (abn.length !== 11) miss.push('an 11 digit ABN')
-  if (!insurer) miss.push('insurer')
-  if (!policy) miss.push('policy number')
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(expiry)) miss.push('insurance expiry date')
+  if (!covered) {
+    if (!insurer) miss.push('insurer')
+    if (!policy) miss.push('policy number')
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiry)) miss.push('insurance expiry date')
+  }
   if (sig.length < 2) miss.push('your typed name to sign')
   if (miss.length) return { ok: false, error: 'Please add ' + miss.join(', ') + '.' }
-  if (expiry < brisbaneToday()) return { ok: false, error: 'That insurance has already expired. Renew it before signing.' }
+  if (!covered && expiry < brisbaneToday()) return { ok: false, error: 'That insurance has already expired. Renew it before signing.' }
   if (!f.agree) return { ok: false, error: 'Tick the box to agree to the pack.' }
   if (phone && phone.replace(/[^0-9]/g, '').length !== 10) return { ok: false, error: 'Mobile numbers have 10 digits, e.g. 0412 345 678.' }
   if ([company, insurer, policy, sig, contact].some(v => v.length > 200)) return { ok: false, error: 'One of those answers is too long.' }
-  const cert = f.cert && f.cert.startsWith(`packs/${k.id}/`) && !f.cert.includes('..') ? f.cert : null
+  const cert = !covered && f.cert && f.cert.startsWith(`packs/${k.id}/`) && !f.cert.includes('..') ? f.cert : null
 
   // Their cleaner login. The starter password is their first name (see starterPw).
   const yr = +brisbaneToday().slice(0, 4)
@@ -97,7 +105,7 @@ export async function signPack(token: string, f: PackForm): Promise<{ ok: true; 
   if (pErr || !prof) { await db.auth.admin.deleteUser(userId).catch(() => {}); return { ok: false, error: OFFLINE } }
   const ip = (headers().get('x-forwarded-for') || '').split(',')[0].trim() || null
   const { error: kErr } = await db.from('cleaner_packs').update({
-    profile_id: prof.id, company, abn, contact: contact || name, contact_phone: phone || null, insurer, policy, expiry, cert_path: cert, signed_name: sig, signed_at: now, signed_ip: ip,
+    profile_id: prof.id, company, abn, contact: contact || name, contact_phone: phone || null, insurer: covered ? null : insurer, policy: covered ? null : policy, expiry: covered ? null : expiry, cert_path: cert, signed_name: sig, signed_at: now, signed_ip: ip,
   }).eq('id', k.id)
   if (kErr) {
     await db.from('profiles').delete().eq('id', prof.id)
@@ -111,7 +119,7 @@ export async function signPack(token: string, f: PackForm): Promise<{ ok: true; 
   if (!tested) {
     await sendEmail(k.email, 'Your Core Cleaning portal login', loginEmail(k.first_name, k.email, pw, site)).catch(() => {})
     await sendEmail('admin@corecleaning.services', `${name} signed the subcontractor pack`,
-      `<p><strong>${esc(name)}</strong> signed the subcontractor pack for <strong>${esc(company)}</strong> (ABN ${esc(abnFmt(abn))}).</p><p>Public liability: ${esc(insurer)}, policy ${esc(policy)}, expires ${esc(expiry.split('-').reverse().join('/'))}.</p><p>Their cleaner login was emailed to them. See the signed pack under Team in the hub.</p>`).catch(() => {})
+      `<p><strong>${esc(name)}</strong> signed the subcontractor pack for <strong>${esc(company)}</strong> (ABN ${esc(abnFmt(abn))}).</p><p>Public liability: ${covered ? 'covered under Core Cleaning’s policy (they pay the excess on claims from their work)' : `${esc(insurer)}, policy ${esc(policy)}, expires ${esc(expiry.split('-').reverse().join('/'))}`}.</p><p>Their cleaner login was emailed to them. See the signed pack under Team in the hub.</p>`).catch(() => {})
   }
   await sendPushToRole('admin', { title: `${name} signed the pack`, body: `${company} · their login was emailed to them`, url: '/hub/team' }).catch(() => {})
   revalidatePath('/hub', 'layout')

@@ -6,13 +6,17 @@ export type RegionId = (typeof REGIONS)[number]['id']
 export const REGION_NAME: Record<string, string> = Object.fromEntries(REGIONS.map(r => [r.id, r.name]))
 export const isRegion = (v: unknown): v is RegionId => REGIONS.some(r => r.id === v)
 
-export interface SignedDetails { company: string; abn: string; contact: string; phone: string; insurer: string; policy: string; expiry: string; sig: string; date: string; cert: boolean }
+export interface SignedDetails { company: string; abn: string; contact: string; phone: string; insurer: string; policy: string; expiry: string; sig: string; date: string; cert: boolean
+  /** covered under Core Cleaning's public liability policy, so no insurance of their own */
+  covered: boolean }
 export interface TeamMember {
   /** 'p' a cleaner login (profile id), 'k' a pack not signed yet (pack id) */
   kind: 'p' | 'k'; id: string; name: string; email: string; phone: string
   region: string | null; leader: boolean; signed: boolean
   /** the pack row, when they signed through the new hub (or were sent one) */
   packId: string | null; details: SignedDetails | null
+  /** Laith covers them under Core Cleaning's public liability policy (set on the pack) */
+  covered: boolean
 }
 
 /** "12345678901" → "12 345 678 901" */

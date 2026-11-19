@@ -30,26 +30,26 @@ function siteUrl(): string {
 }
 function refresh() { revalidatePath('/hub', 'layout') }
 
-function packEmail(first: string, link: string): string {
+function packEmail(first: string, link: string, covered: boolean): string {
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px 16px;color:#13201a">
   <div style="background:#00250e;color:#fff;padding:18px 20px;border-radius:10px 10px 0 0;font-size:18px;font-weight:700">Core Cleaning</div>
   <div style="border:1px solid #d5dfda;border-top:0;border-radius:0 0 10px 10px;padding:22px 20px">
     <p style="margin:0 0 12px;font-size:16px">Hi ${esc(first)},</p>
-    <p style="margin:0 0 12px;font-size:15px;line-height:1.5">Welcome to Core Cleaning. Before your first job, please read your subcontractor pack, add your business and insurance details, and sign once. One signature covers every document. It takes about 10 minutes.</p>
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.5">Welcome to Core Cleaning. Before your first job, please read your subcontractor pack, add your business${covered ? '' : ' and insurance'} details, and sign once. One signature covers every document. It takes about 10 minutes.</p>
     <p style="margin:8px 0 20px"><a href="${link}" style="background:#0f7a5a;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:8px;display:inline-block">Open your pack</a></p>
-    <p style="margin:0 0 6px;font-size:13px;color:#5d6b65">Have your ABN, your public liability policy and its certificate of currency ready.</p>
+    <p style="margin:0 0 6px;font-size:13px;color:#5d6b65">${covered ? 'Have your ABN ready. You’re covered under Core Cleaning’s public liability insurance, so you don’t need your own policy.' : 'Have your ABN, your public liability policy and its certificate of currency ready.'}</p>
     <p style="margin:0;font-size:13px;color:#5d6b65">When you’ve signed, we’ll email your login for the cleaner app. Questions? Call Laith on 0407 026 360.</p>
   </div></div>`
 }
 
 /** Emails the pack. On the test site (no email key) nothing goes out; the toast says so. */
-async function deliver(to: string, first: string, token: string): Promise<{ ok: boolean; tested: boolean }> {
+async function deliver(to: string, first: string, token: string, covered: boolean): Promise<{ ok: boolean; tested: boolean }> {
   if (!process.env.RESEND_API_KEY) return { ok: true, tested: true }
-  const r = await sendEmail(to, 'Your Core Cleaning subcontractor pack', packEmail(first, `${siteUrl()}/pack/${token}`))
+  const r = await sendEmail(to, 'Your Core Cleaning subcontractor pack', packEmail(first, `${siteUrl()}/pack/${token}`, covered))
   return { ok: r.success, tested: false }
 }
 
-export interface AddForm { first: string; last: string; email: string; phone: string; region: string; leader: boolean }
+export interface AddForm { first: string; last: string; email: string; phone: string; region: string; leader: boolean; covered?: boolean }
 
 export async function addCleaner(f: AddForm): Promise<R & { id?: string }> {
   const denied = await requireStaff(); if (denied) return fail(denied)
@@ -74,9 +74,9 @@ export async function addCleaner(f: AddForm): Promise<R & { id?: string }> {
   if ((pQ.data || []).length || (kQ.data || []).length) return fail('A cleaner with that email is already on your team.')
   const token = randomBytes(32).toString('hex')
   const name = `${first} ${last}`
-  const { data: row, error } = await db.from('cleaner_packs').insert({ token, first_name: first, last_name: last, email, phone: phone || null, region: f.region, is_team_leader: !!f.leader }).select('id').single()
+  const { data: row, error } = await db.from('cleaner_packs').insert({ token, first_name: first, last_name: last, email, phone: phone || null, region: f.region, is_team_leader: !!f.leader, ...(f.covered ? { covered_by_core: true } : {}) }).select('id').single()
   if (error || !row) return fail(/duplicate|unique/i.test(String(error?.message)) ? 'A cleaner with that email is already on your team.' : NO_DB)
-  const sent = await deliver(email, first, token)
+  const sent = await deliver(email, first, token, !!f.covered)
   refresh()
   if (sent.tested) return { ok: true, id: row.id, toast: `Added ${name}. This is the test site, so no email went out. Use See what they get to open their page.` }
   if (!sent.ok) return { ok: true, id: row.id, toast: `Added ${name}, but the email didn’t send. Use Resend pack to try again.` }
@@ -87,15 +87,32 @@ export async function resendPack(packId: string): Promise<R> {
   const denied = await requireStaff(); if (denied) return fail(denied)
   if (!uuid(packId)) return fail('That cleaner was removed. Refresh the page.')
   const db = createClient() as any
-  const { data: k, error } = await db.from('cleaner_packs').select('id, token, first_name, email, signed_at').eq('id', packId).maybeSingle()
+  const { data: k, error } = await db.from('cleaner_packs').select('id, token, first_name, email, signed_at, covered_by_core').eq('id', packId).maybeSingle()
   if (error) return fail(NO_DB)
   if (!k) return fail('That cleaner was removed. Refresh the page.')
   if (k.signed_at) return { ok: true, toast: `${k.first_name} has already signed the pack.` }
-  const sent = await deliver(k.email, k.first_name, k.token)
+  const sent = await deliver(k.email, k.first_name, k.token, !!k.covered_by_core)
   if (sent.tested) return { ok: true, toast: 'This is the test site, so no email went out. Use See what they get to open their page.' }
   if (!sent.ok) return fail('The email didn’t send. Check your connection and try again.')
   await db.from('cleaner_packs').update({ sent_at: new Date().toISOString() }).eq('id', packId)
   return { ok: true, toast: `Compliance pack sent again to ${k.email}.` }
+}
+
+/** Cover a cleaner who hasn't signed yet under Core Cleaning's public liability policy (or take that off). Their pack
+ *  link stays the same: it stops asking for their insurance and clause 4 changes. Locked once they've signed. */
+export async function setCover(packId: string, on: boolean): Promise<R> {
+  const denied = await requireStaff(); if (denied) return fail(denied)
+  if (!uuid(packId)) return fail(GONE)
+  const db = createClient() as any
+  const { data, error } = await db.from('cleaner_packs').update({ covered_by_core: !!on }).eq('id', packId).is('signed_at', null).is('removed_at', null).select('first_name')
+  if (error) return fail(/covered_by_core/.test(String(error.message)) ? 'The hub needs update 073 first. Ask Claude for the file.' : NO_DB)
+  if (!(data || []).length) {
+    const { data: k } = await db.from('cleaner_packs').select('first_name, signed_at').eq('id', packId).maybeSingle()
+    return fail(k?.signed_at ? `${k.first_name} has already signed, so their insurance can’t change now.` : GONE)
+  }
+  const who = data[0].first_name
+  refresh()
+  return { ok: true, toast: on ? `${who} is covered by your insurance. Their pack no longer asks for theirs.` : `${who} needs their own insurance again. Their pack asks for it.` }
 }
 
 /** kind 'p' = a cleaner login, 'k' = a pack not signed yet. An empty region puts them back under To sort. */

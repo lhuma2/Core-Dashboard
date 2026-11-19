@@ -5,14 +5,14 @@ import { shortName, currentStatus, cleansPerMonth } from './figures'
 import { t12 } from './timetable'
 import { dShort } from './home-quotes'
 
-export const PACK_COLS = 'id, token, profile_id, first_name, last_name, email, phone, region, is_team_leader, sent_at, company, abn, contact, contact_phone, insurer, policy, expiry, cert_path, signed_name, signed_at'
+export const PACK_COLS = 'id, token, profile_id, first_name, last_name, email, phone, region, is_team_leader, sent_at, company, abn, contact, contact_phone, insurer, policy, expiry, cert_path, signed_name, signed_at, covered_by_core'
 const dayAu = (ts: string) => new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(ts))
 
 export function packDetails(k: any): SignedDetails | null {
   if (!k?.signed_at) return null
   return {
     company: k.company || '', abn: abnFmt(k.abn || ''), contact: k.contact || '', phone: k.contact_phone || k.phone || '', insurer: k.insurer || '', policy: k.policy || '',
-    expiry: auDate(String(k.expiry || '').slice(0, 10)), sig: k.signed_name || '', date: dayAu(k.signed_at), cert: !!k.cert_path,
+    expiry: auDate(String(k.expiry || '').slice(0, 10)), sig: k.signed_name || '', date: dayAu(k.signed_at), cert: !!k.cert_path, covered: !!k.covered_by_core,
   }
 }
 
@@ -31,12 +31,12 @@ export async function loadTeam(): Promise<TeamMember[] | null> {
     const k = packs.find(x => x.profile_id === p.id)
     return {
       kind: 'p', id: p.id, name: String(p.full_name || 'Cleaner').trim(), email: p.email || '', phone: p.phone || '', region: p.region || null,
-      leader: !!p.is_team_leader, signed: !!p.pack_signed_at, packId: k?.id || null, details: packDetails(k),
+      leader: !!p.is_team_leader, signed: !!p.pack_signed_at, packId: k?.id || null, details: packDetails(k), covered: !!k?.covered_by_core,
     }
   })
   for (const k of packs) {
     if (k.profile_id) continue
-    out.push({ kind: 'k', id: k.id, name: `${k.first_name} ${k.last_name}`.trim(), email: k.email, phone: k.phone || '', region: k.region || null, leader: !!k.is_team_leader, signed: false, packId: k.id, details: null })
+    out.push({ kind: 'k', id: k.id, name: `${k.first_name} ${k.last_name}`.trim(), email: k.email, phone: k.phone || '', region: k.region || null, leader: !!k.is_team_leader, signed: false, packId: k.id, details: null, covered: !!k.covered_by_core })
   }
   return out.sort((a, b) => a.name.localeCompare(b.name))
 }
