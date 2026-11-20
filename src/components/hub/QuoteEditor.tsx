@@ -9,7 +9,7 @@ import { saveQuote } from '@/actions/hub-quotes'
 import { setFlash } from '@/lib/hub/flash'
 import { useDiv } from '@/lib/hub/use-div'
 import {
-  EVERY_OPTS, Q_WINF_OPTS, EOL_ADDK, EOL_TERMS, eolAddNote, eolAutoPrice, eolRateNote, eolScope, addTotal, cash2, priceNote, qAddItems, qMoney, residentialScope, residentialTermsGlance, standardAddItems, webRows,
+  EVERY_OPTS, Q_WINF_OPTS, EOL_ADDK, EOL_TERMS, eAddsOn, eTotal, eolAddNote, eolAutoPrice, eolRateNote, eolScope, addTotal, cash2, priceNote, qAddItems, qMoney, residentialScope, residentialTermsGlance, standardAddItems, webRows,
   type EolAdd, type Quote, type QEvery, type WinFreq,
 } from '@/lib/hub/home-quotes'
 
@@ -43,6 +43,22 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
   const pNote = priceNote(q)
   const total = addTotal(q)
   const eol = q.type === 'eol'
+  const only = eol && !!q.eol?.only
+  const shown = only ? eTotal(q) : price
+  // Full end of lease clean, or add-ons on their own (e.g. carpet steam cleaning only): no clean, scope or clean price.
+  const setOnly = (v: boolean) => { if (v !== only) set(y => {
+    if (!y.eol) return
+    y.eol.only = v
+    if (v) {
+      y.scope = []; y.price = ''; y.priceFromWeb = false; y.hours = ''
+      const f = y.eol.adds.find(a => a.k === 'furnished'); if (f) f.on = false
+      if (!eAddsOn(y).length) { const c = y.eol.adds.find(a => a.k === 'carpet'); if (c) { c.on = true; if (!qMoney(c.price)) c.price = eolAutoPrice(c, '') } }
+      if (y.heading === 'Your end of lease clean quote' && y.eol.adds.some(a => a.on && a.k === 'carpet')) y.heading = 'Your carpet steam cleaning quote'
+    } else {
+      y.scope = eolScope(y.eol.garage, y.eol.balcony)
+      if (y.heading === 'Your carpet steam cleaning quote') y.heading = 'Your end of lease clean quote'
+    }
+  }) }
   const terms = eol ? EOL_TERMS : residentialTermsGlance(q.type, q.every)
   const stdScope = (y: Quote) => (y.type === 'eol' ? eolScope(y.eol?.garage, y.eol?.balcony) : residentialScope(y.type))
   const setAdd = (ai: number, fn: (a: EolAdd, y: Quote) => void) => set(y => { if (y.eol) fn(y.eol.adds[ai], y) })
@@ -100,7 +116,14 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
         </div>
 
         <h2 className="nch"><span className="qstep">2</span> Scope of works</h2>
-        {eol ? <div className="stypes"><div className="stype on"><span className="sttext"><strong>End of Lease</strong><span>Your standard end of lease scope, plus Garage and Balcony boxes when the form has them</span></span></div></div>
+        {eol ? <div className="stypes" role="radiogroup" aria-label="What they want">
+          <button type="button" role="radio" className={only ? 'stype' : 'stype on'} aria-checked={!only} onClick={() => setOnly(false)}>
+            <span className="sttext"><strong>End of Lease clean</strong><span>Your standard end of lease scope, plus Garage and Balcony boxes when the form has them</span></span>
+          </button>
+          <button type="button" role="radio" className={only ? 'stype on' : 'stype'} aria-checked={only} onClick={() => setOnly(true)}>
+            <span className="sttext"><strong>Add-ons only</strong><span>No clean. Just carpet steam cleaning, blinds or other add-ons</span></span>
+          </button>
+        </div>
         : <div className="stypes" role="radiogroup" aria-label="Type of clean">
           <button type="button" role="radio" className={q.type === 'deep' ? 'stype on' : 'stype'} aria-checked={q.type === 'deep'}
             onClick={() => { if (q.type !== 'deep') set(y => { y.type = 'deep'; y.scope = residentialScope('deep'); if (y.every !== 'oneoff') y.every = 'oneoff' }) }}>
@@ -111,6 +134,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
             <span className="sttext"><strong>General Maintenance</strong><span>Standard clean, regular or one-off</span></span>
           </button>
         </div>}
+        {only ? <p className="nchint">No end of lease clean on this quote. Tick what they want under Price (step 4). Each add-on’s list of what’s included is its scope on the quote.</p> : <>
         <p className="nchint">Your standard boxes are pulled in for the type you pick. Change, add or remove anything for this quote.</p>
         <div className="pscope">
           {q.scope.map((g, gi) => (
@@ -135,6 +159,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
             <button type="button" className="btn log" onClick={() => set(y => { y.scope = stdScope(y) })}>Reset to my standard scope</button>
           </div>
         </div>
+        </>}
 
         <h2 className="nch"><span className="qstep">3</span> Terms</h2>
         <p className="nchint">Your standard quote terms go in automatically, matched to a one-off or regular clean. They show on the quote in this order.</p>
@@ -142,20 +167,21 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
 
         <h2 className="nch"><span className="qstep">4</span> Price</h2>
         <div className="ncgrid">
-          {eol ? <div className="fld half"><span>How often</span><div className="freqread">One-off end of lease clean</div></div>
+          {eol ? <div className="fld half"><span>How often</span><div className="freqread">{only ? 'One-off, add-ons only' : 'One-off end of lease clean'}</div></div>
             : q.type === 'general'
             ? <label className="fld half"><span>How often</span><select value={q.every} onChange={e => { const v = e.target.value as QEvery; set(y => { y.every = v }) }}>{EVERY_OPTS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}</select></label>
             : <div className="fld half"><span>How often</span><div className="freqread">One-off deep clean</div></div>}
           <label className="fld half"><span>{eol ? 'Move-out / clean date (optional)' : 'Preferred date (optional)'}</span><input type="date" min={today} value={q.start} onChange={e => { const v = e.target.value; set(y => { y.start = v }) }} /></label>
-          <label className="fld half"><span>{eol ? 'Price for the clean ($, incl GST)' : 'Price per clean ($, incl GST)'} <span className="req" aria-hidden="true">*</span><span className="sr">(required)</span></span><input type="text" inputMode="decimal" autoComplete="off" value={q.price} onChange={e => { const v = e.target.value; set(y => { y.price = v; y.priceFromWeb = false }) }} /></label>
+          {!only && <label className="fld half"><span>{eol ? 'Price for the clean ($, incl GST)' : 'Price per clean ($, incl GST)'} <span className="req" aria-hidden="true">*</span><span className="sr">(required)</span></span><input type="text" inputMode="decimal" autoComplete="off" value={q.price} onChange={e => { const v = e.target.value; set(y => { y.price = v; y.priceFromWeb = false }) }} /></label>}
           <label className="fld half"><span>Estimated hours (optional)</span><input type="text" inputMode="decimal" autoComplete="off" value={q.hours} onChange={e => { const v = e.target.value.replace(/[^0-9.]/g, ''); set(y => { y.hours = v }) }} /></label>
         </div>
         {pNote && <p className="fhint">{pNote}</p>}
-        {price > 0 && <p className="money">Ex GST {cash2(price / 1.1)} · GST {cash2(price - price / 1.1)}</p>}
+        {!only && price > 0 && <p className="money">Ex GST {cash2(price / 1.1)} · GST {cash2(price - price / 1.1)}</p>}
         {eol && <>
-          <p className="nchint">Add-ons from the website form. Ticked ones show on the quote with their own list of what’s included.</p>
+          <p className="nchint">{only ? 'Tick what they want. Each one shows on the quote with its own list of what’s included, and its price.' : 'Add-ons from the website form. Ticked ones show on the quote with their own list of what’s included.'}</p>
           {(q.eol?.adds || []).map((a, ai) => {
             const d = EOL_ADDK[a.k]
+            if (only && d.pct) return null
             return (
               <div className="extracard" key={a.k} data-testid={'eoladd-' + a.k}>
                 <label className="check"><input type="checkbox" checked={a.on} onChange={e => { const v = e.target.checked; setAdd(ai, (x, y) => { x.on = v; if (v && !qMoney(x.price)) x.price = eolAutoPrice(x, y.price) }) }} /><span><strong>{d.label}</strong> add-on</span></label>
@@ -212,6 +238,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
         )}
         {q.type === 'general' && <p className="fhint">Standard cleans only offer the windows add-on.</p>}
         {total && <p className="money">{total}</p>}
+        {only && shown > 0 && <p className="money">Ex GST {cash2(shown / 1.1)} · GST {cash2(shown - shown / 1.1)}</p>}
 
         <h2 className="nch"><span className="qstep">5</span> Contact</h2>
         <p className="nchint">Your details close the quote: Laith Humadi, {BRAND.email}, 0407 026 360, www.{BRAND.website}.</p>

@@ -40,7 +40,8 @@ export interface QuoteBody {
 }
 export type EolKey = 'carpet' | 'blinds' | 'walls' | 'furnished' | 'mattress' | 'sofa' | 'fridge'
 export interface EolAdd { k: EolKey; on: boolean; qty: string; price: string; fromWeb: boolean; webPrice: string; items: Task[] }
-export interface EolBody { kitchens: number; garage: number; balcony: number; adds: EolAdd[] }
+/** only: add-ons on their own (e.g. carpet steam cleaning only), no end of lease clean, scope or clean price. */
+export interface EolBody { kitchens: number; garage: number; balcony: number; adds: EolAdd[]; only?: boolean }
 
 /** A whole quote as the screens use it. */
 export interface Quote extends QuoteBody {
@@ -215,7 +216,7 @@ export function qAddLines(q: QuoteBody, k: 'windows' | 'carpet'): string[] { ret
 export function standardAddItems(k: 'windows' | 'carpet'): Task[] { return tasks(SPEC[ADD_PRESET[k]]) }
 
 export function qWhatLine(q: Quote): string {
-  if (q.type === 'eol') { const n = eAddsOn(q).length; return 'End of Lease · ' + q.beds + ' bed, ' + q.baths + ' bath' + (q.suburb || q.region ? ' · ' + (q.suburb || q.region) : '') + (n ? ' · ' + n + ' add-on' + (n === 1 ? '' : 's') : '') }
+  if (q.type === 'eol') { const n = eAddsOn(q).length; return (eOnly(q) ? 'Add-ons only · ' : 'End of Lease · ') + q.beds + ' bed, ' + q.baths + ' bath' + (q.suburb || q.region ? ' · ' + (q.suburb || q.region) : '') + (n ? ' · ' + n + ' add-on' + (n === 1 ? '' : 's') : '') }
   return Q_TYPE[q.type] + ' · ' + Q_EVERY[q.every] + ' · ' + q.beds + ' bed, ' + q.baths + ' bath' + (q.region ? ' · ' + q.region : '') }
 export function qMeta(q: Quote): string {
   if (q.status === 'draft') return (q.source === 'website' ? 'From the website ' + dShort(q.created) + '. Check it and send' : 'Created ' + dShort(q.created) + ', not sent yet')
@@ -229,8 +230,9 @@ export function qMeta(q: Quote): string {
 export function qCheck(q: Quote, today: string): string {
   if (!(q.name || '').trim()) return 'Add the client’s name.'
   if (!EMAIL_RE.test((q.email || '').trim())) return 'Add a valid email to send the quote to.'
-  if (!q.scope.length || !q.scope.some(g => g.items.some(i => (i.text || '').trim()))) return 'The scope of works is empty. Add at least one task.'
-  if (!(qMoney(q.price) > 0)) return q.type === 'eol' ? 'Add the price for the clean, including GST.' : 'Add the price per clean, including GST.'
+  if (eOnly(q) && !eAddsOn(q).length) return 'Tick at least one add-on, like carpet steam cleaning.'
+  if (!eOnly(q) && (!q.scope.length || !q.scope.some(g => g.items.some(i => (i.text || '').trim())))) return 'The scope of works is empty. Add at least one task.'
+  if (!eOnly(q) && !(qMoney(q.price) > 0)) return q.type === 'eol' ? 'Add the price for the clean, including GST.' : 'Add the price per clean, including GST.'
   if (q.type === 'eol') {
     for (const a of eAddsOn(q)) {
       const d = EOL_ADDK[a.k]; if (!d) continue
@@ -286,6 +288,7 @@ export function priceNote(q: Quote): string {
 
 /** "Total…" line under the add-ons in the editor. */
 export function addTotal(q: Quote): string {
+  if (eOnly(q)) return eAddsOn(q).length ? 'Total: ' + cash2(eTotal(q)) + ' incl GST.' : ''
   if (q.type === 'eol') return eAddsOn(q).length && qMoney(q.price) > 0 ? 'Total: ' + cash2(eTotal(q)) + ' incl GST.' : ''
   const b = qMoney(q.price), w = q.windows.on ? qMoney(q.windows.price) : 0, c = q.type === 'deep' && q.carpet.on ? qMoney(q.carpet.price) : 0
   if (!(w || c) || !(b > 0)) return ''
@@ -317,6 +320,8 @@ export function webRows(q: Quote): { k: string; v: string }[] {
 // ── the quote document (admin preview and the client's page) ──
 export interface QuoteDoc {
   isEol: boolean; charges: string
+  /** Add-ons only (no end of lease clean): the price block shows the total and priceSub, and there are no add-on rows. */
+  only?: boolean; priceSub?: string
   ref: string; heading: string; intro: string; name: string; date: string; issued: string; validTo: string; address: string; typeLabel: string; freqLine: string; homeLine: string
   scopeSub: string; excl: string; price: string; per: string; priceKick: string; hoursLine: string; totalLine: string; addonsLead: string
   scope: { num: string; heading: string; items: { text: string; tag: string }[] }[]
@@ -331,8 +336,25 @@ export interface QuoteDoc {
 export const QUOTE_TERMS_V = 2
 export function quoteDoc(q: Quote, today: string): QuoteDoc {
   const d = quoteDocBase(q, today)
+  if (d.only) return d
   if (q.status !== 'draft' && (q.tv || 1) < 2) return { ...d, charges: d.isEol ? EOL_CHARGES_V1 : '' }
   return { ...d, charges: d.isEol ? EOL_CHARGES : RES_CHARGES }
+}
+/** The additional-charges line on an add-ons only quote (no end of lease clean). Added 20 Nov 2026. */
+export const ADDON_CHARGES = 'Heavily soiled areas, stains or marks that need extra treatment, items beyond the scope above, and anything not reasonably accessible may incur an additional charge. Any variation will be confirmed with you before further work proceeds. Final scope is subject to on-site inspection.'
+/** An add-ons only End of Lease quote: carpet steam cleaning (or other add-ons) without the clean. */
+function quoteDocOnly(d: QuoteDoc, q: Quote): QuoteDoc {
+  const adds = eAddsOn(q), names = adds.map(a => EOL_ADDK[a.k]?.label || a.k)
+  const label = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0] || 'Add-on service'
+  return {
+    ...d, only: true, charges: ADDON_CHARGES,
+    typeLabel: label, freqLine: 'One-off service' + (q.start ? ', ' + dLong(q.start) : ''),
+    scopeSub: 'The service you asked for, covering the following.',
+    scope: adds.map((a, i) => ({ num: ('0' + (i + 1)).slice(-2), heading: (EOL_ADDK[a.k]?.label || a.k) + (eUnits(a) ? ' (' + eUnits(a) + ')' : ''), items: eLines(a).map(text => ({ text, tag: '' })) })),
+    price: cash2(eTotal(q)), per: '', priceKick: label,
+    priceSub: adds.map(a => [eUnits(a), adds.length > 1 ? cash2(qMoney(a.price)) : ''].filter(Boolean).join(', ')).filter(Boolean).join(' · '),
+    totalLine: '', addons: [], addonsLead: '',
+  }
 }
 function quoteDocBase(q: Quote, today: string): QuoteDoc {
   const price = qMoney(q.price)
@@ -347,7 +369,7 @@ function quoteDocBase(q: Quote, today: string): QuoteDoc {
   }
   if (eol) for (const a of eAddsOn(q)) addons.push({ name: EOL_ADDK[a.k]?.label || a.k, desc: eUnits(a), items: eLines(a), price: cash2(qMoney(a.price)) })
   const from = q.sentAt || q.created || today
-  return {
+  const d: QuoteDoc = {
     isEol: eol, charges: eol ? EOL_CHARGES : '',
     ref: q.ref, heading: q.heading || 'Your cleaning quote', intro: q.intro || '', name: q.name, date: dLong(from), issued: from, validTo: dLong(isoAdd(from, 30)),
     address: [q.street, [q.suburb, q.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ') || q.region || 'Address to be confirmed',
@@ -365,6 +387,7 @@ function quoteDocBase(q: Quote, today: string): QuoteDoc {
     terms: eol ? EOL_TERMS : residentialTermsGlance(q.type, q.every),
     addons,
   }
+  return eOnly(q) ? quoteDocOnly(d, q) : d
 }
 
 // ── database row ⇄ quote ──────────────────────────────────────
@@ -434,9 +457,11 @@ export const EOL_ADDS: EolAddDef[] = [
 export const EOL_ADDK = Object.fromEntries(EOL_ADDS.map(d => [d.k, d])) as Record<EolKey, EolAddDef>
 export function eolAddsBlank(): EolAdd[] { return EOL_ADDS.map(a => ({ k: a.k, on: false, qty: a.unit ? '1' : '', price: '', fromWeb: false, webPrice: '', items: tasks(a.items) })) }
 export const eAddsOn = (q: { eol?: EolBody }): EolAdd[] => (q.eol?.adds || []).filter(a => a.on)
+/** An End of Lease quote for add-ons only (e.g. carpet steam cleaning on its own), no clean. */
+export const eOnly = (q: { type?: QType; eol?: EolBody }): boolean => q.type === 'eol' && !!q.eol?.only
 export function eUnits(a: EolAdd): string { const d = EOL_ADDK[a.k], n = +a.qty || 0; return d && d.unit ? n + ' ' + d.unit + (n === 1 ? '' : 's') : '' }
 export function eLines(a: EolAdd): string[] { return (a.items || []).map(i => (i.text || '').trim()).filter(Boolean) }
-export function eTotal(q: { price: string; eol?: EolBody }): number { return qMoney(q.price) + eAddsOn(q).reduce((t, a) => t + qMoney(a.price), 0) }
+export function eTotal(q: { price: string; eol?: EolBody }): number { return (q.eol?.only ? 0 : qMoney(q.price)) + eAddsOn(q).reduce((t, a) => t + qMoney(a.price), 0) }
 /** The website rate for an add-on at this count (furnished is a share of the clean). '' when there's no rate. */
 export function eolAutoPrice(a: EolAdd, basePrice: string): string {
   const d = EOL_ADDK[a.k]

@@ -60,7 +60,7 @@ export function QuoteDocument({ d }: { d: QuoteDoc }) {
         <Head n="03" label="Price" />
         <h2 className="ph2">Your price</h2>
         <div className="pprice">
-          <div><div className="pkick g">{d.priceKick}</div><div>{d.homeLine}</div>{d.hoursLine && <div>{d.hoursLine}</div>}</div>
+          <div><div className="pkick g">{d.priceKick}</div><div>{d.only ? d.priceSub : d.homeLine}</div>{d.hoursLine && <div>{d.hoursLine}</div>}</div>
           <div className="pamt"><div className="pamtrow"><b>{d.price}</b><span className="per">{d.per}</span></div><span className="gst">Incl. GST</span></div>
         </div>
         {d.addons.length > 0 && <p className="pp paddlead">{d.addonsLead}</p>}

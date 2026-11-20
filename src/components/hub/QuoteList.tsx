@@ -7,7 +7,7 @@ import { useLiveRefresh } from '@/lib/hub/use-live'
 import { Search, Plus } from './icons'
 import { takeFlash } from '@/lib/hub/flash'
 import { sendQuote, resendQuote, deleteQuote } from '@/actions/hub-quotes'
-import { Q_STATE, cash, qMeta, qMoney, qWhatLine, type Quote } from '@/lib/hub/home-quotes'
+import { Q_STATE, cash, eTotal, qMeta, qMoney, qWhatLine, type Quote } from '@/lib/hub/home-quotes'
 import { useDiv } from '@/lib/hub/use-div'
 
 type Show = 'open' | 'sent' | 'closed' | 'all'
@@ -81,7 +81,7 @@ export function QuoteList({ quotes, initial }: { quotes: Quote[]; initial: Show 
                 <span className="drmain"><strong>{x.name || 'No name yet'}</strong><span>{x.ref} · {qWhatLine(x)}</span></span>
                 <span className={tagCls}>{tag}</span>
               </div>
-              <div className="probmeta">{qMoney(x.price) > 0 ? cash(qMoney(x.price)) + (x.every === 'oneoff' ? '' : ' a clean') : 'No price'} · {qMeta(x)}</div>
+              <div className="probmeta">{(x.type === 'eol' ? eTotal(x) : qMoney(x.price)) > 0 ? cash(x.type === 'eol' ? eTotal(x) : qMoney(x.price)) + (x.every === 'oneoff' ? '' : ' a clean') : 'No price'} · {qMeta(x)}</div>
               {x.source === 'website' && <div className="probmeta">Website: {(x.type === 'eol' ? [x.req.hours, 'estimated total ' + (x.req.estimatedTotal || 'none')] : [x.req.frequency, x.req.hours, 'calculator price ' + (x.req.priceInc || 'none')]).filter(Boolean).join(', ')}</div>}
               <div className="sheetbtns">
                 {canEdit && <Link className="btn log" href={`${base}/quotes/${x.id}/edit`}>{x.status === 'sent' ? 'Revise' : 'Edit'}</Link>}

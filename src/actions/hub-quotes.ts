@@ -36,6 +36,7 @@ const quoteSchema = z.object({
   eol: z.object({
     kitchens: z.number().int().min(0).max(20), garage: z.number().int().min(0).max(20), balcony: z.number().int().min(0).max(20),
     adds: z.array(z.object({ k: z.enum(['carpet', 'blinds', 'walls', 'furnished', 'mattress', 'sofa', 'fridge']), on: z.boolean(), qty: s(3), price: s(20), fromWeb: z.boolean(), webPrice: s(20), items: z.array(task).max(30) })).max(10),
+    only: z.boolean().optional(),
   }).optional(),
 }).passthrough()
 
