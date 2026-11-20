@@ -49,13 +49,12 @@ export const SOLE_TRADER: Issuer = {
   website:      DOMAIN,
 }
 
-// Waiting on the ABN (ABR).
-// Until SWITCH_OVER_DATE is set, nothing below is shown on documents.
+// Core Cleaning QLD Pty Ltd. Shown on documents dated SWITCH_OVER_DATE or later.
 export const COMPANY: Issuer = {
   tradingName:  'Core Cleaning',
   legalName:    'Core Cleaning QLD Pty Ltd',
   acn:          '704 290 737', // registered 19/11/2026
-  abn:          '',
+  abn:          '89 704 290 737', // ABN and GST from 20/11/2026
   email:        `admin@${DOMAIN}`,
   contactEmail: `admin@${DOMAIN}`,
   phone:        SOLE_TRADER.phone,
@@ -66,7 +65,7 @@ export const COMPANY: Issuer = {
 const HUB_EMAIL = `admin@${DOMAIN}`
 
 /** First day (Brisbane time, YYYY-MM-DD) documents show the company. Empty = not switched yet. */
-export const SWITCH_OVER_DATE: string = ''
+export const SWITCH_OVER_DATE: string = '2026-11-20'
 
 function brisbaneIso(now: Date = new Date()): string {
   return new Date(now.getTime() + 10 * 3600_000).toISOString().slice(0, 10)
