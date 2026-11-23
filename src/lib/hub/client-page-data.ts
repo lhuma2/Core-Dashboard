@@ -1,8 +1,9 @@
 import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { scopeBoxes } from '@/lib/crew/jobs'
-import { shortName } from './figures'
-import type { CpClient, CpCleaner, CpHistory, CpProblem, CpService } from './client-page'
+import { shortName, brisbaneToday } from './figures'
+import { isoAdd } from './timetable'
+import { ONE_OFF_PAST_DAYS, type CpClient, type CpCleaner, type CpHistory, type CpProblem, type CpService } from './client-page'
 
 const d10 = (v: any) => (v ? String(v).slice(0, 10) : null)
 const t5 = (v: any) => (v ? String(v).slice(0, 5) : '')
@@ -35,11 +36,15 @@ export async function loadClientPage(id: string): Promise<{ c: CpClient; cleaner
     // before test-db update 067 there's no items column: show the standard lists
     return q.error ? db.from('client_addons').select('id, service_id, name, freq, price, cost, next_date, created_at').in('service_id', svcIds).order('created_at') : q
   }
-  const [addQ, crewQ] = await Promise.all([
+  const since = isoAdd(brisbaneToday(), -ONE_OFF_PAST_DAYS)
+  const [addQ, crewQ, oneQ, runQ] = await Promise.all([
     svcIds.length ? addons() : { data: [] },
     svcIds.length ? db.from('client_service_cleaners').select('service_id, cleaner_id').in('service_id', svcIds) : { data: [] },
+    svcIds.length ? db.from('one_offs').select('id, service_id, request_id, clean_date, start_time, finish_time, price, cost, note').in('service_id', svcIds).gte('clean_date', since).order('clean_date').order('start_time') : { data: [] },
+    svcIds.length ? db.from('jobs').select('service_id, clean_date, started_at').in('service_id', svcIds).gte('clean_date', since).not('started_at', 'is', null) : { data: [] },
   ])
-  if (addQ.error || crewQ.error) return null
+  if (addQ.error || crewQ.error || oneQ.error) return null
+  const startedOn = new Set(((runQ.error ? [] : runQ.data) || []).map((j: any) => j.service_id + '|' + d10(j.clean_date)))
 
   const r = cQ.data
   const sites: any[] = sitesQ.data || []
@@ -60,6 +65,10 @@ export async function loadClientPage(id: string): Promise<{ c: CpClient; cleaner
         id: a.id, name: a.name || 'Additional service', freq: a.freq || 'once', price: Number(a.price) || 0, cost: Number(a.cost) || 0, next: d10(a.next_date), items: a.items || [],
       })),
       sow: sow.length ? sow : clientSow,
+      oneOffs: ((oneQ.data || []) as any[]).filter(o => o.service_id === s.id).map(o => ({
+        id: o.id, date: d10(o.clean_date) || '', start: t5(o.start_time), finish: t5(o.finish_time), price: Number(o.price) || 0, cost: Number(o.cost) || 0,
+        note: o.note || '', fromRequest: !!o.request_id, started: startedOn.has(s.id + '|' + d10(o.clean_date)),
+      })),
     }
   })
   const team: CpCleaner[] = ((teamQ.data || []) as any[]).map(p => ({ id: p.id, name: p.full_name || 'Cleaner', region: p.region || null, leader: !!p.is_team_leader, signed: !!p.pack_signed_at }))

@@ -222,8 +222,9 @@ export function teamCard(cleaners: { region?: string | null }[]) {
 
 // ---------- Commercial > Clients list (mock-up recalcClient, v56–v58) ----------
 
-/** "Weekly", "3x a week", "Fortnightly", "2x a fortnight", "Monthly", "Daily". */
+/** "Weekly", "3x a week", "Fortnightly", "2x a fortnight", "Monthly", "Daily". No days: one-off cleans only. */
 export function freqText(n: number, every?: string | null): string {
+  if (!n) return 'One-off'
   if (every === 'fortnightly') return n === 1 ? 'Fortnightly' : `${n}x a fortnight`
   if (every === 'monthly') return 'Monthly'
   return n === 7 ? 'Daily' : n === 1 ? 'Weekly' : `${n}x a week`
@@ -297,7 +298,7 @@ export function clientRow(c: ListClient, today: string): ClientRow {
   for (const s of c.services) for (const k of s.cleaners) { if (!ids.includes(k.id)) ids.push(k.id); names.set(k.id, k.name) }
   const cleaner = !ids.length ? 'Unassigned' : ids.length === 1 ? shortName(names.get(ids[0])) : `${ids.length} cleaners`
 
-  let mrr = 'Not on file', margin = '—', health: ClientRow['health'] = 'watch'
+  let mrr = c.services.length && c.services.every(s => !s.days.length) ? 'One-off' : 'Not on file', margin = '—', health: ClientRow['health'] = 'watch'
   if (monthly > 0) {
     const pct = Math.round(((monthly - mcost) / monthly) * 100)
     mrr = money(Math.round(monthly))

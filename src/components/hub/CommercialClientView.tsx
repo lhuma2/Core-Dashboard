@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation'
 import { Back, Plus } from './icons'
 import {
   saveClientDetails, saveService, toggleServiceCleaner, cleanersToast, saveServiceAccess, setAddonDue, removeAddon, addAddon,
-  pauseClient, endClient, resumeClient, reactivateClient,
+  pauseClient, endClient, resumeClient, reactivateClient, bookOneOff, cancelOneOff,
 } from '@/actions/hub-client-page'
 import { DAYS, STATES, EVERY_OPTS, EXTRA_KINDS, EXTRA_FREQS, svcMoney, extraMoney, fmt$, time12, type NcSvc, type NcExtra } from '@/lib/hub/new-client'
 import { currentStatus, cleansPerMonth, freqText } from '@/lib/hub/figures'
 import { dLong, dShort } from '@/lib/hub/home-quotes'
+import { longDate } from '@/lib/hub/timetable'
 import {
   ADDON_FREQ_LABEL, PAUSE_REASONS, END_REASONS, addonTasks, presetFor, nextVisit,
   type CpClient, type CpCleaner, type CpHistory, type CpProblem, type CpService,
@@ -64,6 +65,10 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
 
   const addr = [c.street, [c.suburb, c.street ? c.state || 'QLD' : '', c.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ')
   const visits = Math.round(c.services.reduce((t, s) => t + cleansPerMonth(s), 0))
+  // a client with no regular cleans anywhere, only one-offs
+  const oneOffClient = c.services.length > 0 && c.services.every(s => !s.days.length)
+  const booked = c.services.flatMap(s => s.oneOffs).filter(x => x.date >= today).sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
+  const nextOne = booked[0]
   const statusText = st === 'paused'
     ? (c.paused_from && c.paused_from > today ? 'Pausing from ' : 'Paused from ') + dLong(c.paused_from) + (c.resume_on ? '. Cleans restart ' + dLong(c.resume_on) + ' by themselves.' : '. No restart date yet.') + (c.reason ? ' Reason: ' + c.reason + '.' : '')
     : st === 'ended' ? 'Ended. ' + ((c.ended_on || '') >= today ? 'Last clean will be ' : 'Last clean was ') + dLong(c.ended_on) + '.' + (c.reason ? ' Reason: ' + c.reason + '.' : '') : ''
@@ -73,9 +78,13 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
   function serviceCard(sv: CpService, i: number) {
     const title = c.multi ? sv.siteName || `Site ${i + 1}` : 'Service details'
     const siteAddr = c.multi ? [sv.siteStreet, [sv.siteSuburb, sv.sitePostcode].filter(Boolean).join(' ')].filter(Boolean).join(', ') : ''
-    const editKey = 'svc:' + i, accKey = 'acc:' + i, addKey = 'add:' + i
-    const editing = edit === editKey, accEditing = edit === accKey, adding = edit === addKey, picking = pick === i
-    const firstFuture = !sv.first || sv.first >= today
+    const editKey = 'svc:' + i, accKey = 'acc:' + i, addKey = 'add:' + i, oneKey = 'one:' + i
+    const editing = edit === editKey, accEditing = edit === accKey, adding = edit === addKey, picking = pick === i, booking = edit === oneKey
+    const oneMoney = booking ? svcMoney({ days: {}, every: 'weekly', cost: d.cost, price: d.price } as NcSvc, true) : null
+    const upcoming = sv.oneOffs.filter(x => x.date >= today), past = sv.oneOffs.filter(x => x.date < today).reverse()
+    const onceOnly = !sv.days.length
+    // a one-off-only site setting up regular cleans picks a fresh first clean date
+    const firstFuture = !sv.first || sv.first >= today || onceOnly
     const viewMoney = svcMoney({ days: Object.fromEntries(sv.days.map(k => [k, true])), every: sv.every, cost: String(sv.cost || ''), price: String(sv.price || '') } as NcSvc)
     const editMoney = editing ? svcMoney({ days: d.days || {}, every: d.every, cost: d.cost, price: d.price } as NcSvc) : null
     const items: string[] = adding ? d.items || [] : []
@@ -92,22 +101,24 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
           {!editing && <button type="button" className="btn log" onClick={() => {
             const ev = sv.every || 'weekly'
             open(editKey, {
-              days: Object.fromEntries(sv.days.map(k => [k, true])), every: ev, pat: ev !== 'weekly' ? nextVisit(sv, today) : '', start: sv.start, finish: sv.finish, first: sv.first || '',
+              days: Object.fromEntries(sv.days.map(k => [k, true])), every: ev, pat: ev !== 'weekly' ? nextVisit(sv, today) : '', start: sv.start, finish: sv.finish, first: onceOnly && sv.first && sv.first < today ? '' : sv.first || '',
               price: sv.price ? String(sv.price) : '', cost: sv.cost ? String(sv.cost) : '', sname: sv.siteName, sstreet: sv.siteStreet, ssuburb: sv.siteSuburb, spostcode: sv.sitePostcode,
             })
-          }} aria-label={'Edit ' + title}>Edit</button>}
+          }} aria-label={(onceOnly ? 'Set up regular cleans for ' : 'Edit ') + title}>{onceOnly ? 'Set up regular cleans' : 'Edit'}</button>}
         </div>
 
-        {!editing ? <>
+        {!editing ? (onceOnly
+          ? <p className="cpnone">One-off cleans only, no regular cleans. Book each clean below, or set up regular cleans.</p>
+          : <>
           <dl className="cpkv">
-            <div><dt>Days</dt><dd>{(sv.days.length ? sv.days.map(k => DAYW[k]).join(', ') : 'No days set') + ' · ' + freqText(sv.days.length, sv.every)}</dd></div>
+            <div><dt>Days</dt><dd>{sv.days.map(k => DAYW[k]).join(', ') + ' · ' + freqText(sv.days.length, sv.every)}</dd></div>
             <div><dt>Time</dt><dd>{sv.start ? time12(sv.start) + (sv.finish ? ' to ' + time12(sv.finish) : '') : 'No start time'}</dd></div>
             <div><dt>First clean</dt><dd>{sv.first ? (sv.first > today ? 'Starts ' : 'Since ') + dLong(sv.first) : 'No first clean date on file'}</dd></div>
             <div><dt>Client price</dt><dd>{sv.price > 0 ? fmt$(sv.price) + ' a visit, ex GST' : 'Not on file'}</dd></div>
             <div><dt>Cleaner cost</dt><dd>{sv.cost > 0 ? fmt$(sv.cost) + ' a visit' : 'Not on file'}</dd></div>
           </dl>
           {viewMoney && <p className={viewMoney.cls}>{viewMoney.text}</p>}
-        </> : (
+        </>) : (
           <div role="form" className="ncform">
             {c.multi && (
               <div className="ncgrid">
@@ -140,6 +151,44 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
             {btns('Save changes', () => run(() => saveService(sv.id, { days: Object.keys(d.days || {}).filter(k => d.days[k]), every: d.every, pat: d.pat, start: d.start, finish: d.finish, first: d.first, price: d.price, cost: d.cost, sname: d.sname, sstreet: d.sstreet, ssuburb: d.ssuburb, spostcode: d.spostcode })))}
           </div>
         )}
+
+        <div className="cpsec">
+          <h3 className="cpsh">One-off cleans</h3>
+          {upcoming.map(x => {
+            const confirming = delX === 'one:' + x.id
+            return (
+              <div className="cpx" key={x.id}>
+                <span className="cpxm"><strong>{longDate(x.date)}</strong>
+                  <span>{time12(x.start) + (x.finish ? ' to ' + time12(x.finish) : '') + ' · ' + (x.price > 0 ? fmt$(x.price) + ' ex GST (cleaner ' + fmt$(x.cost) + ')' : 'price not on file')}</span>
+                  {x.note && x.note !== 'One-off clean' && <span className="cpxdue">{x.note}</span>}
+                </span>
+                {x.started ? <span className="cpxdue">Started</span> : !confirming
+                  ? <span className="cpxbtns"><button type="button" className="linkbtn danger" onClick={() => { setDelX('one:' + x.id); close(); setPick(null) }} aria-label={'Cancel the one-off clean on ' + longDate(x.date)}>Cancel clean</button></span>
+                  : <span className="cpbtns"><button type="button" className="btn call dangerfill" disabled={busy} onClick={() => run(() => cancelOneOff(x.id))}>Yes, cancel it</button><button type="button" className="btn log" onClick={() => setDelX(null)}>Keep</button></span>}
+              </div>
+            )
+          })}
+          {!upcoming.length && !booking && <p className="cpnone">None booked.</p>}
+          {past.length > 0 && <p className="cpnone">{'Past: ' + past.slice(0, 3).map(x => dShort(x.date)).join(', ') + (past.length > 3 ? ` and ${past.length - 3} more` : '') + '.'}</p>}
+          {booking ? (
+            <div className="extracard" role="form" aria-label="Book a one-off clean">
+              <div className="ncgrid">
+                <label className="fld half"><span>Clean date</span><input type="date" min={today} value={d.date} onChange={set('date')} /></label>
+                <label className="fld half"><span>Start time</span><input type="time" value={d.start} onChange={set('start')} /></label>
+                <label className="fld half"><span>Finish time (optional)</span><input type="time" value={d.finish} onChange={set('finish')} /></label>
+                <label className="fld half"><span>Client price ($, ex GST)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 180" value={d.price} onChange={set('price')} /></label>
+                <label className="fld half"><span>Total cleaner cost ($)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 120" value={d.cost} onChange={set('cost')} /></label>
+                <label className="fld span2"><span>Note for you (optional)</span><input type="text" autoComplete="off" maxLength={300} placeholder="e.g. Deep clean before the open day" value={d.note} onChange={set('note')} /></label>
+              </div>
+              {oneMoney && <p className={oneMoney.cls}>{oneMoney.text}</p>}
+              <p className="nchint">{mine.length ? 'It goes on the timetable and shows in the assigned cleaners’ app on the day.' : 'It goes on the timetable. Assign a cleaner below so someone sees it in their app.'}</p>
+              {errP}
+              {btns('Book clean', () => run(() => bookOneOff(sv.id, { date: d.date, start: d.start, finish: d.finish, price: d.price, cost: d.cost, note: d.note })))}
+            </div>
+          ) : (
+            <button type="button" className="btn log addsite" onClick={() => open(oneKey, { date: '', start: sv.start || '', finish: sv.finish || '', price: sv.price ? String(sv.price) : '', cost: sv.cost ? String(sv.cost) : '', note: '' })}><Plus />Book a one-off clean</button>
+          )}
+        </div>
 
         <div className="cpsec">
           <h3 className="cpsh">Cleaners</h3>
@@ -298,17 +347,26 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
       <div className="cphead">
         <div className="cpwho">
           <h1 className="greet">{c.name}</h1>
-          <p className="cpsub">{c.suburb} <span className={'h ' + stats.health}>{stats.health === 'low' ? 'Low margin' : stats.health === 'watch' ? 'Watch' : 'Healthy'}</span></p>
+          <p className="cpsub">{c.suburb} {oneOffClient ? <span className="h watch">One-off client</span> : <span className={'h ' + stats.health}>{stats.health === 'low' ? 'Low margin' : stats.health === 'watch' ? 'Watch' : 'Healthy'}</span>}</p>
         </div>
       </div>
       {st === 'paused' && <div className="agstatus warn cpbanner"><span>{statusText}</span>{resumeBtn('btn log')}</div>}
       {st === 'ended' && <div className="agstatus cpbanner"><span>{statusText}</span>{reactBtn('btn log')}</div>}
-      <div className="cpstats">
-        <div><span>Monthly, ex GST</span><strong>{stats.mrr}</strong></div>
-        <div><span>Margin</span><strong>{stats.margin}</strong></div>
-        <div><span>Sites</span><strong>{String(c.multi ? c.services.length : 1)}</strong></div>
-        <div><span>Cleans a month</span><strong>{String(visits)}</strong></div>
-      </div>
+      {oneOffClient ? (
+        <div className="cpstats">
+          <div><span>Next clean</span><strong>{nextOne ? dShort(nextOne.date) : 'None booked'}</strong></div>
+          <div><span>Price, ex GST</span><strong>{nextOne ? fmt$(nextOne.price) : '—'}</strong></div>
+          <div><span>Sites</span><strong>{String(c.multi ? c.services.length : 1)}</strong></div>
+          <div><span>Booked cleans</span><strong>{String(booked.length)}</strong></div>
+        </div>
+      ) : (
+        <div className="cpstats">
+          <div><span>Monthly, ex GST</span><strong>{stats.mrr}</strong></div>
+          <div><span>Margin</span><strong>{stats.margin}</strong></div>
+          <div><span>Sites</span><strong>{String(c.multi ? c.services.length : 1)}</strong></div>
+          <div><span>Cleans a month</span><strong>{String(visits)}</strong></div>
+        </div>
+      )}
 
       <section className="addcard cpcard" aria-label="Business details">
         <div className="cpcardh"><h2 className="nch">Business details</h2>
