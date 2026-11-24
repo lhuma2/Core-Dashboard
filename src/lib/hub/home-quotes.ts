@@ -35,6 +35,10 @@ export interface QuoteBody {
   carpet: { on: boolean; items: Task[]; price: string; rooms: string; halls: string; fromWeb: boolean; webPrice: string }
   /** End of Lease only: rooms from the form and the add-ons. */
   eol?: EolBody
+  /** The in-hub price calculator: auto = the price follows the calculator until you type your own. */
+  calc?: { auto: boolean; pets?: boolean; unit?: boolean }
+  /** The client page this quote was started from (an existing client). */
+  forHome?: string
   /** Which wording of the additional-charges line the quote was saved or sent with (see QUOTE_TERMS_V). Missing on quotes from before 2. */
   tv?: number
 }
@@ -391,7 +395,7 @@ function quoteDocBase(q: Quote, today: string): QuoteDoc {
 }
 
 // ── database row ⇄ quote ──────────────────────────────────────
-const BODY_KEYS: (keyof QuoteBody)[] = ['region', 'street', 'suburb', 'postcode', 'heading', 'intro', 'type', 'every', 'beds', 'baths', 'living', 'start', 'hours', 'price', 'priceFromWeb', 'notes', 'scope', 'windows', 'carpet', 'eol', 'tv']
+const BODY_KEYS: (keyof QuoteBody)[] = ['region', 'street', 'suburb', 'postcode', 'heading', 'intro', 'type', 'every', 'beds', 'baths', 'living', 'start', 'hours', 'price', 'priceFromWeb', 'notes', 'scope', 'windows', 'carpet', 'eol', 'tv', 'calc', 'forHome']
 export function bodyOf(q: QuoteBody): QuoteBody { const o: any = {}; for (const k of BODY_KEYS) if ((q as any)[k] !== undefined) o[k] = (q as any)[k]; return o }
 
 export interface QuoteRow {
