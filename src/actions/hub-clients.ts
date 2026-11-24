@@ -19,6 +19,7 @@ const svcSchema = z.object({
 const siteSchema = z.object({ name: str(300), street: str(300), suburb: str(200), postcode: str(10) })
 const formSchema = z.object({
   biz: str(300), contact: str(300), phone: str(40), email: str(320), street: str(300), suburb: str(200), postcode: str(10), state: str(5),
+  kind: z.enum(['regular', 'oneoff']).optional(),
   siteType: z.enum(['single', 'multi']),
   sites: z.array(siteSchema).max(MAX_SITES + 1),
   svcs: z.array(svcSchema).min(1).max(MAX_SITES + 1),
@@ -56,7 +57,9 @@ export async function createCommercialClient(input: NcForm, fromProp: string | n
     const m = String(error.message ?? '')
     if (m.includes('duplicate_client')) return { ok: false, error: `${checked.payload.business_name} is already one of your clients.` }
     if (m.includes('cleaner_not_allowed')) return { ok: false, error: 'One of the chosen cleaners can’t be assigned. Remove them and choose again.' }
-    if (m.includes('bad_first_clean')) return { ok: false, error: 'A first clean date is in the past. Pick today or later.' }
+    if (m.includes('bad_first_clean')) return { ok: false, error: checked.payload.oneoff ? 'The clean date is in the past. Pick today or later.' : 'A first clean date is in the past. Pick today or later.' }
+    // a one-off sent to a database that hasn't had update 075 yet
+    if (m.includes('bad_days') && checked.payload.oneoff) return { ok: false, error: 'The hub’s database needs a small update before one-off clients can be saved. Nothing was saved.' }
     if (m.includes('not_allowed')) return { ok: false, error: 'Only admins and managers can add clients.' }
     return { ok: false, error: 'Couldn’t save the client. Nothing was saved, so you can try again.' }
   }

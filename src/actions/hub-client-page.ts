@@ -11,6 +11,7 @@ import { brisbaneToday, ADDON_PER_YEAR } from '@/lib/hub/figures'
 import { normPhone, pcFits, money, fmt$, everyErr, STATES, DAYS, EXTRA_KINDS } from '@/lib/hub/new-client'
 import { dLong, dShort } from '@/lib/hub/home-quotes'
 import { ADDON_FREQ_LABEL, PAUSE_REASONS, END_REASONS, reasonText, tidy, joinAnd } from '@/lib/hub/client-page'
+import { offOn, onCadence, isoDow, CAL_DOW, longDate, t12 } from '@/lib/hub/timetable'
 
 type R = { ok: true; toast: string } | { ok: false; error: string }
 const NO_DB = 'Couldn’t reach the hub. Check your connection and try again.'
@@ -86,7 +87,8 @@ export async function saveService(sid: string, d: ServiceForm): Promise<R> {
   const { s, site, sites } = o
   const today = brisbaneToday()
   const first0 = s.first_clean ? String(s.first_clean).slice(0, 10) : ''
-  const firstFuture = !first0 || first0 >= today
+  // a one-off-only site (no regular days yet) picks a fresh first clean date when it goes regular
+  const firstFuture = !first0 || first0 >= today || !(s.days || []).length
   const who = site ? site.site_name : 'This service'
   const days = DAYS.map(x => x[0]).filter(k => (d.days || []).includes(k))
   const sn = tidy(d.sname), ss = tidy(d.sstreet), su = tidy(d.ssuburb), sp = String(d.spostcode || '').trim()
@@ -283,3 +285,61 @@ export async function reactivateClient(id: string): Promise<R> {
   return { ok: true, toast: `${o.c.business_name} is back in Active clients with the same sites, cleaners and prices. Check the times are still right.` }
 }
 
+
+// ── One-off cleans: a single clean on its own date, on top of (or instead of) regular cleans ──
+export interface OneOffForm { date: string; start: string; finish: string; price: string; cost: string; note: string }
+export async function bookOneOff(sid: string, d: OneOffForm): Promise<R> {
+  const g = await gate(); if ('error' in g) return fail(g.error)
+  const o = await getService(g.db, sid); if ('error' in o) return fail(o.error!)
+  const cq = await getClient(g.db, o.s.client_id); if ('error' in cq) return fail(cq.error!)
+  const { s, site } = o, c = cq.c
+  const today = brisbaneToday()
+  const date = String(d.date || ''), start = String(d.start || ''), finish = String(d.finish || '')
+  if (!ISO.test(date)) return fail('Choose the day for the clean.')
+  if (date < today) return fail('That day has already passed. Choose today or later.')
+  if (!HM.test(start)) return fail('Add a start time.')
+  if (finish && !HM.test(finish)) return fail('The finish time isn’t valid.')
+  if (finish && finish <= start) return fail('The finish time must be after the start time.')
+  const pr = money(d.price), co = money(d.cost)
+  if (!pr) return fail('Enter the client price as a dollar amount, e.g. 180.')
+  if (!co) return fail('Enter your cleaner cost as a dollar amount, e.g. 120.')
+  if (pr <= co) return fail(`The client price (${fmt$(pr)}) is not more than your cleaner cost (${fmt$(co)}). Check the two prices.`)
+  if (pr >= 100000 || co >= 100000) return fail('Check the two prices. They look too big.')
+  const note = tidy(d.note)
+  if (note.length > 300) return fail('Keep the note under 300 characters.')
+  const d10 = (v: any) => (v ? String(v).slice(0, 10) : null)
+  if (offOn({ status: c.status, paused_from: d10(c.paused_from), resume_on: d10(c.resume_on), ended_on: d10(c.ended_on) }, date))
+    return fail(`${c.business_name} is ${c.status === 'ended' ? 'ended' : 'paused'} on ${longDate(date)}. ${c.status === 'ended' ? 'Reactivate them first, or choose an earlier day.' : 'Choose another day, or resume them first.'}`)
+  const first = d10(s.first_clean)
+  const regular = (s.days || []).includes(CAL_DOW[isoDow(date)]) && !(first && date < first) && onCadence({ every: s.every, anchor: d10(s.anchor), first }, date)
+  const where = site ? ` at ${site.site_name}` : ''
+  if (regular) return fail(`They already have their regular clean${where} on ${longDate(date)}. Choose another day, or change that clean’s time under Edit.`)
+  const { error } = await g.db.from('one_offs').insert({ client_id: c.id, service_id: sid, clean_date: date, start_time: start, finish_time: finish || null, price: pr, cost: co, note: note || 'One-off clean' })
+  if (error) return fail(/duplicate|unique/i.test(String(error.message)) ? `There’s already a one-off clean${where} on ${longDate(date)}. Choose another day.` : NO_DB)
+  await log(g.db, c.id, `One-off clean booked${where} for ${dShort(date)} at ${t12(start)}, ${fmt$(pr)} ex GST (cleaner ${fmt$(co)})${note ? '. ' + note : ''}.`)
+  refresh()
+  return { ok: true, toast: `One-off clean booked${where} for ${longDate(date)} at ${t12(start)}. It’s on the timetable${(await hasCrew(g.db, sid)) ? ' and the cleaners’ jobs' : '. Assign a cleaner so someone sees it'}.` }
+}
+async function hasCrew(db: any, sid: string) {
+  const { data } = await db.from('client_service_cleaners').select('cleaner_id').eq('service_id', sid).limit(1)
+  return !!(data || []).length
+}
+export async function cancelOneOff(id: string): Promise<R> {
+  const g = await gate(); if ('error' in g) return fail(g.error)
+  if (!uuid(id)) return fail('That clean was already cancelled. Refresh the page.')
+  const { data: x, error } = await g.db.from('one_offs').select('id, client_id, service_id, clean_date').eq('id', id).maybeSingle()
+  if (error) return fail(NO_DB)
+  if (!x) return fail('That clean was already cancelled. Refresh the page.')
+  const date = String(x.clean_date).slice(0, 10)
+  if (date < brisbaneToday()) return fail('That clean has already happened, so it can’t be cancelled.')
+  const { data: run, error: rErr } = await g.db.from('jobs').select('id').eq('service_id', x.service_id).eq('clean_date', date).not('started_at', 'is', null).limit(1)
+  if (rErr) return fail(NO_DB)
+  if ((run || []).length) return fail('The cleaner has already started this clean, so it can’t be cancelled.')
+  const { error: dErr } = await g.db.from('one_offs').delete().eq('id', id)
+  if (dErr) return fail(NO_DB)
+  const o = await getService(g.db, x.service_id)
+  const where = !('error' in o) && o.site ? ` at ${o.site.site_name}` : ''
+  await log(g.db, x.client_id, `One-off clean${where} on ${dShort(date)} cancelled.`)
+  refresh()
+  return { ok: true, toast: `Cancelled the one-off clean${where} on ${longDate(date)}. It’s off the timetable and the cleaners’ jobs.` }
+}

@@ -15,12 +15,13 @@ const MAX_EXTRAS = 10
 export interface NcExtra { kind: string; custom: string; freq: string; price: string; cost: string }
 export interface NcSvc { days: Partial<Record<DayKey, boolean>>; every: string; start: string; finish: string; first: string; cost: string; price: string; cleaners: string[]; access: string; extras: NcExtra[] }
 export interface NcSite { name: string; street: string; suburb: string; postcode: string }
-export interface NcForm { biz: string; contact: string; phone: string; email: string; street: string; suburb: string; postcode: string; state: string; siteType: 'single' | 'multi'; sites: NcSite[]; svcs: NcSvc[] }
+/** kind: regular cleans on set days, or a single one-off clean on the first clean date (left out = regular). */
+export interface NcForm { biz: string; contact: string; phone: string; email: string; street: string; suburb: string; postcode: string; state: string; kind?: 'regular' | 'oneoff'; siteType: 'single' | 'multi'; sites: NcSite[]; svcs: NcSvc[] }
 
 export const blankSite = (): NcSite => ({ name: '', street: '', suburb: '', postcode: '' })
 export const blankSvc = (): NcSvc => ({ days: {}, every: 'weekly', start: '', finish: '', first: '', cost: '', price: '', cleaners: [], access: '', extras: [] })
 export const blankExtra = (): NcExtra => ({ kind: '', custom: '', freq: '', price: '', cost: '' })
-export const blankNc = (): NcForm => ({ biz: '', contact: '', phone: '', email: '', street: '', suburb: '', postcode: '', state: 'QLD', siteType: 'single', sites: [blankSite(), blankSite()], svcs: [blankSvc(), blankSvc()] })
+export const blankNc = (): NcForm => ({ biz: '', contact: '', phone: '', email: '', street: '', suburb: '', postcode: '', state: 'QLD', kind: 'regular', siteType: 'single', sites: [blankSite(), blankSite()], svcs: [blankSvc(), blankSvc()] })
 export { MAX_SITES, MAX_EXTRAS }
 
 const STATE_PC: Record<string, [number, number][]> = {
@@ -65,6 +66,12 @@ export function time12(t: string): string {
   h = h % 12 || 12
   return `${h}:${m} ${ap}`
 }
+const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+/** 2026-11-25 → "Wed 25 Nov" */
+export function longDay(iso: string): string {
+  const d = new Date(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)))
+  return `${DAYS[(d.getUTCDay() + 6) % 7][1]} ${d.getUTCDate()} ${MON3[d.getUTCMonth()]}`
+}
 export const dayKeys = (sv: NcSvc): DayKey[] => DAYS.filter(d => sv.days[d[0]]).map(d => d[0])
 const PER_MONTH: Record<string, number> = { weekly: 52 / 12, fortnightly: 26 / 12, monthly: 1 }
 const DOW_KEY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
@@ -83,11 +90,12 @@ export function everyErr(who: string, every: string, keys: string[], pat: string
 export interface MoneyLine { text: string; cls: string }
 const health = (pct: number) => (pct >= 30 ? 'good' : pct >= 20 ? 'watch' : 'low')
 
-export function svcMoney(sv: NcSvc): MoneyLine | null {
+export function svcMoney(sv: NcSvc, oneOff = false): MoneyLine | null {
   const cost = money(sv.cost), price = money(sv.price), n = dayKeys(sv).length
   if (!cost || !price) return null
   const per = price - cost, pct = Math.round((per / price) * 100)
-  if (per <= 0) return { text: `The client price is not more than your cleaner cost. You would lose ${fmt$(-per)} a visit.`, cls: 'money h low' }
+  if (per <= 0) return { text: `The client price is not more than your cleaner cost. You would lose ${fmt$(-per)} ${oneOff ? 'on this clean' : 'a visit'}.`, cls: 'money h low' }
+  if (oneOff) return { text: `Margin ${fmt$(per)} on this clean (${pct}%). One-off, so it isn’t counted in the monthly total.`, cls: 'money h ' + health(pct) }
   return {
     text: `Margin ${fmt$(per)} a visit (${pct}%).` + (n ? ` About ${fmt$(Math.round(price * n * (PER_MONTH[sv.every] ?? PER_MONTH.weekly)))} a month from the client, ex GST.` : ''),
     cls: 'money h ' + health(pct),
@@ -118,6 +126,8 @@ export function svcSummary(sv: NcSvc): string {
 export interface NcPayload {
   business_name: string; contact_name: string; contact_phone: string; contact_email: string
   street: string; suburb: string; postcode: string; state: string; multi: boolean
+  /** true: each service is one clean on first_clean, with no regular days */
+  oneoff?: boolean
   services: {
     site: NcSite | null; days: DayKey[]; every: string; first_clean: string; start_time: string; finish_time: string
     price: number; cost: number; access: string; cleaners: string[]
@@ -155,6 +165,7 @@ export function validateNewClient(
   if (pc && !pcFits(pc, n.state)) return fail(`Postcode ${pc} isn’t in ${n.state}. Check the postcode or the state.`)
 
   const multi = n.siteType === 'multi'
+  const once = n.kind === 'oneoff'
   const sites: NcSite[] = []
   if (multi) {
     if (n.sites.length < 2 || n.sites.length > MAX_SITES || n.svcs.length !== n.sites.length) return fail('Add between 2 and 20 sites.')
@@ -170,30 +181,33 @@ export function validateNewClient(
 
   const idx = multi ? n.sites.map((_, j) => j) : [0]
   const services: NcPayload['services'] = []
-  let monthly = 0, monthlyCost = 0
+  let monthly = 0, monthlyCost = 0, oPrice = 0, oCost = 0
   const freqs: string[] = []
+  const dates: string[] = []
   for (const k of idx) {
     const sv = n.svcs[k] ?? blankSvc()
-    const who = multi ? `Site ${k + 1}` + (sites[k] ? ` (${sites[k].name})` : '') : 'Service details'
-    const keys = dayKeys(sv)
-    if (!keys.length) return fail(`${who}: pick at least one cleaning day.`)
+    const who = multi ? `Site ${k + 1}` + (sites[k] ? ` (${sites[k].name})` : '') : once ? 'Clean details' : 'Service details'
+    const keys = once ? [] : dayKeys(sv)
+    if (!once && !keys.length) return fail(`${who}: pick at least one cleaning day.`)
     if (!/^\d{2}:\d{2}$/.test(sv.start || '')) return fail(`${who}: add a start time.`)
     if (sv.finish && !/^\d{2}:\d{2}$/.test(sv.finish)) return fail(`${who}: the finish time isn’t valid.`)
     if (sv.finish && sv.finish <= sv.start) return fail(`${who}: the finish time must be after the start time.`)
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(sv.first || '')) return fail(`${who}: add the first clean date.`)
-    if (sv.first < today) return fail(`${who}: the first clean date is in the past.`)
-    const ev = everyErr(who, sv.every || 'weekly', keys, sv.first, 'first clean date')
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(sv.first || '')) return fail(once ? `${who}: add the clean date.` : `${who}: add the first clean date.`)
+    if (sv.first < today) return fail(once ? `${who}: the clean date is in the past.` : `${who}: the first clean date is in the past.`)
+    const ev = once ? '' : everyErr(who, sv.every || 'weekly', keys, sv.first, 'first clean date')
     if (ev) return fail(ev)
     const cst = money(sv.cost), prc = money(sv.price)
-    if (!cst) return fail(`${who}: enter your cleaner cost per visit as a dollar amount, e.g. 120 or 120.50.`)
-    if (!prc) return fail(`${who}: enter the client price per visit as a dollar amount, e.g. 180.`)
+    if (!cst) return fail(`${who}: enter your cleaner cost${once ? '' : ' per visit'} as a dollar amount, e.g. 120 or 120.50.`)
+    if (!prc) return fail(`${who}: enter the client price${once ? '' : ' per visit'} as a dollar amount, e.g. 180.`)
     if (prc <= cst) return fail(`${who}: the client price (${fmt$(prc)}) is not more than your cleaner cost (${fmt$(cst)}). Check the two prices.`)
     if (sv.cleaners.some(id => !team.some(x => x.id === id && x.signed))) return fail(`${who}: one of the chosen cleaners can’t be assigned. Remove them and choose again.`)
     if ((sv.access || '').length > 2000) return fail(`${who}: the access details are too long. Keep them under 2,000 characters.`)
-    if ((sv.extras || []).length > MAX_EXTRAS) return fail(`${who}: that’s more additional services than one site can have (10).`)
+    // a one-off has no additional services (the form hides them, so any left from Regular are dropped)
+    const extras = once ? [] : sv.extras || []
+    if (extras.length > MAX_EXTRAS) return fail(`${who}: that’s more additional services than one site can have (10).`)
     const addons: NcPayload['services'][number]['addons'] = []
-    for (let e = 0; e < (sv.extras || []).length; e++) {
-      const ex = sv.extras[e], exn = `additional service ${e + 1}`
+    for (let e = 0; e < extras.length; e++) {
+      const ex = extras[e], exn = `additional service ${e + 1}`
       if (!ex.kind) return fail(`${who}: choose which service ${exn} is, or remove it.`)
       const nm = extraName(ex)
       if (!nm) return fail(`${who}: give the custom service a name.`)
@@ -205,20 +219,31 @@ export function validateNewClient(
       if (p <= c) return fail(`${who}: your charge for ${nm} (${fmt$(p)}) is not more than the cleaner cost (${fmt$(c)}).`)
       addons.push({ name: nm, freq: ex.freq, price: p, cost: c })
     }
-    const every = sv.every || 'weekly'
+    const every = once ? 'weekly' : sv.every || 'weekly'
+    if (once) { oPrice += prc; oCost += cst; dates.push(sv.first) }
     const cpm = cleansPerMonth({ days: keys, every })
     monthly += prc * cpm; monthlyCost += cst * cpm
     for (const a of addons) { const py = ADDON_PER_YEAR[a.freq as AddonFreq] ?? 0; monthly += (a.price * py) / 12; monthlyCost += (a.cost * py) / 12 }
-    freqs.push(freqText(keys.length, every))
+    if (!once) freqs.push(freqText(keys.length, every))
     services.push({
       site: multi ? sites[k] : null, days: keys, every, first_clean: sv.first, start_time: sv.start, finish_time: sv.finish || '',
       price: prc, cost: cst, access: (sv.access || '').trim(), cleaners: Array.from(new Set(sv.cleaners)), addons,
     })
   }
+  const payload: NcPayload = { business_name: biz, contact_name: contact, contact_phone: phone, contact_email: email, street, suburb, postcode: pc, state: n.state, multi, services }
+  if (once) {
+    payload.oneoff = true
+    const ds = Array.from(new Set(dates)).sort()
+    const opct = Math.round(((oPrice - oCost) / oPrice) * 100)
+    return {
+      ok: true, payload,
+      toast: `Added ${biz}${sites.length ? ` with ${sites.length} sites` : ''}. One-off clean on ${ds.map(longDay).join(', ')}, ${fmt$(oPrice)} ex GST, ${opct}% margin. It’s on the timetable.`,
+    }
+  }
   const mpct = Math.round(((monthly - monthlyCost) / monthly) * 100)
   return {
     ok: true,
-    payload: { business_name: biz, contact_name: contact, contact_phone: phone, contact_email: email, street, suburb, postcode: pc, state: n.state, multi, services },
+    payload,
     toast: `Added ${biz}${sites.length ? ` with ${sites.length} sites.` : '.'} Monthly ${fmt$(Math.round(monthly))} ex GST, ${mpct}% margin.`,
   }
 }

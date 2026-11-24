@@ -21,6 +21,8 @@ const Plus = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" s
 const Person = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="4" /><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6M19 8v6M16 11h6" /></svg>
 const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
 const Bldg = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1.5" /><path d="M9 7h1M14 7h1M9 11h1M14 11h1M10 21v-3h4v3" /></svg>
+const Repeat = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4" /><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4" /><path d="M21 13v2a3 3 0 0 1-3 3H3" /></svg>
+const Cal = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /><path d="M12 14v3" /></svg>
 const Pin = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
 
 export function NewClientForm({ team, existing, today, initial, fromProp = null }: { team: TeamMember[]; existing: { name: string; status: string | null; resume_on: string | null }[]; today: string; initial?: NcForm; fromProp?: string | null }) {
@@ -30,6 +32,7 @@ export function NewClientForm({ team, existing, today, initial, fromProp = null 
   const [saving, start] = useTransition()
   const router = useRouter()
   const multi = nc.siteType === 'multi'
+  const once = nc.kind === 'oneoff'
   const teamSorted = [...team].sort((a, b) => (REGION_ORDER[a.region ?? ''] ?? 9) - (REGION_ORDER[b.region ?? ''] ?? 9) || a.name.localeCompare(b.name))
 
   const upd = (patch: Partial<NcForm>) => { setNc(cur => ({ ...cur, ...patch })); setErr('') }
@@ -78,13 +81,13 @@ export function NewClientForm({ team, existing, today, initial, fromProp = null 
 
   function svcSection(i: number, title: string) {
     const sv = nc.svcs[i]
-    const m = svcMoney(sv)
+    const m = svcMoney(sv, once)
     const assigned = sv.cleaners.map(id => team.find(t => t.id === id)).filter((t): t is TeamMember => !!t)
     const open = picking === i
     return (
       <section className="svccard" aria-label={title}>
         <h2 className="nch">{title}</h2>
-        <div className="fld">
+        {!once && <div className="fld">
           <span>Cleaning days</span>
           <div className="days" role="group" aria-label={`Cleaning days for ${title}`}>
             {DAYS.map(([k, short, full]) => {
@@ -92,19 +95,22 @@ export function NewClientForm({ team, existing, today, initial, fromProp = null 
               return <button key={k} type="button" className={on ? 'day on' : 'day'} aria-pressed={on} aria-label={full} onClick={() => updSvc(i, s => ({ ...s, days: { ...s.days, [k]: !s.days[k] } }))}>{short}</button>
             })}
           </div>
-        </div>
+        </div>}
         <div className="ncgrid">
+          {once && <label className="fld half"><span>Clean date</span><input type="date" min={today} value={sv.first} onChange={svcField(i, 'first')} /></label>}
           <label className="fld half"><span>Start time</span><input type="time" value={sv.start} onChange={svcField(i, 'start')} /></label>
           <label className="fld half"><span>Finish time (optional)</span><input type="time" value={sv.finish} onChange={svcField(i, 'finish')} /></label>
-          <label className="fld half"><span>First clean date</span><input type="date" min={today} value={sv.first} onChange={svcField(i, 'first')} /></label>
-          <label className="fld half"><span>How often</span>
-            <select value={sv.every} onChange={svcField(i, 'every')}>{EVERY_OPTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
-          </label>
-          <div className="fld half"><span>Summary</span><div className="freqread">{svcSummary(sv)}</div></div>
-          {sv.every === 'fortnightly' && <p className="fhint span2">Cleaned every second week, counting from the first clean date.</p>}
-          {sv.every === 'monthly' && <p className="fhint span2">Cleaned once a month on the same week as the first clean, e.g. the 2nd Saturday.</p>}
-          <label className="fld half"><span>Total cleaner cost per visit ($)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 120" value={sv.cost} onChange={svcField(i, 'cost')} /></label>
-          <label className="fld half"><span>Client price per visit ($, ex GST)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 180" value={sv.price} onChange={svcField(i, 'price')} /></label>
+          {!once && <>
+            <label className="fld half"><span>First clean date</span><input type="date" min={today} value={sv.first} onChange={svcField(i, 'first')} /></label>
+            <label className="fld half"><span>How often</span>
+              <select value={sv.every} onChange={svcField(i, 'every')}>{EVERY_OPTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+            </label>
+            <div className="fld half"><span>Summary</span><div className="freqread">{svcSummary(sv)}</div></div>
+            {sv.every === 'fortnightly' && <p className="fhint span2">Cleaned every second week, counting from the first clean date.</p>}
+            {sv.every === 'monthly' && <p className="fhint span2">Cleaned once a month on the same week as the first clean, e.g. the 2nd Saturday.</p>}
+          </>}
+          <label className="fld half"><span>{once ? 'Total cleaner cost ($)' : 'Total cleaner cost per visit ($)'}</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 120" value={sv.cost} onChange={svcField(i, 'cost')} /></label>
+          <label className="fld half"><span>{once ? 'Client price ($, ex GST)' : 'Client price per visit ($, ex GST)'}</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 180" value={sv.price} onChange={svcField(i, 'price')} /></label>
         </div>
         {m && <p className={m.cls}>{m.text}</p>}
 
@@ -146,7 +152,7 @@ export function NewClientForm({ team, existing, today, initial, fromProp = null 
           <textarea rows={3} maxLength={2000} placeholder="Keys or swipe card, alarm instructions, parking, which door to use, who to contact on site" value={sv.access} onChange={svcField(i, 'access')} />
         </label>
 
-        <div className="fld">
+        {!once && <div className="fld">
           <span>Additional services</span>
           {sv.extras.map((ex, xi) => {
             const nm = extraName(ex), em = extraMoney(ex)
@@ -179,7 +185,7 @@ export function NewClientForm({ team, existing, today, initial, fromProp = null 
           {sv.extras.length < MAX_EXTRAS && (
             <button type="button" className="btn log addsite" onClick={() => updSvc(i, s => ({ ...s, extras: [...s.extras, blankExtra()] }))}><Plus />Add a service</button>
           )}
-        </div>
+        </div>}
       </section>
     )
   }
@@ -199,6 +205,17 @@ export function NewClientForm({ team, existing, today, initial, fromProp = null 
           <select value={nc.state} onChange={field('state')}>{STATES.map(s => <option key={s} value={s}>{s}</option>)}</select>
         </label>
       </div>
+
+      <h2 className="nch">Type of clean</h2>
+      <div className="stypes" role="radiogroup" aria-label="Type of clean">
+        <button type="button" role="radio" className={once ? 'stype' : 'stype on'} aria-checked={!once} onClick={() => upd({ kind: 'regular' })}>
+          <span className="sticon"><Repeat /></span><span className="sttext"><strong>Regular cleans</strong><span>Weekly, fortnightly or monthly</span></span>
+        </button>
+        <button type="button" role="radio" className={once ? 'stype on' : 'stype'} aria-checked={once} onClick={() => upd({ kind: 'oneoff' })}>
+          <span className="sticon"><Cal /></span><span className="sttext"><strong>One-off clean</strong><span>A single clean on one date</span></span>
+        </button>
+      </div>
+      {once && <p className="nchint">Booked for one date only. It goes on the timetable and the cleaners’ jobs. You can book more one-offs, or set up regular cleans, from their client page later.</p>}
 
       <h2 className="nch">Site type</h2>
       <p className="nchint">Does this client have one location or multiple separate sites?</p>
@@ -226,10 +243,10 @@ export function NewClientForm({ team, existing, today, initial, fromProp = null 
                 <label className="fld pc"><span>Postcode</span><input type="text" inputMode="numeric" maxLength={4} autoComplete="off" placeholder="4032" value={s.postcode} onChange={siteField(i, 'postcode')} /></label>
               </div>
             </div>
-            {svcSection(i, `Site ${i + 1}${s.name.trim() ? ': ' + s.name.trim() : ''} service`)}
+            {svcSection(i, `Site ${i + 1}${s.name.trim() ? ': ' + s.name.trim() : ''} ${once ? 'clean' : 'service'}`)}
           </div>
         ))
-        : <div className="ncrow">{svcSection(0, 'Service details')}</div>}
+        : <div className="ncrow">{svcSection(0, once ? 'Clean details' : 'Service details')}</div>}
 
       {multi && <button type="button" className="btn log addsite" onClick={addSite}><Plus />Add another site</button>}
 

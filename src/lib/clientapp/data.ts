@@ -75,7 +75,7 @@ export async function loadPortal(me: ClientMe): Promise<PortalData | null> {
     const start = t5(s.start_time), fin = t5(s.finish_time)
     return {
       id: s.site_id || s.id, name: nameOf(s), address: place(site?.address ? site : c),
-      days: (s.days || []).map((d: string) => DN[d]).join(', ') + (s.every === 'fortnightly' ? ', fortnightly' : s.every === 'monthly' ? ', monthly' : ''),
+      days: !(s.days || []).length ? 'One-off cleans' : (s.days || []).map((d: string) => DN[d]).join(', ') + (s.every === 'fortnightly' ? ', fortnightly' : s.every === 'monthly' ? ', monthly' : ''),
       time: start ? p12(start) + (fin ? ' to ' + p12(fin) : '') : 'Time to be confirmed',
       team: names.length ? 'Cleaner: ' + names.join(', ') : 'Cleaner: to be confirmed',
       extras: ex.map(a => a.name + ' ' + (EVERY_WORD[a.freq] || '')).join(', ').replace(/\s+,/g, ','),

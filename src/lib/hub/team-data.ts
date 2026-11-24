@@ -73,10 +73,11 @@ export async function loadCommercialTeam(today: string): Promise<CtRow[] | null>
         const others = ids.filter(i => i !== t.id).map(i => nameOf.get(i)).filter(Boolean)
         const s0 = String(sv.start_time || '').slice(0, 5), f0 = String(sv.finish_time || '').slice(0, 5)
         const time = s0 ? t12(s0) + (f0 ? '–' + t12(f0) : '') : ''
-        const days = ORDER.filter(d => (sv.days || []).includes(d)).map(d => DAYW[d]).join(', ') + (sv.every === 'fortnightly' ? ', fortnightly' : sv.every === 'monthly' ? ', monthly' : '')
+        const once = !(sv.days || []).length
+        const days = once ? 'One-off' : ORDER.filter(d => (sv.days || []).includes(d)).map(d => DAYW[d]).join(', ') + (sv.every === 'fortnightly' ? ', fortnightly' : sv.every === 'monthly' ? ', monthly' : '')
         const site = multi(c.id) && sv.site_id ? sites.find(s => s.id === sv.site_id)?.site_name || '' : ''
         const first = String(sv.first_clean || '').slice(0, 10)
-        let line = [site, days, time].filter(Boolean).join(' · ') + (others.length ? ' · with ' + others.join(', ') : '') + (first && first > today ? ' · starts ' + dShort(first) : '')
+        let line = [site, days, time].filter(Boolean).join(' · ') + (others.length ? ' · with ' + others.join(', ') : '') + (first && first > today ? (once ? ' · on ' : ' · starts ') + dShort(first) : '')
         if (st === 'paused') line += ' · paused' + (c.resume_on ? ' until ' + dShort(String(c.resume_on).slice(0, 10)) : '')
         else visits += cleansPerMonth(sv)
         lines.push(line)

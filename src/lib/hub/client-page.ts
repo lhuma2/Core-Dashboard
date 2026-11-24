@@ -6,11 +6,17 @@ import { onCadence, isoAdd, isoDow, CAL_DOW } from './timetable'
 
 export interface CpCleaner { id: string; name: string; region: string | null; leader: boolean; signed: boolean }
 export interface CpAddon { id: string; name: string; freq: string; price: number; cost: number; next: string | null; items: string[] }
+/** A single clean booked on its own date: a one-off, or an extra clean the client asked for. */
+export interface CpOneOff { id: string; date: string; start: string; finish: string; price: number; cost: number; note: string; fromRequest: boolean; started: boolean }
 export interface CpService {
   id: string; siteId: string | null; siteName: string; siteStreet: string; siteSuburb: string; sitePostcode: string
   days: string[]; every: string; anchor: string | null; first: string | null; start: string; finish: string
   price: number; cost: number; access: string; cleaners: string[]; addons: CpAddon[]; sow: SowBox[]
+  /** one-off and extra cleans from 30 days ago on, oldest first */
+  oneOffs: CpOneOff[]
 }
+/** How far back the client page lists past one-off cleans. */
+export const ONE_OFF_PAST_DAYS = 30
 export interface CpClient {
   id: string; name: string; contact: string; phone: string; email: string; street: string; suburb: string; postcode: string; state: string
   status: string; paused_from: string | null; resume_on: string | null; ended_on: string | null; reason: string; multi: boolean
