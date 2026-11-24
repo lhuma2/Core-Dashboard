@@ -108,7 +108,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
       <Link className="back" href={backHref}><Back /> {from === 'client' && q.forHome ? initial.name || 'Client' : 'Quotes'}</Link>
       <h1 className="greet">{heading}</h1>
       {q.ref && <p className="sub"><span>Ref {q.ref}</span></p>}
-      {q.forHome && <p className="fhint">Started from {initial.name || 'this client'}’s page and listed there. If they accept, the booking gets its own client card.</p>}
+      {q.forHome && <p className="fhint">Started from {initial.name || 'this client'}’s page and listed there. If they accept, it goes onto their client card, unless that card still has cleans booked that this would replace. Then it gets its own card so those stay the same.</p>}
       {rows.length > 0 && (
         <details className="addcard webreq" open>
           <summary className="nch">What they asked for on the website</summary>

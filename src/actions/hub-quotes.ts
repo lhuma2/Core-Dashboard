@@ -267,9 +267,11 @@ export async function clientAccept(code: string, a: { street: string; suburb: st
   if (cur.type === 'eol' && made?.home) {
     const adds = eAddsOn(cur), ca = adds.find(x => x.k === 'carpet')
     const list = (withPrice: boolean) => adds.map(x => (EOL_ADDK[x.k]?.label || x.k) + (eUnits(x) ? ' × ' + eUnits(x) : '') + (withPrice ? ' (' + cash2(qMoney(x.price)) + ')' : '')).join(', ')
+    // Added to an existing client's card: the database already kept their notes and added the quote's, so only add the add-ons.
+    const kept = made.merged ? String(((await o.db.from('homes').select('notes').eq('id', made.home).maybeSingle()).data as any)?.notes || '').trim() : (cur.notes || '').trim()
     await o.db.from('homes').update({
       price: Math.round(eTotal(cur) * 100) / 100, carpet_rooms: ca ? Math.min(+ca.qty || 0, 40) : 0, hallways: 0,
-      notes: [(cur.notes || '').trim(), adds.length ? 'Add-ons: ' + list(false) : ''].filter(Boolean).join('. ').slice(0, 3000) || null,
+      notes: [kept, adds.length ? 'Add-ons: ' + list(false) : ''].filter(Boolean).join('. ').slice(0, 3000) || null,
     }).eq('id', made.home)
     if (adds.length) {
       const { data: hist } = await o.db.from('home_history').select('id, text').eq('home_id', made.home)
