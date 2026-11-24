@@ -24,7 +24,7 @@ export function ProposalForm({ initial, presets, leads, clients, requests, today
 }) {
   const router = useRouter()
   const [pf, setPf] = useState<Pf>(initial)
-  const [pick, setPick] = useState('')
+  const [pick, setPick] = useState(initial.clientId && !initial.requestId && clients.some(c => c.id === initial.clientId) ? 'c:' + initial.clientId : '')
   const [err, setErr] = useState('')
   const [reading, setReading] = useState('')
   const [busy, start] = useTransition()

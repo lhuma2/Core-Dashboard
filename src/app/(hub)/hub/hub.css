@@ -963,3 +963,23 @@
 @keyframes hlbar{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
 @keyframes hlpulse{0%,100%{opacity:1}50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){.hub .hubload *{animation:none!important}}
+/* Price calculator in the quote editor */
+.hub .calcbox{border:1px solid #cfe3d8;background:#f2f8f4;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.hub .calchead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.hub .calchead strong{font-size:15px;color:#00250e}
+.hub .calchead span{font-size:12px;color:#5d6b65}
+.hub .calcopts{display:flex;flex-wrap:wrap;gap:6px 18px}
+.hub .calcres{margin:0;font-size:15px;color:#13201a}
+.hub .calcres strong{font-size:22px;color:#14532d;margin-right:2px}
+.hub .calcwhy{margin:0;font-size:12px;color:#5d6b65;line-height:1.45}
+.hub .calcuse{align-self:flex-start;min-height:38px}
+@container (max-width:700px){
+.hub .calcbox{padding:10px 12px;gap:6px;border-radius:10px;margin-bottom:10px}
+.hub .calchead strong{font-size:13px}
+.hub .calchead span{font-size:11px}
+.hub .calcres{font-size:13px}
+.hub .calcres strong{font-size:18px}
+.hub .calcwhy{font-size:11px}
+.hub .calcuse{min-height:34px;font-size:12px;padding:0 12px}
+.hub .cphead>.btn{min-height:34px;font-size:12px;padding:0 12px}
+}

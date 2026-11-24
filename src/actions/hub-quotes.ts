@@ -38,6 +38,8 @@ const quoteSchema = z.object({
     adds: z.array(z.object({ k: z.enum(['carpet', 'blinds', 'walls', 'furnished', 'mattress', 'sofa', 'fridge']), on: z.boolean(), qty: s(3), price: s(20), fromWeb: z.boolean(), webPrice: s(20), items: z.array(task).max(30) })).max(10),
     only: z.boolean().optional(),
   }).optional(),
+  calc: z.object({ auto: z.boolean(), pets: z.boolean().optional(), unit: z.boolean().optional() }).optional(),
+  forHome: z.string().uuid().optional(),
 }).passthrough()
 
 function siteUrl(): string {

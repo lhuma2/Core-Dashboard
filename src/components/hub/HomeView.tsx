@@ -15,6 +15,7 @@ import {
 } from '@/lib/hub/homes'
 import { docMeta, docTag, type HomeDoc } from '@/lib/hub/home-agreements'
 import { AGRN } from '@/lib/hub/div'
+import { Q_STATE, eTotal, qMoney, type Quote } from '@/lib/hub/home-quotes'
 import { useDiv } from '@/lib/hub/use-div'
 import { isoAdd } from '@/lib/hub/timetable'
 
@@ -23,7 +24,7 @@ type R = { ok: true; id: string; toast: string } | { ok: false; error: string; n
 
 // The residential client's page: status, money, details, cleans, agreement, status actions and history. Mock-up words.
 
-export function HomeView({ h, history, docs, cleaners, today, from, photos }: { h: Home; history: History[]; docs: HomeDoc[]; cleaners: { id: string; name: string; removed?: boolean }[]; today: string; from?: string; photos?: React.ReactNode }) {
+export function HomeView({ h, history, docs, cleaners, quotes, today, from, photos }: { h: Home; history: History[]; docs: HomeDoc[]; cleaners: { id: string; name: string; removed?: boolean }[]; quotes?: Quote[] | null; today: string; from?: string; photos?: React.ReactNode }) {
   const { div, base, name: divName } = useDiv()
   const [backHref, backLabel] = from === 'timetable' ? [base + '/timetable', 'Timetable'] : from === 'team' ? [base + '/team', 'Team'] : [base + '/clients', divName]
   const router = useRouter()
@@ -143,6 +144,22 @@ export function HomeView({ h, history, docs, cleaners, today, from, photos }: { 
       </section>
 
       {photos}
+
+      <section className="addcard cpcard" aria-label="Quotes">
+        <div className="cpcardh"><h2 className="nch">Quotes</h2><Link className="btn call" href={`${base}/quotes/new?home=${h.id}`}>New quote</Link></div>
+        {quotes === null && <p className="cpnone">Their quotes couldn’t load just now.</p>}
+        {(quotes || []).map(x => {
+          const [tag, cls] = Q_STATE[x.status]
+          const total = x.type === 'eol' ? eTotal(x) : qMoney(x.price)
+          return (
+            <div className="cpdoc" key={x.id}>
+              <span className="cpxm"><strong>{x.heading || 'Quote'} <span className={cls}>{tag}</span></strong><span>{x.ref} · {total > 0 ? cash2(total) + ' incl GST' : 'No price yet'} · {dShort(x.created)}</span></span>
+              <Link className="btn log" href={`${base}/quotes/${x.id}`} aria-label={'Open ' + x.ref}>Open</Link>
+            </div>
+          )
+        })}
+        {quotes && !quotes.length && <p className="cpnone">No quotes yet. Use New quote to price a new clean for them over the phone.</p>}
+      </section>
 
       <section className="addcard cpcard" aria-label="Agreement and files">
         <div className="cpcardh"><h2 className="nch">Agreement and files</h2><Link className="linkbtn" href={base + '/documents'}>Open in Documents</Link></div>

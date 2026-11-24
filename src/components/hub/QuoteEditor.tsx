@@ -8,6 +8,7 @@ import { Back } from './icons'
 import { saveQuote } from '@/actions/hub-quotes'
 import { setFlash } from '@/lib/hub/flash'
 import { useDiv } from '@/lib/hub/use-div'
+import { hrsText, quoteCalc, resWindowsPrice, RES_CARPET_ROOM } from '@/lib/hub/price-calc'
 import {
   EVERY_OPTS, Q_WINF_OPTS, EOL_ADDK, EOL_TERMS, eAddsOn, eTotal, eolAddNote, eolAutoPrice, eolRateNote, eolScope, addTotal, cash2, priceNote, qAddItems, qMoney, residentialScope, residentialTermsGlance, standardAddItems, webRows,
   type EolAdd, type Quote, type QEvery, type WinFreq,
@@ -16,15 +17,30 @@ import {
 const X = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
 const NUMS = (max: number) => Array.from({ length: max + 1 }, (_, i) => String(i))
 
-export function QuoteEditor({ initial, today, from }: { initial: Quote; today: string; from: 'list' | 'view' }) {
+export function QuoteEditor({ initial, today, from }: { initial: Quote; today: string; from: 'list' | 'view' | 'client' }) {
   const { base, div, name: divName, lower: divLower } = useDiv()
   const router = useRouter()
-  const [q, setQState] = useState<Quote>(initial)
+  const [q, setQState] = useState<Quote>(() => {
+    if (initial.calc) return initial
+    // First open: a new phone quote follows the calculator; a website or older quote keeps its price until you pick Use.
+    const y: Quote = JSON.parse(JSON.stringify(initial))
+    y.calc = { auto: !y.id && !qMoney(y.price), pets: /^\s*y/i.test(y.req?.pets || ''), unit: /unit|apartment/i.test(y.req?.propertyType || '') }
+    follow(y)
+    return y
+  })
   const [touched, setTouched] = useState(false)
   const [err, setErr] = useState('')
   const [busy, start] = useTransition()
-  const set = (fn: (y: Quote) => void) => { const y: Quote = JSON.parse(JSON.stringify(q)); fn(y); setQState(y); setErr(''); setTouched(true) }
-  const backHref = from === 'view' && q.id ? `${base}/quotes/${q.id}` : base + '/quotes'
+  const set = (fn: (y: Quote) => void) => { const y: Quote = JSON.parse(JSON.stringify(q)); fn(y); follow(y); setQState(y); setErr(''); setTouched(true) }
+  // While the calculator is on, the clean price and hours follow it (and a furnished add-on follows the clean).
+  function follow(y: Quote) {
+    if (!y.calc?.auto) return
+    const c = quoteCalc(y)
+    y.price = c ? String(c.price) : ''; y.hours = c ? hrsText(c.hours) : ''; y.priceFromWeb = false
+    const f = y.eol?.adds.find(a => a.k === 'furnished' && a.on); if (f) f.price = eolAutoPrice(f, y.price)
+  }
+  const setCalc = (k: 'auto' | 'pets' | 'unit', v: boolean) => set(y => { y.calc = { auto: !!y.calc?.auto, ...y.calc, [k]: v } })
+  const backHref = from === 'view' && q.id ? `${base}/quotes/${q.id}` : from === 'client' && q.forHome ? `${base}/clients/${q.forHome}` : base + '/quotes'
 
   function own(y: Quote, k: 'windows' | 'carpet') { y[k].items = qAddItems(y, k).map(z => ({ text: z.text })); return y[k].items }
   function act(mode: 'draft' | 'preview' | 'send') {
@@ -39,6 +55,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
 
   const heading = q.status === 'draft' && q.source === 'website' && !touched ? 'Quote for ' + (q.name || 'a new request') : (q.ref ? 'Edit ' + q.ref : 'New quote')
   const rows = webRows(q)
+  const calc = quoteCalc(q)
   const price = qMoney(q.price)
   const pNote = priceNote(q)
   const total = addTotal(q)
@@ -88,9 +105,10 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
 
   return (
     <>
-      <Link className="back" href={backHref}><Back /> Quotes</Link>
+      <Link className="back" href={backHref}><Back /> {from === 'client' && q.forHome ? initial.name || 'Client' : 'Quotes'}</Link>
       <h1 className="greet">{heading}</h1>
       {q.ref && <p className="sub"><span>Ref {q.ref}</span></p>}
+      {q.forHome && <p className="fhint">Started from {initial.name || 'this client'}’s page and listed there. If they accept, the booking gets its own client card.</p>}
       {rows.length > 0 && (
         <details className="addcard webreq" open>
           <summary className="nch">What they asked for on the website</summary>
@@ -112,6 +130,11 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
           <label className="fld q"><span>Bedrooms</span><select value={String(q.beds)} onChange={e => { const v = +e.target.value; set(y => { y.beds = v }) }}>{NUMS(7).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
           <label className="fld q"><span>Bathrooms</span><select value={String(q.baths)} onChange={e => { const v = +e.target.value; set(y => { y.baths = v }) }}>{NUMS(7).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
           <label className="fld q"><span>Living areas</span><select value={String(q.living)} onChange={e => { const v = +e.target.value; set(y => { y.living = v }) }}>{NUMS(7).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
+          {eol && q.eol && <>
+            <label className="fld q"><span>Kitchens</span><select value={String(q.eol.kitchens)} onChange={e => { const v = +e.target.value; set(y => { if (y.eol) y.eol.kitchens = v }) }}>{NUMS(4).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
+            <label className="fld q"><span>Garage</span><select value={String(q.eol.garage)} onChange={e => { const v = +e.target.value; set(y => { if (y.eol) y.eol.garage = v }) }}>{NUMS(3).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
+            <label className="fld q"><span>Balcony</span><select value={String(q.eol.balcony)} onChange={e => { const v = +e.target.value; set(y => { if (y.eol) y.eol.balcony = v }) }}>{NUMS(3).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
+          </>}
           <label className="fld span2"><span>Notes for the cleaner (not shown on the quote)</span><input type="text" autoComplete="off" value={q.notes} onChange={e => { const v = e.target.value; set(y => { y.notes = v }) }} /></label>
         </div>
 
@@ -166,14 +189,29 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
         <ol className="qterms">{terms.map((t, i) => <li key={i}>{t}</li>)}</ol>
 
         <h2 className="nch"><span className="qstep">4</span> Price</h2>
+        {!only && <div className="calcbox" role="group" aria-label="Price calculator">
+          <div className="calchead"><strong>Price calculator</strong><span>Same rates as the website</span></div>
+          <div className="calcopts">
+            {eol
+              ? <label className="check"><input type="checkbox" checked={!!q.calc?.unit} onChange={e => setCalc('unit', e.target.checked)} /><span>Unit or apartment</span></label>
+              : <label className="check"><input type="checkbox" checked={!!q.calc?.pets} onChange={e => setCalc('pets', e.target.checked)} /><span>Pets in the home</span></label>}
+          </div>
+          {calc
+            ? <p className="calcres"><strong>{cash2(calc.price)}</strong> incl GST{eol ? '' : ' per clean'} · {hrsText(calc.hours)} hrs{calc.charged > calc.hours ? ' (charged ' + hrsText(calc.charged) + ')' : ''}</p>
+            : <p className="calcres">Pick the rooms in step 1 to see a price.</p>}
+          {calc && <p className="calcwhy">{calc.lines.join(' · ')} · {cash2(calc.rateEx)}/hr ex GST</p>}
+          {calc && (q.calc?.auto
+            ? <p className="calcwhy">The price and hours below follow the calculator. Type your own price to override it.</p>
+            : <button type="button" className="btn log calcuse" onClick={() => setCalc('auto', true)}>Use {cash2(calc.price)}</button>)}
+        </div>}
         <div className="ncgrid">
           {eol ? <div className="fld half"><span>How often</span><div className="freqread">{only ? 'One-off, add-ons only' : 'One-off end of lease clean'}</div></div>
             : q.type === 'general'
             ? <label className="fld half"><span>How often</span><select value={q.every} onChange={e => { const v = e.target.value as QEvery; set(y => { y.every = v }) }}>{EVERY_OPTS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}</select></label>
             : <div className="fld half"><span>How often</span><div className="freqread">One-off deep clean</div></div>}
           <label className="fld half"><span>{eol ? 'Move-out / clean date (optional)' : 'Preferred date (optional)'}</span><input type="date" min={today} value={q.start} onChange={e => { const v = e.target.value; set(y => { y.start = v }) }} /></label>
-          {!only && <label className="fld half"><span>{eol ? 'Price for the clean ($, incl GST)' : 'Price per clean ($, incl GST)'} <span className="req" aria-hidden="true">*</span><span className="sr">(required)</span></span><input type="text" inputMode="decimal" autoComplete="off" value={q.price} onChange={e => { const v = e.target.value; set(y => { y.price = v; y.priceFromWeb = false }) }} /></label>}
-          <label className="fld half"><span>Estimated hours (optional)</span><input type="text" inputMode="decimal" autoComplete="off" value={q.hours} onChange={e => { const v = e.target.value.replace(/[^0-9.]/g, ''); set(y => { y.hours = v }) }} /></label>
+          {!only && <label className="fld half"><span>{eol ? 'Price for the clean ($, incl GST)' : 'Price per clean ($, incl GST)'} <span className="req" aria-hidden="true">*</span><span className="sr">(required)</span></span><input type="text" inputMode="decimal" autoComplete="off" value={q.price} onChange={e => { const v = e.target.value; set(y => { y.price = v; y.priceFromWeb = false; if (y.calc) y.calc.auto = false }) }} /></label>}
+          <label className="fld half"><span>Estimated hours (optional)</span><input type="text" inputMode="decimal" autoComplete="off" value={q.hours} onChange={e => { const v = e.target.value.replace(/[^0-9.]/g, ''); set(y => { y.hours = v; if (y.calc) y.calc.auto = false }) }} /></label>
         </div>
         {pNote && <p className="fhint">{pNote}</p>}
         {!only && price > 0 && <p className="money">Ex GST {cash2(price / 1.1)} · GST {cash2(price - price / 1.1)}</p>}
@@ -212,7 +250,7 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
           })}
         </>}
         {!eol && <div className="extracard">
-          <label className="check"><input type="checkbox" checked={q.windows.on} onChange={e => { const v = e.target.checked; set(y => { y.windows.on = v }) }} /><span><strong>Internal windows</strong> add-on</span></label>
+          <label className="check"><input type="checkbox" checked={q.windows.on} onChange={e => { const v = e.target.checked; set(y => { y.windows.on = v; if (v && !qMoney(y.windows.price)) y.windows.price = String(resWindowsPrice(y.beds)) }) }} /><span><strong>Internal windows</strong> add-on</span></label>
           <p className="fhint">{winNote}</p>
           {q.windows.on && <>
             <div className="ncgrid">
@@ -224,11 +262,11 @@ export function QuoteEditor({ initial, today, from }: { initial: Quote; today: s
         </div>}
         {q.type === 'deep' && (
           <div className="extracard">
-            <label className="check"><input type="checkbox" checked={q.carpet.on} onChange={e => { const v = e.target.checked; set(y => { y.carpet.on = v }) }} /><span><strong>Carpet Steam Cleaning</strong> add-on</span></label>
+            <label className="check"><input type="checkbox" checked={q.carpet.on} onChange={e => { const v = e.target.checked; set(y => { y.carpet.on = v; if (v && !qMoney(y.carpet.price) && +y.carpet.rooms > 0) y.carpet.price = String(+y.carpet.rooms * RES_CARPET_ROOM) }) }} /><span><strong>Carpet Steam Cleaning</strong> add-on</span></label>
             <p className="fhint">{carNote}</p>
             {q.carpet.on && <>
               <div className="ncgrid">
-                <label className="fld q"><span>Rooms</span><select value={q.carpet.rooms} onChange={e => { const v = e.target.value; set(y => { y.carpet.rooms = v }) }}>{NUMS(8).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
+                <label className="fld q"><span>Rooms</span><select value={q.carpet.rooms} onChange={e => { const v = e.target.value; set(y => { y.carpet.rooms = v; if (+v > 0) y.carpet.price = String(+v * RES_CARPET_ROOM) }) }}>{NUMS(8).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
                 <label className="fld q"><span>Hallways</span><select value={q.carpet.halls} onChange={e => { const v = e.target.value; set(y => { y.carpet.halls = v }) }}>{NUMS(8).map(n => <option key={n} value={n}>{n}</option>)}</select></label>
                 <label className="fld half"><span>Price ($, incl GST)</span><input type="text" inputMode="decimal" autoComplete="off" value={q.carpet.price} onChange={e => { const v = e.target.value; set(y => { y.carpet.price = v }) }} /></label>
               </div>

@@ -349,6 +349,7 @@ export function CommercialClientView({ c, cleaners, problems, history, stats, to
           <h1 className="greet">{c.name}</h1>
           <p className="cpsub">{c.suburb} {oneOffClient ? <span className="h watch">One-off client</span> : <span className={'h ' + stats.health}>{stats.health === 'low' ? 'Low margin' : stats.health === 'watch' ? 'Watch' : 'Healthy'}</span>}</p>
         </div>
+        <Link className="btn log" href={`/hub/commercial/documents/proposals/new?client=${c.id}`}>New proposal</Link>
       </div>
       {st === 'paused' && <div className="agstatus warn cpbanner"><span>{statusText}</span>{resumeBtn('btn log')}</div>}
       {st === 'ended' && <div className="agstatus cpbanner"><span>{statusText}</span>{reactBtn('btn log')}</div>}

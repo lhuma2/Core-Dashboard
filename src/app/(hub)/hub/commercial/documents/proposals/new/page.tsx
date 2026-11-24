@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function NewProposalPage({ searchParams }: { searchParams: { type?: string; request?: string } }) {
+export default async function NewProposalPage({ searchParams }: { searchParams: { type?: string; request?: string; client?: string } }) {
   const today = brisbaneToday()
   const [presets, fill, requests, ref] = await Promise.all([loadPresets(), loadFillFrom(), loadOpenQuoteReqs(), peekQuoteRef(today.slice(0, 4))])
   const rq = searchParams.request ? requests.find(r => r.id === searchParams.request) : null
@@ -26,10 +26,13 @@ export default async function NewProposalPage({ searchParams }: { searchParams: 
       date2: r?.want_date && String(r.want_date).slice(0, 10) >= today ? String(r.want_date).slice(0, 10) : '',
     })
   }
+  // From a client's page (?client=<id>): their details filled in, back goes to their page.
+  const cl = !rq && searchParams.client ? fill.clients.find(x => x.id === searchParams.client) : null
+  if (cl) Object.assign(pf, { clientId: cl.id, leadId: null, biz: cl.name, contact: cl.contact || '', email: cl.email || '', address: cl.address || '' })
   const fromReq = !!rq
   return (
     <ProposalForm initial={pf} presets={presets} leads={fill.leads} clients={fill.clients} requests={requests} today={today}
-      backHref={fromReq ? '/hub/commercial/requests' : '/hub/commercial/documents'} backLabel={fromReq ? 'Requests' : 'Documents'}
+      backHref={fromReq ? '/hub/commercial/requests' : cl ? '/hub/commercial/clients/' + cl.id : '/hub/commercial/documents'} backLabel={fromReq ? 'Requests' : cl ? cl.name : 'Documents'}
       heading={pf.ptype === 'comm' ? 'New proposal' : 'New specialist proposal'} />
   )
 }
