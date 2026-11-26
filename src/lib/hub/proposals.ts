@@ -63,13 +63,15 @@ export const JOB_KINDS = ['Post-construction clean', 'Post-construction clean (b
 export const DECLINE_WHY = ['Price is higher than expected', 'Going with another provider', 'Not the right time yet', 'The scope doesn’t suit what we need', 'Other'] as const
 const EXCL_COMM = 'rubbish removal from site, carpet steam cleaning, pest control, and any item outside the scope listed above.'
 export const EXCL_SPEC = 'moving heavy furniture or equipment, permanent stains or damage, and any area not listed above.'
+export const HOURLY_FEES = 'Where the Works are priced per hour, the Fees are the hourly rate in the Particulars for each hour worked on site by each of the Provider’s personnel, rounded up to the nearest half hour. Any estimate of hours is a guide only and not a fixed price, and the Provider will tell the Client as soon as it expects the estimate to be exceeded.'
 export const EXCL_PC = 'removal of builders’ rubbish or waste from site, repairs to building defects or damaged finishes, paint, render or sealant that can’t be removed without risk of damage, carpet steam cleaning, external windows above ground level, and any area not listed above.'
 
 // ── the proposal ────────────────────────────────────────────
 export interface Task { text: string; orig?: string; src?: string[] }
 export interface SowHead { heading: string; src?: string[]; items: Task[] }
 export interface Addon { kind: string; custom: string; freq: string; desc: string; price: string; items?: { text: string }[] }
-export interface Job { kind: string; custom: string; area: string; included: string; price: string }
+/** unit 'hour': price is the hourly rate (incl GST) and hours an optional estimate. Left out = a fixed price. */
+export interface Job { kind: string; custom: string; area: string; included: string; price: string; unit?: 'fixed' | 'hour'; hours?: string }
 export type PStatus = 'draft' | 'sent' | 'revision' | 'accepted' | 'declined'
 export type PType = 'comm' | 'spec'
 
@@ -178,7 +180,20 @@ export const addLines = (a: Addon) => addItems(a).map(it => tidy(it.text)).filte
 export const addBox = (a: Addon) => ({ heading: addName(a) + ' (add-on, ' + (ADD_ADJ[a.freq] || '').toLowerCase() + ')', items: addLines(a).map(t => ({ text: t })) })
 export const jobName = (j: Job) => (j.kind === 'Custom' ? tidy(j.custom) : j.kind)
 export const jobLines = (j: Job) => String(j.included || '').split('\n').map(tidy).filter(Boolean)
-export const propTotal = (p: Pick<Pf, 'jobs'>) => (p.jobs || []).reduce((s, jb) => s + (money(jb.price) || 0), 0)
+export const jobHourly = (j: Pick<Job, 'unit'>) => j.unit === 'hour'
+export const jobHours = (j: Pick<Job, 'hours'>) => { const t = String(j.hours || '').trim(); if (!/^\d+(\.\d{1,2})?$/.test(t)) return null; const n = parseFloat(t); return n > 0 && n <= 500 ? n : null }
+/** What a service comes to: its fixed price, or for hourly work the rate × estimated hours (0 with no estimate). */
+export const jobAmount = (j: Job) => { const m = money(j.price) || 0; return jobHourly(j) ? Math.round(m * (jobHours(j) || 0) * 100) / 100 : m }
+const hrs = (n: number) => (Number.isInteger(n) ? String(n) : String(n)) + (n === 1 ? ' hour' : ' hours')
+/** "$75.00 per hour" / "$75.00 per hour, estimated 12 hours (about $900.00)" / "$1,250.00" */
+export function jobPrice(j: Job): string {
+  const m = money(j.price)
+  if (!jobHourly(j)) return m ? fmt2(m) : '$0.00'
+  const h = jobHours(j)
+  return (m ? fmt2(m) : '$0.00') + ' per hour' + (h && m ? ', estimated ' + hrs(h) + ' (about ' + fmt2(jobAmount(j)) + ')' : '')
+}
+export const anyHourly = (jobs?: Job[] | null) => (jobs || []).some(jobHourly)
+export const propTotal = (p: Pick<Pf, 'jobs'>) => (p.jobs || []).reduce((s, jb) => s + jobAmount(jb), 0)
 
 /** Monthly value (incl GST) of a commercial proposal with its recurring add-ons. Only shown to Laith. */
 export function pfMonthly(p: Pf): number {
@@ -229,7 +244,8 @@ export function checkProp(p: Pf, today: string): string {
       if (!jobName(jb)) return lab + ': give the custom service a name.'
       if (!tidy(jb.area)) return jobName(jb) + ': say where and how much, e.g. Ground floor offices, about 140 m².'
       if (!jobLines(jb).length) return jobName(jb) + ': list what’s included, one per line.'
-      if (!money(jb.price)) return jobName(jb) + ': enter the price as a dollar amount, e.g. 650.'
+      if (!money(jb.price)) return jobName(jb) + (jobHourly(jb) ? ': enter the hourly rate as a dollar amount, e.g. 65.' : ': enter the price as a dollar amount, e.g. 650.')
+      if (jobHourly(jb) && tidy(jb.hours) && !jobHours(jb)) return jobName(jb) + ': the estimated hours should be a number, e.g. 12. Leave it empty if you’re not sure.'
     }
     if (p.date2 && !isIso(p.date2)) return 'The proposed date isn’t valid.'
     if (p.date2 && p.date2 < today) return 'The proposed date is in the past.'
@@ -245,7 +261,7 @@ export function cleanProp(p: Pf): Pf {
     q.sow = (q.sow || []).map(h => ({ heading: tidy(h.heading), src: h.src || [], items: h.items.map(it => ({ text: tidy(it.text), orig: it.orig, src: it.src || [] })) }))
     q.jobs = [blankJob()]
   } else {
-    q.jobs = (q.jobs || []).map(jb => ({ kind: jb.kind, custom: tidy(jb.custom), area: tidy(jb.area), included: jobLines(jb).join('\n'), price: (jb.price || '').trim() }))
+    q.jobs = (q.jobs || []).map(jb => ({ kind: jb.kind, custom: tidy(jb.custom), area: tidy(jb.area), included: jobLines(jb).join('\n'), price: (jb.price || '').trim(), ...(jobHourly(jb) ? { unit: 'hour' as const, hours: jobHours(jb) ? String(jobHours(jb)) : '' } : {}) }))
     q.sow = []; q.presets = {}; q.addons = []
   }
   return q
@@ -268,7 +284,7 @@ export function sortProps(list: Prop[]): Prop[] {
 export function propTitle(p: Prop): string {
   return p.ptype === 'comm'
     ? 'Commercial proposal · ' + (money(p.price) ? fmt2(money(p.price)!) + '/clean, ' + (P_FREQ[p.freq] || P_FREQ.w1).word : 'price not set')
-    : (isPc(p) ? '' : 'Specialist works · ') + ((p.jobs || []).map(jobName).filter(Boolean).join(', ') || 'service not chosen') + (propTotal(p) ? ' · ' + fmt2(propTotal(p)) : '')
+    : (isPc(p) ? '' : 'Specialist works · ') + ((p.jobs || []).map(jobName).filter(Boolean).join(', ') || 'service not chosen') + (p.jobs.length === 1 && jobHourly(p.jobs[0]) && money(p.jobs[0].price) ? ' · ' + fmt2(money(p.jobs[0].price)!) + '/hour' : anyHourly(p.jobs) ? (propTotal(p) ? ' · about ' + fmt2(propTotal(p)) : ' · hourly') : propTotal(p) ? ' · ' + fmt2(propTotal(p)) : '')
 }
 export function propMeta(p: Prop): string {
   const k = propState(p).key, comm = p.ptype === 'comm'
@@ -301,6 +317,7 @@ export function propDoc(p: Pf & { sentAt?: string | null }, today: string, reqCl
   const addons = comm ? (p.addons || []).filter(a => addName(a) && ADD_ADJ[a.freq]) : []
   const issue = p.sentAt || p.created || today
   const biz = tidy(p.biz)
+  const oneHourly = !comm && (p.jobs || []).length === 1 && jobHourly(p.jobs[0])
   const v: PropDocView = {
     isComm: comm,
     kicker: comm ? 'Commercial cleaning proposal' : 'Specialist works proposal',
@@ -343,9 +360,9 @@ export function propDoc(p: Pf & { sentAt?: string | null }, today: string, reqCl
     termsNote: 'Full terms are set out in Core Cleaning’s Master Terms & Conditions (MTC‑CC‑2026), which apply to all services and are available on request. ' + (comm ? 'A formal service agreement is issued once this proposal is accepted.' : 'A short specialist works agreement is issued once this proposal is accepted.'),
     priceKick: comm ? 'Quoted price — ' + F.kick : 'Quoted price — specialist works',
     priceLines: comm ? [F.line + ', ' + (P_WHEN[p.when] || P_WHEN.after) + '.', 'Full scope of works as set out on page 08.', 'All figures in AUD, inclusive of GST.']
-      : (p.jobs || []).map(jb => (jobName(jb) || 'Service') + ': ' + (money(jb.price) ? fmt2(money(jb.price)!) : '$0.00')).concat(['All figures in AUD, inclusive of GST.']),
-    price: comm ? fmt2(money(p.price) || 0) : fmt2(propTotal(p)),
-    per: comm ? '/clean' : 'total',
+      : (p.jobs || []).map(jb => (jobName(jb) || 'Service') + ': ' + jobPrice(jb)).concat(anyHourly(p.jobs) ? ['Hourly work is charged for the hours worked on site; any estimate is a guide, not a fixed price.', 'All figures in AUD, inclusive of GST.'] : ['All figures in AUD, inclusive of GST.']),
+    price: comm ? fmt2(money(p.price) || 0) : oneHourly ? fmt2(money(p.jobs[0].price) || 0) : fmt2(propTotal(p)),
+    per: comm ? '/clean' : oneHourly ? '/hour' : anyHourly(p.jobs) ? 'estimate' : 'total',
     addons: addons.map(a => { const nm = addName(a); return { kick: nm + ' — add-on', desc: tidy(a.desc) || ADD_ADJ[a.freq] + ' ' + nm.toLowerCase() + ', charged in addition to the regular clean.', price: fmt2(money(a.price) || 0) } }),
     steps: (comm ? [['Confirm', 'Reply to confirm you are happy with this proposal.'], ['Agreement & compliance', 'We issue your service agreement and compliance pack, and agree a start date.'], ['First clean', 'Your first clean is booked and your portal is set up.']]
       : reqClient ? [['Accept', 'Accept online. Your current agreement with us covers these works, so there’s nothing new to sign.'], ['Booked', 'We lock in the date and it shows in your client portal.'], ['The works', 'We complete the works and walk you through the result.']]
@@ -377,6 +394,10 @@ export function propDoc(p: Pf & { sentAt?: string | null }, today: string, reqCl
       priceKick: 'Quoted price — post-construction clean',
       steps: reqClient ? v.steps : [['Confirm', 'Accept this proposal online.'], ['Works agreement', 'You sign a short post-construction works agreement and lock in the date.'], ['The clean', 'We complete the clean and walk you through the result, ready for handover.']].map((x, i) => ({ n: String(i + 1), t: x[0], b: x[1] })),
     })
+  }
+  if (!comm && anyHourly(p.jobs)) {
+    v.how = v.how.map(x => (x.t === 'Fixed quote' ? { ...x, t: 'Clear pricing', b: 'A written hourly rate and an estimate of the hours, so you know what to expect.' } : x))
+    v.terms = [v.terms[0], 'Hourly work is charged at the rate shown for each hour worked on site by each of our cleaners, rounded up to the nearest half hour. Any estimate of hours is a guide, not a fixed price, and we tell you as soon as we expect to go over it.'].concat(v.terms.slice(1))
   }
   return v
 }
@@ -553,7 +574,7 @@ export function specParts(d: Pick<Agr, 'start' | 'client'>, p: PropSnap | null, 
     { k: 'Premises', v: p ? p.address : 'To be confirmed' },
     { k: 'Works', v: names },
     { k: 'Works date', v: d.start ? dLong(d.start) + (p && p.window ? ', ' + win[p.window] : '') : 'To be confirmed' },
-    { k: 'Works price', v: tot ? fmt$(tot) + ' inc GST (' + fmt$(Math.round(tot / 1.1 * 100) / 100) + ' ex GST)' : 'As per the accepted proposal' },
+    { k: 'Works price', v: p && anyHourly(p.jobs) ? (p.jobs || []).map(j => (p.jobs.length > 1 ? jobName(j) + ': ' : '') + jobPrice(j)).join('; ') + ', inc GST. Hourly work is charged for the hours worked on site (clause 8)' : tot ? fmt$(tot) + ' inc GST (' + fmt$(Math.round(tot / 1.1 * 100) / 100) + ' ex GST)' : 'As per the accepted proposal' },
     { k: 'Payment terms', v: 'Invoiced on completion, due within 14 days' },
     { k: 'Accepted proposal', v: p ? p.ref + ', accepted' + (acceptedBy ? ' by ' + acceptedBy : '') + ' on ' + dLong(p.acceptedAt) : '' },
     CONTACT(iss),
@@ -592,7 +613,12 @@ export function agrScope(d: Agr, clientSnap: ClientSnap | null): { heading: stri
 }
 const agrPc = (d: { atype: string; snap?: AgrSnap | null }) => d.atype === 'spec' && isPcJobs(d.snap?.prop?.jobs)
 /** The clauses a proposal's agreement is made with (copied onto the agreement when the proposal is accepted). */
-export const propClauses = (p: { ptype: PType; jobs?: Job[] | null }): Clause[] => (p.ptype === 'comm' ? COMM_CLAUSES : isPc(p) ? PC_CLAUSES : SPEC_CLAUSES)
+export const propClauses = (p: { ptype: PType; jobs?: Job[] | null }): Clause[] => {
+  if (p.ptype === 'comm') return COMM_CLAUSES
+  const base = isPc(p) ? PC_CLAUSES : SPEC_CLAUSES
+  // priced by the hour: the fees clause says how hours are charged
+  return anyHourly(p.jobs) ? base.map(c => (/^Fees, Invoicing/.test(c.t) ? { ...c, b: c.b + ' ' + HOURLY_FEES } : c)) : base
+}
 export const agrClauses = (d: Pick<Agr, 'atype' | 'snap'>): Clause[] => (d.snap?.clauses?.length ? d.snap.clauses : d.atype === 'spec' ? (agrPc(d) ? PC_CLAUSES : SPEC_CLAUSES) : COMM_CLAUSES)
 export const agrTitle = (d: { atype: string; snap?: AgrSnap | null }) => (d.atype === 'spec' ? (agrPc(d) ? 'Post-construction works agreement' : 'Specialist works agreement') : 'Service agreement')
 

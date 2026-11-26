@@ -46,7 +46,7 @@ const pfSchema = z.object({
   freq: z.enum(['d5', 'w3', 'w2', 'w1', 'f1']), when: z.enum(['after', 'early', 'day', 'weekend']), price: s(20),
   presets: z.record(z.boolean()), sow: z.array(z.object({ heading: s(120), src: z.array(s(40)).max(20).optional(), items: z.array(task).max(40) })).max(20),
   addons: z.array(z.object({ kind: s(60), custom: s(120), freq: s(20), desc: s(300), price: s(20), items: z.array(z.object({ text: s(300) })).max(30).optional() })).max(6),
-  jobs: z.array(z.object({ kind: s(60), custom: s(120), area: s(300), included: s(4000), price: s(20) })).max(10),
+  jobs: z.array(z.object({ kind: s(60), custom: s(120), area: s(300), included: s(4000), price: s(20), unit: z.enum(['fixed', 'hour']).optional(), hours: s(10).optional() })).max(10),
   date2: s(10), window: z.enum(['day', 'after', 'weekend']), excl: s(1000), uploadName: s(200),
 }).passthrough()
 
