@@ -44,6 +44,15 @@ function row(r: QuoteRequest, re: RegExp): string {
   return r.fields.find((f) => re.test(f.label.toLowerCase()))?.value?.trim() ?? ''
 }
 
+/** Garage and balcony counts from an end of lease request, e.g. "Garage × 1, Balcony × 2". */
+function otherRooms(r: QuoteRequest): string {
+  return ['Garage', 'Balcony']
+    .map((name) => [name, row(r, new RegExp(`^${name.toLowerCase()}$`))])
+    .filter(([, n]) => n && n !== '0')
+    .map(([name, n]) => `${name} × ${n}`)
+    .join(', ')
+}
+
 export function kindOfRequest(r: QuoteRequest): QuoteRequestKind | null {
   const s = r.service.toLowerCase()
   if (/end of lease|bond/.test(s)) return 'end_of_lease'
@@ -127,6 +136,35 @@ function priceFromRequest(l: string, r: QuoteRequest): string {
   return inc
 }
 
+// End of lease add-ons the website prices, each sent as an "Add-on price: <name>" row.
+// A template's price box for one of them is matched by its label.
+const ADD_ONS: { field: RegExp; row: RegExp }[] = [
+  { field: /carpet/, row: /carpet/ },
+  { field: /blind/, row: /blind/ },
+  { field: /wall/, row: /wall/ },
+  { field: /furnish/, row: /furnish/ },
+  { field: /fridge/, row: /fridge/ },
+  { field: /mattress/, row: /mattress/ },
+  { field: /sofa|couch/, row: /sofa/ },
+]
+
+/**
+ * The price box for one add-on: a price label naming it ("Carpet steam price"), or a field
+ * naming it whose template text is a dollar amount. Gets that add-on's price, e.g. "50.00",
+ * or '' when it wasn't asked for. null = not an add-on price box.
+ */
+function addOnPrice(l: string, defaultValue: string, r: QuoteRequest): string | null {
+  const addOn = ADD_ONS.find((a) => a.field.test(l))
+  if (!addOn) return null
+  const money = /^\s*\$|^\s*\d[\d,]*\.\d{2}\s*$/.test(defaultValue ?? '')
+  if (!isPriceLabel(l) && !money) return null
+  const price = r.fields.find((f) => {
+    const m = /^add-on price:\s*(.*)$/.exec(f.label.toLowerCase())
+    return m && addOn.row.test(m[1])
+  })?.value?.trim()
+  return price || (isPriceLabel(l) ? '' : null)
+}
+
 /**
  * What the request says for a template field, judged from the field's label.
  * '' = a price, left blank to fill in. null = nothing to say, keep the template's text.
@@ -139,6 +177,8 @@ export function valueForField(f: TemplateField, r: QuoteRequest, ref: string, no
 
   if (/hours/.test(l)) return row(r, /hours/) || null
   if (/living/.test(l)) return row(r, /living/) || null
+  const addOn = addOnPrice(l, f.defaultValue, r)
+  if (addOn != null) return addOn
   if (isPriceLabel(l)) return priceFromRequest(l, r)
   if (/\bref|quote (no|number|#)|proposal (no|number|#)/.test(l)) return ref
   if (/e-?mail/.test(l)) return r.email
@@ -153,6 +193,8 @@ export function valueForField(f: TemplateField, r: QuoteRequest, ref: string, no
   if (/property|premises type|home type/.test(l)) return row(r, /property type|premises type/) || null
   if (/size|sqm|square/.test(l)) return row(r, /size|sqm/) || null
   if (/frequen/.test(l)) return row(r, /frequen/) || null
+  // Garage and balcony; the add-ons have their own boxes.
+  if (/extra rooms?|other rooms?/.test(l)) return otherRooms(r) || null
   if (/extra|add-?on/.test(l)) return row(r, /extras/) || null
   if (/service|clean type|type of clean/.test(l)) return kindOfRequest(r) === 'residential_one_off' ? 'Deep Clean' : r.service
   if (/start|preferred|clean(ing)? date|move|booking|service date/.test(l)) {
