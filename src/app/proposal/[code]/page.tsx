@@ -6,7 +6,7 @@ import { ProposalClientPanel } from '@/components/hub/ProposalClientPanel'
 import { PrintButton } from '@/components/hub/PrintButton'
 import { brisbaneToday } from '@/lib/hub/figures'
 import { loadProp, reqClientOf } from '@/lib/hub/documents-data'
-import { dLong, isoAdd, propDoc } from '@/lib/hub/proposals'
+import { dLong, isPc, isoAdd, propDoc } from '@/lib/hub/proposals'
 import '../../(hub)/hub/hub.css'
 
 export const dynamic = 'force-dynamic'
@@ -36,7 +36,7 @@ export default async function ClientProposalPage({ params }: { params: { code: s
   const dated = p.ptype === 'spec' && p.date2 && p.date2 >= today
   const hint = rc
     ? 'Accepting books the works. Your current agreement with Core Cleaning covers them, so there’s nothing new to sign.' + (dated ? ` Date: ${dLong(p.date2)}.` : '')
-    : p.ptype === 'spec' ? 'Accepting takes you straight to a short works agreement, where you add your details and sign.' : 'Accepting takes you straight to your service agreement, where you add your details and sign.'
+    : p.ptype === 'spec' ? `Accepting takes you straight to a short ${isPc(p) ? 'post-construction ' : ''}works agreement, where you add your details and sign.` : 'Accepting takes you straight to your service agreement, where you add your details and sign.'
 
   let closed: React.ReactNode = null
   if (expired) closed = <p className="agstatus warn">This proposal has expired. Contact Core Cleaning on 0407 026 360 for an updated one.</p>

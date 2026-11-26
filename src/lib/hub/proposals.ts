@@ -3,10 +3,10 @@
 // the signing checks). Pure functions: the screens use them for instant messages and the server repeats them.
 
 import { BRAND, type Issuer, issuer, partyLine } from '@/config/brand'
-import { COMM_CLAUSES, SPEC_CLAUSES, SPEC_METHODS, type Clause, type PresetScope } from './comm-text'
+import { COMM_CLAUSES, PC_CLAUSES, PC_KINDS, SPEC_CLAUSES, SPEC_METHODS, type Clause, type PresetScope } from './comm-text'
 import { normPhone } from './new-client'
 
-export { COMM_CLAUSES, SPEC_CLAUSES, SPEC_METHODS }
+export { COMM_CLAUSES, PC_CLAUSES, PC_KINDS, SPEC_CLAUSES, SPEC_METHODS }
 export type { Clause, PresetScope }
 
 // ── dates and money ─────────────────────────────────────────
@@ -59,10 +59,11 @@ export const ADD_ADJ: Record<string, string> = { once: 'One-off', weekly: 'Weekl
 export const ADD_FREQ_OPTS: [string, string][] = [['once', 'One-off'], ['weekly', 'Weekly'], ['fortnightly', 'Fortnightly'], ['monthly', 'Monthly'], ['quarterly', 'Quarterly'], ['six_monthly', 'Every 6 months'], ['yearly', 'Yearly']]
 export const EXTRA_PER_YEAR: Record<string, number> = { once: 0, weekly: 52, fortnightly: 26, monthly: 12, quarterly: 4, six_monthly: 2, yearly: 1 }
 export const ADDON_KINDS = ['Internal windows', 'Internal & external windows', 'Pressure washing', 'Vinyl strip and seal', 'Carpet steam clean', 'Custom'] as const
-export const JOB_KINDS = ['Carpet steam clean', 'Vinyl strip and seal', 'Internal windows', 'Internal & external windows', 'Pressure washing', 'Custom'] as const
+export const JOB_KINDS = ['Post-construction clean', 'Post-construction clean (bathrooms)', 'Carpet steam clean', 'Vinyl strip and seal', 'Internal windows', 'Internal & external windows', 'Pressure washing', 'Custom'] as const
 export const DECLINE_WHY = ['Price is higher than expected', 'Going with another provider', 'Not the right time yet', 'The scope doesn’t suit what we need', 'Other'] as const
 const EXCL_COMM = 'rubbish removal from site, carpet steam cleaning, pest control, and any item outside the scope listed above.'
-const EXCL_SPEC = 'moving heavy furniture or equipment, permanent stains or damage, and any area not listed above.'
+export const EXCL_SPEC = 'moving heavy furniture or equipment, permanent stains or damage, and any area not listed above.'
+export const EXCL_PC = 'removal of builders’ rubbish or waste from site, repairs to building defects or damaged finishes, paint, render or sealant that can’t be removed without risk of damage, carpet steam cleaning, external windows above ground level, and any area not listed above.'
 
 // ── the proposal ────────────────────────────────────────────
 export interface Task { text: string; orig?: string; src?: string[] }
@@ -81,6 +82,14 @@ export interface Pf {
   jobs: Job[]; date2: string; window: WinKey; excl: string; uploadName: string
 }
 export const blankJob = (): Job => ({ kind: '', custom: '', area: '', included: '', price: '' })
+/** A post-construction clean is a specialist proposal with a post-construction service in it. */
+export const isPcJobs = (jobs?: { kind: string }[] | null) => (jobs || []).some(j => (PC_KINDS as readonly string[]).includes(j?.kind))
+export const isPc = (p: { ptype: PType; jobs?: Job[] | null } | null | undefined) => !!p && p.ptype === 'spec' && isPcJobs(p.jobs)
+/** New post-construction proposal: a specialist proposal with the post-construction scope and exclusions filled in. */
+export function blankPc(ref: string, today: string, bathrooms = false): Pf {
+  const kind = bathrooms ? PC_KINDS[1] : PC_KINDS[0]
+  return { ...blankPf('spec', ref, today), jobs: [{ kind, custom: '', area: '', included: SPEC_METHODS[kind].join('\n'), price: '' }], window: 'day', excl: EXCL_PC }
+}
 export const blankAddon = (): Addon => ({ kind: '', custom: '', freq: '', desc: '', price: '', items: [] })
 export function blankPf(ptype: PType, ref: string, today: string): Pf {
   return {
@@ -259,7 +268,7 @@ export function sortProps(list: Prop[]): Prop[] {
 export function propTitle(p: Prop): string {
   return p.ptype === 'comm'
     ? 'Commercial proposal · ' + (money(p.price) ? fmt2(money(p.price)!) + '/clean, ' + (P_FREQ[p.freq] || P_FREQ.w1).word : 'price not set')
-    : 'Specialist works · ' + ((p.jobs || []).map(jobName).filter(Boolean).join(', ') || 'service not chosen') + (propTotal(p) ? ' · ' + fmt2(propTotal(p)) : '')
+    : (isPc(p) ? '' : 'Specialist works · ') + ((p.jobs || []).map(jobName).filter(Boolean).join(', ') || 'service not chosen') + (propTotal(p) ? ' · ' + fmt2(propTotal(p)) : '')
 }
 export function propMeta(p: Prop): string {
   const k = propState(p).key, comm = p.ptype === 'comm'
@@ -269,7 +278,7 @@ export function propMeta(p: Prop): string {
     const signed = p.agr && p.agr.status === 'signed' ? p.agr : null
     return 'Accepted on ' + dShort(p.acceptedAt) + ' · ' + p.ref
       + (p.booked ? ' · works booked for ' + dShort(p.worksDate) + ' (their service agreement covers it)'
-        : signed ? ' · agreement signed by ' + signed.signedBy + (comm ? (p.setupClientId ? ' · client set up' : ' · next: set them up as a client') : ' · works booked')
+        : signed ? ' · agreement signed by ' + signed.signedBy + (comm ? (p.setupClientId ? ' · client set up' : ' · next: set them up as a client') : ' · works booked' + (p.setupClientId ? ' · client set up' : !p.clientId ? ' · next: set them up as a client' : ''))
           : ' · agreement waiting for their signature')
   }
   if (k === 'revision') return 'Revision requested on ' + dShort(p.revisionAt) + ' · “' + p.revisionNote + '” · ' + p.ref
@@ -292,7 +301,7 @@ export function propDoc(p: Pf & { sentAt?: string | null }, today: string, reqCl
   const addons = comm ? (p.addons || []).filter(a => addName(a) && ADD_ADJ[a.freq]) : []
   const issue = p.sentAt || p.created || today
   const biz = tidy(p.biz)
-  return {
+  const v: PropDocView = {
     isComm: comm,
     kicker: comm ? 'Commercial cleaning proposal' : 'Specialist works proposal',
     ref: p.ref, biz: biz || 'Business name', contact: tidy(p.contact) || 'Contact name', address: tidy(p.address) || 'Site address', date: dLong(issue), issued: issue,
@@ -342,6 +351,34 @@ export function propDoc(p: Pf & { sentAt?: string | null }, today: string, reqCl
       : reqClient ? [['Accept', 'Accept online. Your current agreement with us covers these works, so there’s nothing new to sign.'], ['Booked', 'We lock in the date and it shows in your client portal.'], ['The works', 'We complete the works and walk you through the result.']]
         : [['Confirm', 'Reply to confirm you are happy with this proposal.'], ['Works agreement', 'We send a short works agreement to sign and lock in the date.'], ['The works', 'We complete the works and walk you through the result.']]).map((x, i) => ({ n: String(i + 1), t: x[0], b: x[1] })),
   }
+  if (!comm && isPcJobs(p.jobs)) {
+    const who = biz || 'your business'
+    Object.assign(v, {
+      kicker: 'Post-construction cleaning proposal',
+      coverH: 'Ready for handover, done properly.',
+      coverSub: 'A proposal for the post-construction clean of your premises, from a local team that takes pride in the detail.',
+      w1: 'Thank you for the opportunity to put this proposal together for ' + who + '. The final clean is what everyone sees when the building work is done, so we make sure every surface is free of dust, residue and marks and ready to hand over.',
+      w2: 'The pages that follow introduce our team, how we work, and the standards we hold ourselves to. You will then find the post-construction scope we have prepared for your site, the key terms, and our pricing on the final page.',
+      toc: v.toc.map(t => (t.num === '08' ? { name: 'Your site & the post-construction scope', num: '08' } : t)),
+      howH: 'A simple process, from site check to handover.',
+      how: [['Site check', 'We look at the areas, the finishes and the state of the building works before we price anything.'], ['Fixed quote', 'A written price for the areas and rooms described, with no surprises on the day.'], ['The clean', 'Top to bottom, every surface cleared of builders’ dust and residue, once the trades are off site.'], ['Handover check', 'We walk through the finished areas with you, or send photos if you are off site.']].map((x, i) => ({ n: String(i + 1), t: x[0], b: x[1] })),
+      scopeNav: 'Scope of works', scopeKick: 'Your site & the post-construction scope',
+      terms: [
+        'This proposal is valid for 30 days from the date of issue and applies to the areas, rooms and price set out in this document.',
+        'The areas must be ready for cleaning on the day: building works finished, trades off those areas and builders’ rubbish removed. If they are not, we reschedule and a call-out fee of up to 50% of the price may apply.',
+        'The price covers one clean of each area. If trades return and re-soil an area after it is cleaned, a further clean is charged, confirmed with you first.',
+        'Paint, plaster, adhesive and silicone residue is removed where it can be done safely. Anything that can’t be removed without damaging the finish is pointed out and left in place. Construction damage and defects are not our responsibility.',
+        'The Client provides clear, safe access, any site induction needed, and working power, water and lighting.',
+        'The works are invoiced on completion and payment is due within 14 days. Late payment incurs a 10% late fee plus 2% monthly interest on the overdue balance.',
+        'At least 24 hours’ notice is required to cancel or reschedule. Less notice, or a lockout on arrival, incurs a fee of up to 100% of the quoted price.',
+        'Anything in the scope that needs attention must be reported in writing within 24 hours of completion, with photos, and we come back to fix it at no cost.',
+      ],
+      termsNote: 'Full terms are set out in Core Cleaning’s Master Terms & Conditions (MTC‑CC‑2026), which apply to all services and are available on request. A post-construction works agreement is issued once this proposal is accepted.',
+      priceKick: 'Quoted price — post-construction clean',
+      steps: reqClient ? v.steps : [['Confirm', 'Accept this proposal online.'], ['Works agreement', 'You sign a short post-construction works agreement and lock in the date.'], ['The clean', 'We complete the clean and walk you through the result, ready for handover.']].map((x, i) => ({ n: String(i + 1), t: x[0], b: x[1] })),
+    })
+  }
+  return v
 }
 
 /** "12 Gympie Rd, Kedron QLD 4031" → parts for the New client form. */
@@ -553,8 +590,11 @@ export function agrScope(d: Agr, clientSnap: ClientSnap | null): { heading: stri
   const c = d.snap?.client || clientSnap
   return c ? c.scope : []
 }
-export const agrClauses = (d: Pick<Agr, 'atype' | 'snap'>): Clause[] => (d.snap?.clauses?.length ? d.snap.clauses : d.atype === 'spec' ? SPEC_CLAUSES : COMM_CLAUSES)
-export const agrTitle = (d: Pick<Agr, 'atype'>) => (d.atype === 'spec' ? 'Specialist works agreement' : 'Service agreement')
+const agrPc = (d: { atype: string; snap?: AgrSnap | null }) => d.atype === 'spec' && isPcJobs(d.snap?.prop?.jobs)
+/** The clauses a proposal's agreement is made with (copied onto the agreement when the proposal is accepted). */
+export const propClauses = (p: { ptype: PType; jobs?: Job[] | null }): Clause[] => (p.ptype === 'comm' ? COMM_CLAUSES : isPc(p) ? PC_CLAUSES : SPEC_CLAUSES)
+export const agrClauses = (d: Pick<Agr, 'atype' | 'snap'>): Clause[] => (d.snap?.clauses?.length ? d.snap.clauses : d.atype === 'spec' ? (agrPc(d) ? PC_CLAUSES : SPEC_CLAUSES) : COMM_CLAUSES)
+export const agrTitle = (d: { atype: string; snap?: AgrSnap | null }) => (d.atype === 'spec' ? (agrPc(d) ? 'Post-construction works agreement' : 'Specialist works agreement') : 'Service agreement')
 
 /** What the client filled in, for the agreement viewer. */
 export function detailsList(det: SignDetails | null): Part[] {
@@ -581,10 +621,10 @@ export function agView(d: Agr, today: string, det: Partial<SignDetails> | null, 
   return {
     kicker: agrTitle(d), ref: d.ref, biz: d.client,
     address: tidy(det?.address) || p?.address || c?.address || '',
-    coverH: spec ? 'Specialist works agreement.' : 'Service agreement.',
+    coverH: agrTitle(d) + '.',
     coverSub: p ? `The agreement for the ${spec ? 'works' : 'cleaning services'} in proposal ${p.ref}. Add your details, read the terms and sign at the end.` : 'Your agreement for cleaning services with ' + issuer(d.sentAt || d.created || today).tradingName + '. Add your details, read the terms and sign at the end.',
     date: dLong(d.sentAt || d.created || today), issued: d.sentAt || d.created || today,
-    parts: agrParts(d, det, clientSnap), fromProp: !!p, scopeH: spec ? 'The works.' : 'Scope of works.', scope: agrScope(d, clientSnap), clauses: agrClauses(d),
+    parts: agrParts(d, det, clientSnap), fromProp: !!p, scopeH: spec && !agrPc(d) ? 'The works.' : 'Scope of works.', scope: agrScope(d, clientSnap), clauses: agrClauses(d),
   }
 }
 
@@ -612,6 +652,20 @@ export function ncFromProp(p: Prop, det: Partial<SignDetails> | null, today: str
   const d = det || {}
   const ad = splitAddress(d.address || p.address)
   const ex = (v: string) => { const n = money(v) || 0; return n ? String(Math.round(n / 1.1 * 100) / 100) : '' }
+  if (p.ptype === 'spec') {
+    // Specialist and post-construction works: a one-off client, with the clean on the signed works date.
+    const when = d.start || p.worksDate || ''
+    const one = {
+      days: {}, every: 'weekly', start: d.time || P_WIN_TIME[p.window] || '08:00', finish: '', first: when && when >= today ? when : '',
+      cost: '', price: ex(String(propTotal(p) || '')), cleaners: [] as string[], access: d.access || '', extras: [],
+    }
+    const blank1 = { days: {}, every: 'weekly', start: '', finish: '', first: '', cost: '', price: '', cleaners: [] as string[], access: '', extras: [] }
+    const site1 = () => ({ name: '', street: '', suburb: '', postcode: '' })
+    return {
+      biz: p.biz, contact: d.name || p.contact, phone: d.phone || '', email: d.email || p.email || p.sentTo || '',
+      street: ad.street, suburb: ad.suburb, postcode: ad.postcode, state: ad.state || 'QLD', kind: 'oneoff' as const, siteType: 'single' as const, sites: [site1(), site1()], svcs: [one, blank1],
+    }
+  }
   const days: Record<string, boolean> = {}
   if (d.days && d.days.length) for (const k of d.days) days[k] = true
   else if (p.freq === 'd5') for (const k of ['mon', 'tue', 'wed', 'thu', 'fri']) days[k] = true
@@ -624,6 +678,6 @@ export function ncFromProp(p: Prop, det: Partial<SignDetails> | null, today: str
   const site = () => ({ name: '', street: '', suburb: '', postcode: '' })
   return {
     biz: p.biz, contact: d.name || p.contact, phone: d.phone || '', email: d.email || p.email || p.sentTo || '',
-    street: ad.street, suburb: ad.suburb, postcode: ad.postcode, state: ad.state || 'QLD', siteType: 'single' as const, sites: [site(), site()], svcs: [sv, blank],
+    street: ad.street, suburb: ad.suburb, postcode: ad.postcode, state: ad.state || 'QLD', kind: 'regular' as const, siteType: 'single' as const, sites: [site(), site()], svcs: [sv, blank],
   }
 }

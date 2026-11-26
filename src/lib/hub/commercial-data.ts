@@ -63,15 +63,17 @@ export async function loadCommercial(today: string): Promise<{ rows: ClientRow[]
   }
   // Specialist works: booked straight from a client's request, or signed on a works agreement. Each shows on its day.
   const [wpQ, waQ] = await Promise.all([
-    supabase.from('proposals').select('id, client_id, biz, body, works_date').eq('status', 'accepted').not('works_date', 'is', null).is('deleted_at', null),
+    supabase.from('proposals').select('id, client_id, biz, body, works_date, setup_client_id').eq('status', 'accepted').not('works_date', 'is', null).is('deleted_at', null),
     supabase.from('agreements').select('id, proposal_id, client_id, client_name, snap, start_on').eq('atype', 'spec').eq('status', 'signed'),
   ])
   const WIN: Record<string, string> = { day: '08:00', after: '18:00', weekend: '08:00' }
   const jobNames = (jobs: any) => (Array.isArray(jobs) ? jobs : []).map((j: any) => (j?.kind === 'Custom' ? j?.custom : j?.kind)).filter(Boolean).join(', ')
   const withAgr = new Set(((waQ.error ? [] : waQ.data) || []).map((a: any) => a.proposal_id).filter(Boolean))
+  // Set up as a client: the works became that client's one-off clean, which is on the timetable already.
+  const setUp = new Set(((wpQ.error ? [] : wpQ.data) || []).filter((p: any) => p.setup_client_id).map((p: any) => p.id))
   const works: { id: string; clientId: string | null; name: string; iso: string | null; start: string; label: string }[] = [
-    ...((wpQ.error ? [] : wpQ.data) || []).filter((p: any) => !withAgr.has(p.id)).map((p: any) => ({ id: p.id, clientId: p.client_id, name: p.biz, iso: day(p.works_date), start: WIN[p.body?.window] || '08:00', label: 'specialist: ' + (jobNames(p.body?.jobs) || 'works') })),
-    ...((waQ.error ? [] : waQ.data) || []).map((a: any) => ({ id: a.id, clientId: a.client_id, name: a.client_name, iso: day(a.start_on), start: WIN[a.snap?.prop?.window] || '08:00', label: 'specialist: ' + (jobNames(a.snap?.prop?.jobs) || 'works') })),
+    ...((wpQ.error ? [] : wpQ.data) || []).filter((p: any) => !withAgr.has(p.id) && !setUp.has(p.id)).map((p: any) => ({ id: p.id, clientId: p.client_id, name: p.biz, iso: day(p.works_date), start: WIN[p.body?.window] || '08:00', label: 'specialist: ' + (jobNames(p.body?.jobs) || 'works') })),
+    ...((waQ.error ? [] : waQ.data) || []).filter((a: any) => !setUp.has(a.proposal_id)).map((a: any) => ({ id: a.id, clientId: a.client_id, name: a.client_name, iso: day(a.start_on), start: WIN[a.snap?.prop?.window] || '08:00', label: 'specialist: ' + (jobNames(a.snap?.prop?.jobs) || 'works') })),
   ]
   const byId = new Map<string, any>(clientsQ.data.map((c: any) => [c.id, c]))
   for (const w of works) {

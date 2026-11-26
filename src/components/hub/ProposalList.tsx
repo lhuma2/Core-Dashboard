@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search, Plus } from './icons'
 import { sendProposal, resendProposal, deleteProposal } from '@/actions/hub-proposals'
-import { PROP_CHIPS, propMeta, propState, propTitle, sortProps, type PKey, type Prop } from '@/lib/hub/proposals'
+import { PROP_CHIPS, isPc, propMeta, propState, propTitle, sortProps, type PKey, type Prop } from '@/lib/hub/proposals'
 
 export type PropF = PKey | 'all'
 const BASE = '/hub/commercial/documents/proposals'
@@ -21,7 +21,7 @@ export function ProposalList({ props, initial, onToast, onAgreements }: { props:
   const [busy, start] = useTransition()
 
   const q = query.trim().toLowerCase()
-  const rows = sortProps(props.filter(p => (f === 'all' || propState(p).key === f) && (!q || (p.biz + ' ' + p.ref + ' ' + (p.ptype === 'spec' ? 'specialist' : 'commercial')).toLowerCase().includes(q))))
+  const rows = sortProps(props.filter(p => (f === 'all' || propState(p).key === f) && (!q || (p.biz + ' ' + p.ref + ' ' + (p.ptype === 'spec' ? (isPc(p) ? 'post-construction specialist' : 'specialist') : 'commercial')).toLowerCase().includes(q))))
   const done = (r: { ok: true; toast: string } | { ok: false; error: string }, inBox = false) => {
     if (!r.ok) { if (inBox) setErr(r.error); else onToast(r.error); return }
     setSending(null); setConfirming(null); setErr(''); onToast(r.toast); router.refresh()
@@ -44,6 +44,7 @@ export function ProposalList({ props, initial, onToast, onAgreements }: { props:
           <input type="search" placeholder="Search by business or ref" value={query} onChange={e => setQuery(e.target.value)} />
         </label>
         <Link className="primary" href={BASE + '/new?type=comm'}><Plus />New proposal</Link>
+        <Link className="btn log" href={BASE + '/new?type=pc'}>New post-construction proposal</Link>
         <Link className="btn log" href={BASE + '/new?type=spec'}>New specialist proposal</Link>
       </div>
       <div className="chips" role="group" aria-label="Show proposals">
@@ -73,8 +74,8 @@ export function ProposalList({ props, initial, onToast, onAgreements }: { props:
                   <button type="button" className="btn log" onClick={() => copy(p.code)}>Copy link</button>
                   <a className="btn log" href={`/proposal/${p.code}`} target="_blank" rel="noreferrer">See what the client sees</a>
                 </>}
-                {k === 'accepted' && comm && signed && !p.setupClientId && <Link className="btn call" href={`/hub/commercial/new?from=${p.id}`}>Set up as client</Link>}
-                {k === 'accepted' && p.agr && <button type="button" className="btn call" onClick={() => onAgreements(p.biz)}>{comm ? 'Go to the service agreement' : 'Go to the works agreement'}</button>}
+                {k === 'accepted' && signed && !p.setupClientId && (comm || !p.clientId) && <Link className="btn call" href={`/hub/commercial/new?from=${p.id}`}>Set up as client</Link>}
+                {k === 'accepted' && p.agr && <button type="button" className="btn call" onClick={() => onAgreements(p.biz)}>{comm ? 'Go to the service agreement' : isPc(p) ? 'Go to the post-construction agreement' : 'Go to the works agreement'}</button>}
                 {(k === 'declined' || k === 'revision') && <Link className={k === 'revision' ? 'btn call' : 'btn log'} href={`${BASE}/${p.id}/edit?revise=1`}>Revise</Link>}
                 {(k === 'draft' || k === 'declined') && <button type="button" className="btn log dangerbtn" onClick={() => { setConfirming(p.id); setSending(null) }}>Delete</button>}
               </div>

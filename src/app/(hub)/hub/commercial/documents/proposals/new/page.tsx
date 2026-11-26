@@ -1,7 +1,7 @@
 import { ProposalForm } from '@/components/hub/ProposalForm'
 import { brisbaneToday } from '@/lib/hub/figures'
 import { loadFillFrom, loadOpenQuoteReqs, loadPresets, peekQuoteRef } from '@/lib/hub/documents-data'
-import { SPEC_METHODS, blankPf, tidy } from '@/lib/hub/proposals'
+import { SPEC_METHODS, blankPc, blankPf, tidy } from '@/lib/hub/proposals'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -10,7 +10,8 @@ export default async function NewProposalPage({ searchParams }: { searchParams: 
   const today = brisbaneToday()
   const [presets, fill, requests, ref] = await Promise.all([loadPresets(), loadFillFrom(), loadOpenQuoteReqs(), peekQuoteRef(today.slice(0, 4))])
   const rq = searchParams.request ? requests.find(r => r.id === searchParams.request) : null
-  const pf = blankPf(rq || searchParams.type === 'spec' ? 'spec' : 'comm', ref, today)
+  const pc = !rq && searchParams.type === 'pc'
+  const pf = pc ? blankPc(ref, today) : blankPf(rq || searchParams.type === 'spec' ? 'spec' : 'comm', ref, today)
   if (rq) {
     // Start quote from a client's request (mock-up startQuote): the job, the site and the day they asked for
     const c = fill.clients.find(x => x.id === rq.clientId)
@@ -33,6 +34,6 @@ export default async function NewProposalPage({ searchParams }: { searchParams: 
   return (
     <ProposalForm initial={pf} presets={presets} leads={fill.leads} clients={fill.clients} requests={requests} today={today}
       backHref={fromReq ? '/hub/commercial/requests' : cl ? '/hub/commercial/clients/' + cl.id : '/hub/commercial/documents'} backLabel={fromReq ? 'Requests' : cl ? cl.name : 'Documents'}
-      heading={pf.ptype === 'comm' ? 'New proposal' : 'New specialist proposal'} />
+      heading={pf.ptype === 'comm' ? 'New proposal' : pc ? 'New post-construction proposal' : 'New specialist proposal'} />
   )
 }

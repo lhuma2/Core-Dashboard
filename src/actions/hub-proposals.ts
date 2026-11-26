@@ -18,7 +18,7 @@ import { emailSignature } from '@/lib/hub/email-signature'
 import { proposalPdf } from '@/lib/hub/proposal-pdf'
 import { loadProp, reqClientOf } from '@/lib/hub/documents-data'
 import {
-  COMM_CLAUSES, DECLINE_WHY, SPEC_CLAUSES, EMAIL_OK, bodyOf, checkProp, cleanProp, dLong, draftCheck, isoAdd, jobName, propDoc, propSnap,
+  DECLINE_WHY, EMAIL_OK, bodyOf, checkProp, cleanProp, dLong, draftCheck, isPc, isoAdd, jobName, propClauses, propDoc, propSnap,
   quoteRef, tidy, type Pf, type Prop,
 } from '@/lib/hub/proposals'
 
@@ -52,7 +52,7 @@ const pfSchema = z.object({
 
 function proposalEmail(p: Prop, link: string, site: string, validTo: string, again: boolean): string {
   const first = esc(tidy(p.contact).split(' ')[0] || 'there')
-  const what = p.ptype === 'comm' ? 'commercial cleaning' : (p.jobs.map(jobName).filter(Boolean).join(', ').toLowerCase() || 'specialist cleaning')
+  const what = p.ptype === 'comm' ? 'commercial cleaning' : isPc(p) ? 'post-construction cleaning' : (p.jobs.map(jobName).filter(Boolean).join(', ').toLowerCase() || 'specialist cleaning')
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#13201a;font-size:15px;line-height:1.5">
   <p>Hi ${first},</p>
   <p>${again ? 'Here is our proposal again' : 'Thank you for the opportunity to quote'} for the ${esc(what)} at ${esc(p.biz)}. The proposal (${esc(p.ref)}) is attached as a PDF.</p>
@@ -217,7 +217,7 @@ export async function clientAcceptProposal(code: string, worksDate: string): Pro
     refresh()
     return { ok: true, message: `Thank you. ${names} ${names === 'The works' ? 'are' : 'is'} booked for ${dLong(wd)}. It shows in your client portal, and we’ll confirm the time.` }
   }
-  const snap = { prop: propSnap(p, today), clauses: p.ptype === 'spec' ? SPEC_CLAUSES : COMM_CLAUSES }
+  const snap = { prop: propSnap(p, today), clauses: propClauses(p) }
   const { data: made, error } = await o.db.rpc('hub_accept_proposal', { p_code: code, p_snap: snap, p_book: null })
   if (error) {
     const m = String(error.message || '')
@@ -225,7 +225,7 @@ export async function clientAcceptProposal(code: string, worksDate: string): Pro
     if (m.includes('expired')) return { ok: false, error: 'This proposal has expired. Contact Core Cleaning on 0407 026 360 for an updated one.' }
     return { ok: false, error: 'That didn’t go through. Nothing was saved, so you can try again.' }
   }
-  await tellLaith(`${p.biz} accepted ${p.ref}`, [`<strong>${esc(p.biz)}</strong> accepted proposal ${esc(p.ref)}.`, `Their ${p.ptype === 'spec' ? 'works agreement' : 'service agreement'} ${esc(made?.ref || '')} is on its way to be signed. You get another email when they sign.`],
+  await tellLaith(`${p.biz} accepted ${p.ref}`, [`<strong>${esc(p.biz)}</strong> accepted proposal ${esc(p.ref)}.`, `Their ${p.ptype === 'spec' ? (isPc(p) ? 'post-construction works agreement' : 'works agreement') : 'service agreement'} ${esc(made?.ref || '')} is on its way to be signed. You get another email when they sign.`],
     { title: `${p.biz} accepted ${p.ref}`, body: `They’re signing the ${p.ptype === 'spec' ? 'works' : 'service'} agreement now.`, url: '/hub/commercial/documents' })
   refresh()
   return { ok: true, message: 'Thank you, the proposal is accepted.', next: made?.code ? `/agreement/${made.code}?from=proposal` : undefined }

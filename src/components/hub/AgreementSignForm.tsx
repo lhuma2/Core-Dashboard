@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { AgreementDoc } from './AgreementDoc'
 import { clientSignAgreement } from '@/actions/hub-comm-agreements'
-import { AS_REQS, AS_TIMES, P_FREQ, WDAYS, agView, dLong, tidy, type Agr, type SignDetails, type SignForm } from '@/lib/hub/proposals'
+import { AS_REQS, AS_TIMES, P_FREQ, WDAYS, agrTitle, agView, dLong, tidy, type Agr, type SignDetails, type SignForm } from '@/lib/hub/proposals'
 
 /** The client's signing page: their details (page 02), live particulars, Schedule 1, terms, and the sign box. */
 export function AgreementSignForm({ d, today, initial, justAccepted }: { d: Agr; today: string; initial: SignForm; justAccepted: boolean }) {
@@ -118,7 +118,7 @@ export function AgreementSignForm({ d, today, initial, justAccepted }: { d: Agr;
 
   return (
     <>
-      {justAccepted && <p className="agstatus ok asbanner">Thank you, the proposal is accepted. The last step is your {spec ? 'works agreement' : 'service agreement'}: add your details, read the terms and sign at the bottom.</p>}
+      {justAccepted && <p className="agstatus ok asbanner">Thank you, the proposal is accepted. The last step is your {spec ? agrTitle(d).toLowerCase().replace('specialist ', '') : 'service agreement'}: add your details, read the terms and sign at the bottom.</p>}
       <AgreementDoc v={v} details={details} signatures={signatures} />
     </>
   )
