@@ -4,7 +4,7 @@ import { Back } from '@/components/hub/icons'
 import { NewClientForm, type TeamMember } from '@/components/hub/NewClientForm'
 import { brisbaneToday } from '@/lib/hub/figures'
 import { loadProp } from '@/lib/hub/documents-data'
-import { ncFromProp } from '@/lib/hub/proposals'
+import { anyHourly, jobHourly, jobPrice, ncFromProp, propTotal } from '@/lib/hub/proposals'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +30,9 @@ export default async function NewClientPage({ searchParams }: { searchParams: { 
       <Link className="back" href={from ? '/hub/commercial/documents' : '/hub/commercial'}><Back /> {from ? 'Documents' : 'Commercial'}</Link>
       <h1 className="greet">New client</h1>
       {ready && <p className="agstatus ok">{ready.ptype === 'spec'
-        ? `Filled in from proposal ${ready.ref} and their signed agreement, as a one-off clean on their works date. The price is converted to ex GST. Check the time, then add the cleaner cost and cleaners, and save.`
+        ? `Filled in from proposal ${ready.ref} and their signed agreement, as a one-off clean on their works date. ` + (anyHourly(ready.jobs)
+          ? `It’s charged by the hour (${ready.jobs.filter(jobHourly).map(jobPrice).join('; ')}), so the client price ${propTotal(ready) ? 'is the estimate, converted to ex GST' : 'needs your best estimate, ex GST'}. Check the time, then add the cleaner cost and cleaners, and save.`
+          : 'The price is converted to ex GST. Check the time, then add the cleaner cost and cleaners, and save.')
         : `Filled in from proposal ${ready.ref} and their signed agreement. Prices are converted to ex GST. Check the days and times, then add the cleaner costs and cleaners, and save.`}</p>}
       {from && !ready && <p className="agstatus warn">{from.setupClientId ? `${from.ref} is already set up as a client.` : from.ptype === 'spec' && from.clientId ? `${from.ref} is for a client you already have, so there’s nothing to set up.` : `${from.ref} can’t be set up as a client until it’s accepted and the agreement is signed.`}</p>}
       {failed

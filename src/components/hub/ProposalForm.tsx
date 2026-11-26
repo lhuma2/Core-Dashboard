@@ -9,7 +9,7 @@ import { scopeUploadUrl, readScope } from '@/actions/hub-scope'
 import { setFlash } from '@/lib/hub/flash'
 import {
   ADD_ADJ, ADD_FREQ_OPTS, ADDON_KINDS, JOB_KINDS, P_FREQ, SPEC_METHODS, WHEN_OPTS, addItems, addName, addPresetSow, blankAddon, blankJob,
-  EXCL_PC, EXCL_SPEC, checkProp, dLong, isPcJobs, dShort, draftCheck, fmt$, fmt2, jobName, pfMonthly, propTotal, removePresetSow, tidy,
+  EXCL_PC, EXCL_SPEC, anyHourly, jobHourly, jobPrice, checkProp, dLong, isPcJobs, dShort, draftCheck, fmt$, fmt2, jobName, pfMonthly, propTotal, removePresetSow, tidy,
   type FreqKey, type Pf, type PresetScope, type SowHead, type WhenKey, type WinKey,
 } from '@/lib/hub/proposals'
 import type { PickClient, PickLead } from '@/lib/hub/documents-data'
@@ -212,7 +212,7 @@ export function ProposalForm({ initial, presets, leads, clients, requests, today
           <h2 className="nch">The works</h2>
           {pf.jobs.map((jb, ji) => {
             const nm = jobName(jb)
-            const setJ = (k: 'custom' | 'area' | 'included' | 'price') => (e: { target: { value: string } }) => { const v = e.target.value; upd(x => { x.jobs[ji][k] = v }) }
+            const setJ = (k: 'custom' | 'area' | 'included' | 'price' | 'hours') => (e: { target: { value: string } }) => { const v = e.target.value; upd(x => { x.jobs[ji][k] = v }) }
             return (
               <div className="extracard" key={ji}>
                 <div className="sitehead"><strong>Service {ji + 1}{nm ? ': ' + nm : ''}</strong>{pf.jobs.length > 1 && <button type="button" className="linkbtn danger" aria-label={'Remove service ' + (ji + 1)} onClick={() => upd(x => { if (x.jobs.length > 1) x.jobs.splice(ji, 1) })}>Remove</button>}</div>
@@ -226,7 +226,18 @@ export function ProposalForm({ initial, presets, leads, clients, requests, today
                       {JOB_KINDS.map(k => <option key={k} value={k}>{k}</option>)}
                     </select>
                   </label>
-                  <label className="fld half"><span>Price ($, incl GST)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 650" value={jb.price} onChange={setJ('price')} /></label>
+                  <label className="fld half"><span>Charged</span>
+                    <select value={jobHourly(jb) ? 'hour' : 'fixed'} onChange={e => { const v = e.target.value; upd(x => { if (v === 'hour') { x.jobs[ji].unit = 'hour'; x.jobs[ji].hours = x.jobs[ji].hours || '' } else { delete x.jobs[ji].unit; delete x.jobs[ji].hours } }) }}>
+                      <option value="fixed">Fixed price</option>
+                      <option value="hour">By the hour</option>
+                    </select>
+                  </label>
+                  {jobHourly(jb)
+                    ? <>
+                      <label className="fld half"><span>Hourly rate ($, incl GST)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 65" value={jb.price} onChange={setJ('price')} /></label>
+                      <label className="fld half"><span>Estimated hours (optional)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 12" value={jb.hours || ''} onChange={setJ('hours')} /></label>
+                    </>
+                    : <label className="fld half"><span>Price ($, incl GST)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 650" value={jb.price} onChange={setJ('price')} /></label>}
                   {jb.kind === 'Custom' && <label className="fld span2"><span>Custom service name</span><input type="text" autoComplete="off" placeholder="e.g. Graffiti removal" value={jb.custom} onChange={setJ('custom')} /></label>}
                   <label className="fld span2"><span>Where and how much</span><input type="text" autoComplete="off" placeholder={isPcJobs([jb]) ? 'e.g. 5 bathrooms, ground and first floor' : 'e.g. Ground floor offices, about 140 m² of carpet'} value={jb.area} onChange={setJ('area')} /></label>
                   <label className="fld span2"><span>What&apos;s included (one per line)</span><textarea rows={5} value={jb.included} onChange={setJ('included')} /></label>
@@ -245,7 +256,9 @@ export function ProposalForm({ initial, presets, leads, clients, requests, today
               </select>
             </label>
           </div>
-          {total > 0 && <p className="nchint">Total {fmt2(total)} incl GST ({fmt2(total / 1.1)} ex GST).</p>}
+          {anyHourly(pf.jobs)
+            ? <p className="nchint">{pf.jobs.map(j => (pf.jobs.length > 1 ? (jobName(j) || 'Service') + ': ' : '') + jobPrice(j)).join(' · ')}. Charged for the hours worked{total > 0 ? `, so the estimate is a guide (${fmt2(total)} incl GST)` : ''}.</p>
+            : total > 0 && <p className="nchint">Total {fmt2(total)} incl GST ({fmt2(total / 1.1)} ex GST).</p>}
         </>}
 
         <label className="fld"><span>Not included</span><textarea rows={2} value={pf.excl} onChange={set('excl')} /></label>
