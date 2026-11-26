@@ -9,7 +9,7 @@ import { scopeUploadUrl, readScope } from '@/actions/hub-scope'
 import { setFlash } from '@/lib/hub/flash'
 import {
   ADD_ADJ, ADD_FREQ_OPTS, ADDON_KINDS, JOB_KINDS, P_FREQ, SPEC_METHODS, WHEN_OPTS, addItems, addName, addPresetSow, blankAddon, blankJob,
-  checkProp, dLong, dShort, draftCheck, fmt$, fmt2, jobName, pfMonthly, propTotal, removePresetSow, tidy,
+  EXCL_PC, EXCL_SPEC, checkProp, dLong, isPcJobs, dShort, draftCheck, fmt$, fmt2, jobName, pfMonthly, propTotal, removePresetSow, tidy,
   type FreqKey, type Pf, type PresetScope, type SowHead, type WhenKey, type WinKey,
 } from '@/lib/hub/proposals'
 import type { PickClient, PickLead } from '@/lib/hub/documents-data'
@@ -220,15 +220,15 @@ export function ProposalForm({ initial, presets, leads, clients, requests, today
                   <label className="fld half"><span>Service</span>
                     <select value={jb.kind} onChange={e => {
                       const v = e.target.value
-                      upd(x => { const cur = x.jobs[ji], prevPreset = (SPEC_METHODS[cur.kind] || []).join('\n'); cur.kind = v; if (!tidy(cur.included) || cur.included === prevPreset) cur.included = (SPEC_METHODS[v] || []).join('\n') })
+                      upd(x => { const cur = x.jobs[ji], prevPreset = (SPEC_METHODS[cur.kind] || []).join('\n'); cur.kind = v; if (!tidy(cur.included) || cur.included === prevPreset) cur.included = (SPEC_METHODS[v] || []).join('\n'); const pcNow = isPcJobs(x.jobs); if (pcNow && tidy(x.excl) === tidy(EXCL_SPEC)) x.excl = EXCL_PC; else if (!pcNow && tidy(x.excl) === tidy(EXCL_PC)) x.excl = EXCL_SPEC })
                     }}>
                       <option value="">Choose a service</option>
                       {JOB_KINDS.map(k => <option key={k} value={k}>{k}</option>)}
                     </select>
                   </label>
                   <label className="fld half"><span>Price ($, incl GST)</span><input type="text" inputMode="decimal" autoComplete="off" placeholder="e.g. 650" value={jb.price} onChange={setJ('price')} /></label>
-                  {jb.kind === 'Custom' && <label className="fld span2"><span>Custom service name</span><input type="text" autoComplete="off" placeholder="e.g. Post-construction clean" value={jb.custom} onChange={setJ('custom')} /></label>}
-                  <label className="fld span2"><span>Where and how much</span><input type="text" autoComplete="off" placeholder="e.g. Ground floor offices, about 140 m² of carpet" value={jb.area} onChange={setJ('area')} /></label>
+                  {jb.kind === 'Custom' && <label className="fld span2"><span>Custom service name</span><input type="text" autoComplete="off" placeholder="e.g. Graffiti removal" value={jb.custom} onChange={setJ('custom')} /></label>}
+                  <label className="fld span2"><span>Where and how much</span><input type="text" autoComplete="off" placeholder={isPcJobs([jb]) ? 'e.g. 5 bathrooms, ground and first floor' : 'e.g. Ground floor offices, about 140 m² of carpet'} value={jb.area} onChange={setJ('area')} /></label>
                   <label className="fld span2"><span>What&apos;s included (one per line)</span><textarea rows={5} value={jb.included} onChange={setJ('included')} /></label>
                 </div>
               </div>

@@ -20,7 +20,7 @@ import { clientSnapFor } from '@/lib/hub/documents-data'
 import { sendPushToRole } from '@/lib/push'
 import { makeClientLogin, resendClientWelcome } from '@/lib/hub/client-login'
 import {
-  AS_REQ_SHORT, COMM_CLAUSES, EMAIL_OK, dLong, jobName, signCheck, type SignForm, UPLOAD_KINDS, agrOf, agrState, agreeRefNew, dShort, isoAdd, renewRef, tidy, AGR_COLS, type Agr, type AgrSnap,
+  AS_REQ_SHORT, COMM_CLAUSES, agrTitle, EMAIL_OK, dLong, jobName, signCheck, type SignForm, UPLOAD_KINDS, agrOf, agrState, agreeRefNew, dShort, isoAdd, renewRef, tidy, AGR_COLS, type Agr, type AgrSnap,
 } from '@/lib/hub/proposals'
 
 type Done = { ok: true; id: string; toast: string } | { ok: false; error: string }
@@ -57,9 +57,8 @@ async function openFor(db: any, clientId: string, not = ''): Promise<boolean | '
   return !!(data || []).length
 }
 
-function signMail(contact: string, biz: string, ref: string, spec: boolean, link: string, site: string, again: boolean): string {
+function signMail(contact: string, biz: string, ref: string, what: string, link: string, site: string, again: boolean): string {
   const first = esc(tidy(contact).split(' ')[0] || 'there')
-  const what = spec ? 'specialist works agreement' : 'service agreement'
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#13201a;font-size:15px;line-height:1.5">
   <p>Hi ${first},</p>
   <p>${again ? 'Here is the link again for' : 'Here is'} the ${what} for ${esc(biz)} (${esc(ref)}). Please check your details, choose your start date and sign it online. It takes about five minutes.</p>
@@ -73,7 +72,7 @@ async function emailSign(d: Agr, to: string, again: boolean): Promise<{ ok: true
   if (!process.env.RESEND_API_KEY) return { ok: true, tested: true }
   const site = siteUrl(), spec = d.atype === 'spec'
   const contact = d.snap?.client?.contact || d.snap?.prop?.contact || ''
-  const r = await sendEmail(to, `Your ${spec ? 'works' : 'service'} agreement from Core Cleaning (${d.ref})`, signMail(contact, d.client, d.ref, spec, `${site}/agreement/${d.code}`, site, again))
+  const r = await sendEmail(to, `Your ${spec ? 'works' : 'service'} agreement from Core Cleaning (${d.ref})`, signMail(contact, d.client, d.ref, agrTitle(d).toLowerCase(), `${site}/agreement/${d.code}`, site, again))
   return r.success ? { ok: true, tested: false } : { ok: false }
 }
 
@@ -296,7 +295,7 @@ export async function clientSignAgreement(code: string, f: SignForm): Promise<{ 
     }
   }
   const view = `${site}/agreement/${code}`
-  const what = spec ? 'works agreement' : 'service agreement'
+  const what = spec ? agrTitle(d).toLowerCase().replace('specialist ', '') : 'service agreement'
   const works = spec ? (d.snap?.prop?.jobs || []).map(jobName).filter(Boolean).join(', ') || 'The works' : ''
   if (process.env.RESEND_API_KEY) {
     const first = esc(det.name.split(' ')[0])
@@ -307,13 +306,13 @@ export async function clientSignAgreement(code: string, f: SignForm): Promise<{ 
   <p>Kind regards,</p>${emailSignature(site)}</div>`).catch(() => {})
     await sendEmail(BRAND.email, `${d.client} signed ${d.ref}`, `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5">
   <p><strong>${esc(det.name)}</strong> (${esc(det.position)}) signed the ${esc(d.client)} ${what} ${esc(d.ref)}.</p>
-  <p>${spec ? `${esc(works)} booked for ${esc(dLong(det.start))}. Assign a cleaner in the timetable.` : `Preferred first clean ${esc(dLong(det.start))}.`}${esc(asked)}</p>
-  ${!spec && !d.clientId ? '<p>Next: press Set up as client on the proposal in Documents.</p>' : ''}
+  <p>${spec ? `${esc(works)} booked for ${esc(dLong(det.start))}.${d.clientId ? ' Assign a cleaner in the timetable.' : ''}` : `Preferred first clean ${esc(dLong(det.start))}.`}${esc(asked)}</p>
+  ${!d.clientId && d.proposalId ? `<p>Next: press Set up as client on the proposal in Documents${spec ? ' (it adds them with the works as a one-off clean, so you can assign cleaners)' : ''}.</p>` : ''}
   <p><a href="${view}">Signed copy</a></p></div>`).catch(() => {})
   }
   await sendPushToRole('admin', {
     title: `${d.client} signed ${d.ref}`,
-    body: spec ? `${works} booked for ${dLong(det.start)}. Assign a cleaner.` : `Starting ${dLong(det.start)}.` + (d.clientId ? '' : ' Set them up as a client.') + asked,
+    body: spec ? `${works} booked for ${dLong(det.start)}.` + (d.clientId ? ' Assign a cleaner.' : ' Set them up as a client to assign cleaners.') : `Starting ${dLong(det.start)}.` + (d.clientId ? '' : ' Set them up as a client.') + asked,
     url: '/hub/commercial/documents?sec=agreements',
   }).catch(() => {})
   refresh()

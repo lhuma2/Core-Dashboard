@@ -3,7 +3,7 @@ import 'server-only'
 import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { makeClientLogin } from './client-login'
-import { AGR_COLS, agrOf } from './proposals'
+import { AGR_COLS, agrOf, jobLines, jobName, type Job } from './proposals'
 
 function siteUrl(): string {
   const h = headers()
@@ -18,14 +18,18 @@ function siteUrl(): string {
  * client portal login from the details they signed with. Returns the extra words for the toast.
  */
 export async function setUpFromProposal(db: any, propId: string, clientId: string, today: string): Promise<string> {
-  const { data: p } = await db.from('proposals').select('id, ref, body, setup_client_id').eq('id', propId).maybeSingle()
+  const { data: p } = await db.from('proposals').select('id, ref, ptype, body, setup_client_id').eq('id', propId).maybeSingle()
   if (!p) return ''
   if (p.setup_client_id) return ` ${p.ref} was already set up as a client, so nothing else was linked.`
   await db.from('proposals').update({ setup_client_id: clientId, client_id: clientId }).eq('id', propId)
   const { data: aRow } = await db.from('agreements').select(AGR_COLS).eq('proposal_id', propId).maybeSingle()
   const a = aRow ? agrOf(aRow) : null
   // the scope they agreed to becomes the client's checklist (one line per task, under its heading)
-  const sow = (a?.snap?.prop?.sow || (Array.isArray(p.body?.sow) ? p.body.sow : [])) as { heading: string; items: { text: string }[] }[]
+  // (specialist and post-construction works: each service's lines, under its name and area)
+  const jobs = (a?.snap?.prop?.jobs || (Array.isArray(p.body?.jobs) ? p.body.jobs : [])) as Job[]
+  const sow = (p.ptype === 'spec'
+    ? jobs.filter(j => j?.kind).map(j => ({ heading: jobName(j) + (j.area ? ': ' + j.area : ''), items: jobLines(j).map(text => ({ text })) }))
+    : (a?.snap?.prop?.sow || (Array.isArray(p.body?.sow) ? p.body.sow : []))) as { heading: string; items: { text: string }[] }[]
   const scope = sow.flatMap(h => (h.items || []).map(it => ({ task: String(it.text || '').trim().slice(0, 300), area: String(h.heading || '').trim().slice(0, 120), frequency: 'visit' }))).filter(t => t.task)
   if (scope.length) await db.from('clients').update({ scope }).eq('id', clientId)
   if (!a) return ''

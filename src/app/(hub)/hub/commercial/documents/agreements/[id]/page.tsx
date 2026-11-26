@@ -6,7 +6,7 @@ import { AgreementViewBar } from '@/components/hub/AgreementViewBar'
 import { brisbaneToday } from '@/lib/hub/figures'
 import { clientSnapFor } from '@/lib/hub/documents-data'
 import { createClient } from '@/lib/supabase/server'
-import { AGR_COLS, agrOf, agrState, agView, detailsList, dLong } from '@/lib/hub/proposals'
+import { AGR_COLS, agrOf, agrState, agrTitle, agView, detailsList, dLong } from '@/lib/hub/proposals'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +33,7 @@ export default async function CommAgreementPage({ params }: { params: { id: stri
     <>
       {back}
       <article className="doc">
-        <AgreementHead kicker={`${spec ? 'Specialist works agreement' : 'Service agreement'} ${d.ref}`} title={d.client} />
+        <AgreementHead kicker={`${agrTitle(d)} ${d.ref}`} title={d.client} />
         <p className={cls}>{status}</p>
         <AgreementViewBar id={d.id} signedCode={d.status === 'signed' ? d.code : null} portal={!!pt && !!d.clientId} />
         <h2 className="dh">Schedule of particulars</h2>
@@ -46,8 +46,8 @@ export default async function CommAgreementPage({ params }: { params: { id: stri
           <h2 className="dh">Client portal</h2>
           <p className="dp">Welcome email with their login sent to {pt.email} on {dLong(pt.sentAt)}{pt.resentAt ? `, sent again on ${dLong(pt.resentAt)}` : ''}. Their starter password is their first name ({pt.first}), and they choose their own the first time they log in.</p>
         </>}
-        {!spec && d.status === 'signed' && !d.clientId && <p className="agstatus warn">Signed, but not set up as a client yet. Press Set up as client on the proposal in Documents, Proposals. Their client portal login is made then.</p>}
-        <h2 className="dh">Schedule 1: {spec ? 'The works' : 'Scope of works'}</h2>
+        {d.status === 'signed' && !d.clientId && !!d.proposalId && <p className="agstatus warn">Signed, but not set up as a client yet. Press Set up as client on the proposal in Documents, Proposals.{spec ? ' The works become their one-off clean, so you can assign cleaners.' : ''} Their client portal login is made then.</p>}
+        <h2 className="dh">Schedule 1: {v.scopeH.replace(/\.$/, '')}</h2>
         {v.scope.length
           ? v.scope.map((g, i) => <div key={i}><div className="dlabel">{g.heading}</div><ul className="dul">{g.items.map((t, j) => <li key={j}>{t}</li>)}</ul></div>)
           : <p className="dp">As set out in the proposal the client accepted.</p>}
